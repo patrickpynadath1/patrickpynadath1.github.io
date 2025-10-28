@@ -764,6 +764,11 @@
   text-decoration: none;
 }
 
+/* Prevent badge clicks from triggering section expansion */
+.conference-badge, .website-badge, .arxiv-badge, .github-badge {
+  pointer-events: auto;
+}
+
 /* Paper authors styling */
 .paper-authors {
   line-height: 1.4;
@@ -780,51 +785,62 @@
   text-decoration: underline;
 }
 
-/* Hide conference badges on small screens */
+/* Mobile layout improvements */
 @media (max-width: 768px) {
   .conference-badge, .website-badge, .arxiv-badge, .github-badge {
     font-size: 0.8em;
     padding: 6px 10px;
   }
   
-  /* Adjust conference badge position for mobile */
+  /* Make section header a vertical flex container */
+  .section-header {
+    flex-direction: column !important;
+    align-items: stretch !important;
+  }
+  
+  /* Title container - show first */
+  .section-header > div:first-child {
+    order: 1;
+    margin-top: 0 !important;
+    margin-bottom: 15px;
+  }
+  
+  /* Conference badge - position after title, before action badges */
   .section-header .conference-badge {
     position: relative !important;
     top: unset !important;
     left: unset !important;
-    margin-bottom: 15px;
-    display: block;
-    width: fit-content;
+    order: 2;
+    align-self: center;
+    margin: 0 0 10px 0;
+    display: inline-block;
+    width: auto;
   }
   
-  /* Move action badges inside section and stack vertically for mobile */
+  /* Action badges container - show after conference badge */
   .section-header > div[style*="position: absolute"] {
     position: relative !important;
     top: unset !important;
     right: unset !important;
-    flex-direction: column !important;
-    align-items: center !important;
-    margin-top: 15px !important;
-    margin-bottom: 15px !important;
-  }
-  
-  /* Remove top margin on mobile since conference badge is no longer absolute */
-  .section-header > div:first-child {
-    margin-top: 0 !important;
-  }
-  
-  /* Make badge container wrap and stack better on mobile */
-  .section-header > div:last-child {
+    order: 3;
+    flex-direction: row !important;
     flex-wrap: wrap !important;
-    gap: 8px !important;
+    align-items: center !important;
     justify-content: center !important;
-    margin-top: 15px !important;
+    gap: 8px !important;
+    margin: 0 0 15px 0 !important;
+  }
+  
+  /* Expand icon container - show last */
+  .section-header > div:last-child {
+    order: 4;
+    justify-content: center !important;
+    margin-top: 0 !important;
   }
   
   /* Ensure expand icon stays visible */
   .expand-icon {
-    order: 99;
-    margin-top: 8px;
+    margin-top: 0;
     width: 100%;
     text-align: center;
   }
@@ -1408,7 +1424,12 @@ document.addEventListener('DOMContentLoaded', function() {
   const expandableSections = document.querySelectorAll('.expandable-section');
   
   expandableSections.forEach(section => {
-    section.addEventListener('click', function() {
+    section.addEventListener('click', function(event) {
+      // Check if the clicked element is a badge or inside a badge
+      if (event.target.closest('.conference-badge, .website-badge, .arxiv-badge, .github-badge')) {
+        return; // Don't expand/collapse if a badge was clicked
+      }
+      
       const isExpanded = this.classList.contains('expanded');
       
       // Toggle expansion
@@ -1417,6 +1438,14 @@ document.addEventListener('DOMContentLoaded', function() {
       } else {
         this.classList.add('expanded');
       }
+    });
+  });
+  
+  // Prevent badge clicks from bubbling up to the section
+  const badges = document.querySelectorAll('.conference-badge, .website-badge, .arxiv-badge, .github-badge');
+  badges.forEach(badge => {
+    badge.addEventListener('click', function(event) {
+      event.stopPropagation();
     });
   });
 });
