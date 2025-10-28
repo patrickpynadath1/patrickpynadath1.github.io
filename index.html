@@ -1,0 +1,1286 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="description" content="Patrick Pynadath Website">
+  <meta name="keywords" content="Patrick Pynadath, personal website, portfolio, about me">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Patrick Pynadath</title>
+
+  <link href="https://fonts.googleapis.com/css?family=Google+Sans|Noto+Sans|Castoro"
+        rel="stylesheet">
+
+  <link rel="stylesheet" href="./static/css/bulma.min.css">
+  <link rel="stylesheet" href="./static/css/bulma-carousel.min.css">
+  <link rel="stylesheet" href="./static/css/bulma-slider.min.css">
+  <link rel="stylesheet" href="./static/css/fontawesome.all.min.css">
+  <link rel="stylesheet"
+        href="https://cdn.jsdelivr.net/gh/jpswalsh/academicons@1/css/academicons.min.css">
+  <link rel="stylesheet" href="./static/css/index.css">
+  <link rel="icon" href="./static/images/favicon.png">
+
+  <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+  <script defer src="./static/js/fontawesome.all.min.js"></script>
+  <script src="./static/js/bulma-carousel.min.js"></script>
+  <script src="./static/js/bulma-slider.min.js"></script>
+  <script src="./static/js/index.js"></script>
+  <style>
+  .tldr-section {
+  width: 100%;
+  margin: 0;
+  padding: 20px 0;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 50%, #f093fb 100%);
+  color: white;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.15);
+  position: relative;
+  overflow: hidden;
+}
+
+.tldr-title {
+  font-size: 1.5em;
+  font-weight: bold;
+  margin-bottom: 10px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  display: flex;
+  align-items: center;
+}
+
+.tldr-title:before {
+  content: "⚡";
+  margin-right: 10px;
+  font-size: 1.3em;
+}
+
+.tldr-content {
+  font-size: 1.1em;
+  line-height: 1.6;
+}
+
+.tldr-section strong {
+  color: white;
+}
+
+.tldr-section:after {
+  content: "";
+  position: absolute;
+  bottom: -15px;
+  right: -15px;
+  width: 100px;
+  height: 100px;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 50%;
+  z-index: 0;
+}
+
+@media (max-width: 768px) {
+  .tldr-section {
+    padding: 15px 0;
+  }
+  
+  .tldr-title {
+    font-size: 1.3em;
+  }
+  
+  .tldr-content {
+    font-size: 1em;
+  }
+}
+
+/* ============================================
+   COLORED SUBSECTION STYLES
+   ============================================ */
+
+/* Abstract Section - Blue theme */
+.abstract-section {
+    margin-bottom: 25px;
+    padding: 15px;
+    background-color: #f0f4f8;
+    border-left: 4px solid #3498db;
+    border-radius: 4px;
+}
+
+.abstract-title {
+    font-size: 1.8em;
+    margin-bottom: 15px;
+    color: #3498db;
+}
+
+.abstract-section p {
+    margin-bottom: 12px;
+    line-height: 1.6;
+}
+
+/* Problem Statement Section - Orange/Yellow theme */
+.problem-statement-section {
+    margin-bottom: 25px;
+    padding: 15px;
+    background-color: #fef6e6;
+    border-left: 4px solid #f39c12;
+    border-radius: 4px;
+}
+
+.problem-title {
+    font-size: 1.8em;
+    margin-bottom: 15px;
+    color: #f39c12;
+}
+
+/* Framework Section - Green theme */
+.framework-section {
+    margin-bottom: 25px;
+    padding: 15px;
+    background-color: #eafaf1;
+    border-left: 4px solid #27ae60;
+    border-radius: 4px;
+}
+
+.framework-title {
+    font-size: 1.8em;
+    margin-bottom: 15px;
+    color: #27ae60;
+}
+
+/* Algorithm Section - Purple theme */
+.algorithm-section {
+    margin-bottom: 25px;
+    padding: 15px;
+    background-color: #f7f5fe;
+    border-left: 4px solid #9b59b6;
+    border-radius: 4px;
+}
+
+.algorithm-title {
+    font-size: 1.8em;
+    margin-bottom: 15px;
+    color: #9b59b6;
+}
+
+/* Results/Analysis Section - Light blue theme */
+.results-analysis {
+    margin: 25px 0;
+    padding: 15px;
+    background-color: #f0f7ff;
+    border-left: 4px solid #0d6efd;
+    border-radius: 4px;
+}
+
+/* Experiment Description - Gray theme */
+.experiment-description {
+    margin-bottom: 25px;
+    padding: 15px;
+    background-color: white;
+    border-left: 4px solid #4a4a4a;
+    border-radius: 4px;
+}
+
+/* Title with lollipop icon */
+.publication-title {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 15px;
+}
+
+.title-icon {
+    height: 60px;
+    width: auto;
+    display: inline-block;
+}
+
+@media (max-width: 768px) {
+  .title-icon {
+    height: 40px;
+  }
+  
+  .publication-title {
+    gap: 10px;
+  }
+}
+
+/* Section spacing and layout */
+.content-section {
+    margin-bottom: 60px;
+}
+
+/* Expandable benefit boxes - stacked layout */
+.benefits-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 30px;
+    margin-top: 30px;
+}
+
+.benefit-box {
+    cursor: pointer;
+    transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+    position: relative;
+}
+
+.benefit-box:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 8px 20px rgba(155, 89, 182, 0.3);
+}
+
+.benefit-box.expanded {
+    box-shadow: 0 12px 30px rgba(155, 89, 182, 0.4);
+}
+
+.benefit-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 15px;
+}
+
+.expand-icon {
+    font-size: 1.5em;
+    transition: transform 0.3s ease;
+    color: #9b59b6;
+    flex-shrink: 0;
+    margin-left: 10px;
+}
+
+.benefit-box.expanded .expand-icon {
+    transform: rotate(180deg);
+}
+
+.benefit-summary {
+    font-size: 1.05em;
+    line-height: 1.6;
+}
+
+.benefit-content {
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height 0.6s cubic-bezier(0.4, 0, 0.2, 1), 
+                opacity 0.5s ease,
+                margin-top 0.4s ease;
+    opacity: 0;
+}
+
+.benefit-box.expanded .benefit-content {
+    max-height: 2000px;
+    opacity: 1;
+    margin-top: 20px;
+} 
+
+/* Expandable sections - horizontal and vertical expansion */
+.expandable-section {
+    cursor: pointer;
+    transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+    position: relative;
+    margin-left: auto;
+    margin-right: auto;
+    max-width: 100%;
+}
+
+/* Collapsed state - narrower width */
+.expandable-section:not(.expanded) {
+    max-width: 85%;
+}
+
+.expandable-section:hover:not(.expanded) {
+    transform: translateY(-3px);
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
+    max-width: 87%;
+}
+
+/* Expanded state - full width */
+.expandable-section.expanded {
+    max-width: 100%;
+    box-shadow: 0 12px 30px rgba(0, 0, 0, 0.2);
+}
+
+.section-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 15px;
+}
+
+.section-tldr {
+    font-size: 1.05em;
+    line-height: 1.6;
+    font-style: italic;
+    color: #555;
+}
+
+.section-content {
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height 0.6s cubic-bezier(0.4, 0, 0.2, 1), 
+                opacity 0.5s ease,
+                margin-top 0.4s ease;
+    opacity: 0;
+}
+
+.expandable-section.expanded .section-content {
+    max-height: 3000px;
+    opacity: 1;
+    margin-top: 20px;
+}
+
+.expand-icon {
+    font-size: 1.5em;
+    transition: transform 0.3s ease;
+    flex-shrink: 0;
+    margin-left: 10px;
+}
+
+.expandable-section.expanded .expand-icon {
+    transform: rotate(180deg);
+}
+
+/* Color-specific icons */
+.problem-statement-section .expand-icon {
+    color: #f39c12;
+}
+
+.abstract-section .expand-icon {
+    color: #3498db;
+}
+
+.framework-section .expand-icon {
+    color: #27ae60;
+}
+
+.algorithm-section .expand-icon {
+    color: #9b59b6;
+}
+
+.results-analysis .expand-icon {
+    color: #0d6efd;
+}
+
+.content-section {
+    margin-bottom: 30px;
+}
+
+@media (max-width: 768px) {
+    .expandable-section:not(.expanded) {
+        max-width: 95%;
+    }
+    
+    .expandable-section.expanded {
+        max-width: 100%;
+    }
+}
+
+/* Show bullet points in lists */
+.expandable-section ul {
+    list-style-type: disc;
+    padding-left: 40px;
+    margin-top: 15px;
+    margin-bottom: 15px;
+}
+
+.expandable-section ul li {
+    margin-bottom: 8px;
+    list-style-position: outside;
+}
+
+/* Also fix bullets in nested divs */
+.section-content ul {
+    list-style-type: disc;
+    padding-left: 40px;
+}
+
+.section-content ul li {
+    margin-bottom: 8px;
+}
+
+/* Methodology Section - Cream/Beige theme */
+.methodology-section {
+    margin-bottom: 25px;
+    padding: 15px;
+    background-color: #faf8f3;
+    border-left: 4px solid #d4a373;
+    border-radius: 4px;
+}
+
+.methodology-title {
+    font-size: 1.8em;
+    margin-bottom: 15px;
+    color: #d4a373;
+}
+
+.methodology-section .expand-icon {
+    color: #d4a373;
+}
+/* Concurrent Work Sections - Light gray theme */
+.concurrent-work-section {
+    margin-bottom: 25px;
+    padding: 15px;
+    background-color: #f9fafb;
+    border-left: 4px solid #6b7280;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+    position: relative;
+    margin-left: auto;
+    margin-right: auto;
+    max-width: 100%;
+}
+
+/* Collapsed state - narrower width */
+.concurrent-work-section:not(.expanded) {
+    max-width: 85%;
+}
+
+.concurrent-work-section:hover:not(.expanded) {
+    transform: translateY(-3px);
+    box-shadow: 0 8px 20px rgba(107, 114, 128, 0.3);
+    max-width: 87%;
+}
+
+/* Expanded state - full width */
+.concurrent-work-section.expanded {
+    max-width: 100%;
+    box-shadow: 0 12px 30px rgba(107, 114, 128, 0.4);
+}
+
+.concurrent-work-title {
+    font-size: 1.3em;
+    margin-bottom: 10px;
+    color: #6b7280;
+}
+
+.concurrent-work-section .expand-icon {
+    color: #6b7280;
+}
+
+@media (max-width: 768px) {
+    .concurrent-work-section:not(.expanded) {
+        max-width: 100%;
+    }
+    
+    .concurrent-work-section.expanded {
+        max-width: 100%;
+        margin-left: 0;
+        margin-right: 0;
+        padding-left: 20px;
+        padding-right: 20px;
+    }
+}
+
+/* Abstract paragraph hover effects */
+.section .content p {
+  transition: all 0.3s ease;
+  padding: 8px 12px;
+  border-radius: 6px;
+  margin-bottom: 16px;
+}
+
+.section .content p:hover {
+  transform: scale(1.02);
+  background-color: rgba(52, 152, 219, 0.05);
+  box-shadow: 0 4px 12px rgba(52, 152, 219, 0.15);
+  padding: 12px 16px;
+}
+
+/* Also make the list items in the abstract reactive */
+.section .content ul {
+  transition: all 0.3s ease;
+  padding: 8px 12px;
+  border-radius: 6px;
+  margin-bottom: 16px;
+}
+
+.section .content ul:hover {
+  transform: scale(1.02);
+  background-color: rgba(52, 152, 219, 0.05);
+  box-shadow: 0 4px 12px rgba(52, 152, 219, 0.15);
+  padding: 12px 16px;
+}
+
+/* Make sure the hover doesn't interfere with text selection */
+.section .content p:hover,
+.section .content ul:hover {
+  cursor: default;
+}
+
+/* Profile Picture Styles */
+.profile-picture-main {
+  width: 300px;
+  height: 300px;
+  border-radius: 50%;
+  overflow: hidden;
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
+  margin-top: -20px; /* Move up */
+}
+
+.profile-img-main {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center center;
+  transform: scale(2); /* Zoom in by 30% */
+}
+
+/* Responsive design for mobile */
+@media (max-width: 768px) {
+  .profile-picture-main {
+    width: 250px;
+    height: 250px;
+  }
+}
+
+/* Cat Pictures Styles */
+.cat-container {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  cursor: pointer;
+}
+
+.cat-picture {
+  width: 180px;
+  height: 180px;
+  border-radius: 50%;
+  overflow: hidden;
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.1);
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.cat-picture:hover {
+  transform: scale(1.05);
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
+}
+
+.cat-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center center;
+}
+
+.cat-name {
+  position: absolute;
+  bottom: -40px;
+  left: 50%;
+  transform: translateX(-50%) translateY(10px);
+  font-size: 1.4em;
+  color: #2c3e50;
+  font-weight: bold;
+  opacity: 0;
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  pointer-events: none;
+  white-space: nowrap;
+}
+
+.cat-container:hover .cat-name {
+  opacity: 1;
+  transform: translateX(-50%) translateY(0);
+}
+
+/* Responsive design for cat pictures */
+@media (max-width: 768px) {
+  .cat-picture {
+    width: 150px;
+    height: 150px;
+  }
+  
+  .cat-name {
+    font-size: 1.2em;
+    bottom: -35px;
+  }
+}
+
+/* Project Cat Pictures - in margin space */
+.project-cat-picture {
+  position: absolute;
+  right: -80px;
+  top: 20px;
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  overflow: hidden;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  opacity: 0.8;
+  transition: all 0.3s ease;
+}
+
+.project-cat-picture:hover {
+  opacity: 1;
+  transform: scale(1.1);
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.15);
+}
+
+.project-cat-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center center;
+}
+
+/* Make sure the expandable sections have relative positioning for absolute positioning */
+.expandable-section {
+  position: relative;
+}
+
+/* Hide project cats on mobile */
+@media (max-width: 968px) {
+  .project-cat-picture {
+    display: none;
+  }
+}
+
+/* Side cat pictures for projects */
+.side-cat-left {
+  position: absolute;
+  left: -80px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  overflow: hidden;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  opacity: 0.7;
+  transition: all 0.3s ease;
+}
+
+.side-cat-right {
+  position: absolute;
+  right: -80px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  overflow: hidden;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  opacity: 0.7;
+  transition: all 0.3s ease;
+}
+
+.side-cat-left:hover,
+.side-cat-right:hover {
+  opacity: 1;
+  transform: translateY(-50%) scale(1.1);
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.15);
+}
+
+.side-cat-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center center;
+}
+
+/* Hide side cats on mobile */
+@media (max-width: 1200px) {
+  .side-cat-left,
+  .side-cat-right {
+    display: none;
+  }
+}
+
+/* Conference badge styling */
+.conference-badge {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  padding: 6px 12px;
+  border-radius: 20px;
+  font-size: 0.85em;
+  font-weight: bold;
+  box-shadow: 0 2px 8px rgba(102, 126, 234, 0.3);
+  white-space: nowrap;
+  transition: all 0.3s ease;
+}
+
+.conference-badge:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+}
+
+.conference-text {
+  letter-spacing: 0.5px;
+}
+
+/* Website badge styling */
+.website-badge {
+  background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
+  color: white;
+  padding: 6px 12px;
+  border-radius: 20px;
+  font-size: 0.85em;
+  font-weight: bold;
+  box-shadow: 0 2px 8px rgba(17, 153, 142, 0.3);
+  white-space: nowrap;
+  transition: all 0.3s ease;
+  text-decoration: none;
+}
+
+.website-badge:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(17, 153, 142, 0.4);
+  color: white;
+  text-decoration: none;
+}
+
+/* Paper authors styling */
+.paper-authors {
+  line-height: 1.4;
+}
+
+.paper-authors a {
+  color: #3498db;
+  text-decoration: none;
+  transition: color 0.3s ease;
+}
+
+.paper-authors a:hover {
+  color: #2980b9;
+  text-decoration: underline;
+}
+
+/* Hide conference badges on small screens */
+@media (max-width: 768px) {
+  .conference-badge {
+    font-size: 0.75em;
+    padding: 4px 8px;
+  }
+}
+  </style>
+</head>
+<body>
+
+
+<div class="tldr-section">
+  <div class="container is-max-desktop">
+    <div class="tldr-title">Welcome</div>
+    <div class="tldr-content">
+      Welcome to my personal website! Here you'll find information about me, my research, and <strong>my cats</strong>.
+    </div>
+  </div>
+</div>
+
+
+<section class="hero">
+  <div class="hero-body">
+    <div class="container is-max-desktop">
+      <div class="columns is-centered">
+        <div class="column has-text-centered">
+          <div style="display: flex; align-items: center; justify-content: center; gap: 40px; flex-wrap: wrap; margin-bottom: 30px;">
+            <!-- Profile Image -->
+            <div style="display: flex; flex-direction: column; align-items: center;">
+              <!-- Main Profile Picture -->
+              <div class="profile-picture-main">
+                <img src="./static/images/pic.jpg" alt="Profile Picture" class="profile-img-main">
+              </div>
+            </div>
+            
+            <!-- Name and Title Column -->
+            <div style="text-align: center;">
+              <h1 class="title is-1 publication-title">
+                Patrick Pynadath
+              </h1> 
+              <div class="is-size-4 publication-authors">
+                <span class="author-block">
+                  PhD Student @ Purdue University</span>
+              </div>
+
+              <div class="is-size-5 publication-authors">
+                <span class="author-block">Based in West Lafayette, IN</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="column has-text-centered">
+            <div class="publication-links">
+              <!-- Resume Link -->
+              <span class="link-block">
+                <a href="cv.pdf"
+                   class="external-link button is-normal is-rounded is-dark" target="_blank">
+                  <span class="icon">
+                      <i class="fas fa-file-pdf"></i>
+                  </span>
+                  <span>Resume</span>
+                </a>
+              </span>
+              <!-- LinkedIn Link -->
+              <span class="link-block">
+                <a href="https://www.linkedin.com/in/patrick-pynadath-a17434123/"
+                   class="external-link button is-normal is-rounded is-dark" target="_blank">
+                  <span class="icon">
+                      <i class="fab fa-linkedin"></i>
+                  </span>
+                  <span>LinkedIn</span>
+                </a>
+              </span>
+              <!-- GitHub Link -->
+              <span class="link-block">
+                <a href="https://github.com/patrickpynadath1"
+                   class="external-link button is-normal is-rounded is-dark" target="_blank">
+                  <span class="icon">
+                      <i class="fab fa-github"></i>
+                  </span>
+                  <span>GitHub</span>
+                  </a>
+              </span>
+              <!-- Twitter Link -->
+              <span class="link-block">
+                <a href="https://twitter.com/PatrickPyn35903"
+                   class="external-link button is-normal is-rounded is-dark" target="_blank">
+                  <span class="icon">
+                      <i class="fab fa-twitter"></i>
+                  </span>
+                  <span>Twitter</span>
+                </a>
+              </span>
+              <!-- Email Link -->
+              <span class="link-block">
+                <a href="mailto:ppynadat@purdue.edu"
+                   class="external-link button is-normal is-rounded is-dark" target="_blank">
+                  <span class="icon">
+                      <i class="fas fa-envelope"></i>
+                  </span>
+                  <span>Email</span>
+                </a>
+              </span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- About Me Section -->
+<section class="section">
+  <div class="container is-max-desktop">
+    <div class="content">
+      <h2 class="title is-3" style="text-align: center; margin-bottom: 30px;">About Me</h2>
+      <p style="text-align: justify; line-height: 1.8; font-size: 1.1em;">
+        Hello! I'm Patrick Pynadath, a passionate PhD student with a strong interest in probabilistic machine learning and discrete generative modeling.
+        I am currently pursuing my PhD at Purdue University under the guidance of <a href="https://ruqizhang.github.io/" target="_blank">Prof. Ruqi Zhang</a>.
+      </p>
+      <p style="text-align: justify; line-height: 1.8; font-size: 1.1em;">
+        In the past, I have worked on fundamental statistical methods, applications of sampling techniques to LLMs, and LLM safety. 
+        Currently, I am very excited about discrete diffusion.
+      </p>
+      <p style="text-align: justify; line-height: 1.8; font-size: 1.1em;">
+        Feel free to reach out if you'd like to connect or discuss potential collaborations!
+      </p>
+    </div>
+  </div>
+</section>
+
+<!-- Has Cats Section -->
+<section class="section">
+  <div class="container is-max-desktop">
+    <div class="content">
+      <h2 class="title is-3" style="text-align: center; margin-bottom: 40px;">My Cats</h2>
+      <div style="display: flex; justify-content: center; gap: 60px; flex-wrap: wrap;">
+        <!-- Missy -->
+        <div class="cat-container">
+          <div class="cat-picture">
+            <img src="./static/images/missy.jpg" alt="Missy" class="cat-img">
+          </div>
+          <div class="cat-name">Missy</div>
+        </div>
+        
+        <!-- Boba -->
+        <div class="cat-container">
+          <div class="cat-picture">
+            <img src="./static/images/boba.jpg" alt="Boba" class="cat-img">
+          </div>
+          <div class="cat-name">Boba</div>
+        </div>
+      </div>
+      
+      <!-- Cat description paragraph -->
+      <div style="margin-top: 60px; text-align: center; max-width: 600px; margin-left: auto; margin-right: auto;">
+        <p style="line-height: 1.6; font-size: 1.1em; color: #555; font-style: italic;">
+          Meet my two research assistants. Missy specializes in Supervised Keyboard Tuning (SKT) (demonstrated when I am coding); 
+          while Boba is our resident expert in discrete nap optimization. 
+          They are a crucial component of every research project.
+        </p>
+      </div>
+    </div>
+  </div>
+</section>
+
+
+
+
+<section class="section">
+   <div style="max-width: 1200px; margin: 0 auto; padding: 0 20px;">
+
+    <!-- RESEARCH PROJECTS TITLE -->
+    <div style="text-align: center; margin-bottom: 50px;">
+      <h2 class="title is-2" style="color: #2c3e50; margin-bottom: 10px;">Research Projects</h2>
+    </div>
+
+    <!-- PROJECT 1 - Blue Theme -->
+    <div class="content-section">
+      <div class="abstract-section expandable-section">
+        <!-- Side cats for Project 1 -->
+        <div class="side-cat-left">
+          <img src="./static/images/missy_pic1.jpg" alt="Missy" class="side-cat-img">
+        </div>
+        <div class="side-cat-right">
+          <img src="./static/images/boba_pic1.jpg" alt="Boba" class="side-cat-img">
+        </div>
+        
+        <div class="section-header">
+          <div style="flex: 1;">
+            <h2 class="abstract-title"><span class="section-emoji">🚀</span>CANDI: Hybrid Discrete-Continuous Diffusion Models</h2>
+            <div class="paper-authors" style="margin-top: 8px; font-size: 1.1em; color: #666;">
+              <em>Authors:</em> <strong>Patrick Pynadath</strong>, <a href="https://jiaxins.io/" target="_blank">Jiaxin Shi</a>, <a href="https://ruqizhang.github.io/" target="_blank">Ruqi Zhang</a>
+            </div>
+          </div>
+          <div style="display: flex; align-items: center; gap: 15px;">
+            <a href="https://patrickpynadath1.github.io/candi-lander/#" target="_blank" class="website-badge">
+              <span class="conference-text">🌐 Website</span>
+            </a>
+            <div class="conference-badge">
+              <span class="conference-text">Preprint</span>
+            </div>
+            <span class="expand-icon">▼</span>
+          </div>
+        </div>
+        <div class="section-tldr">
+          <p>We figure out why continuous diffusion has struggled on discrete data, and introduce CANDI, a principled solution.</p>
+        </div>
+        <div class="section-content">
+          <div class="experiment-description" style="margin-bottom: 20px;">
+            <h4 style="font-size: 1.3em;"><strong>Overview</strong></h4>
+            <p>Continuous diffusion does extremely well on images, but struggles on discrete data. Theoretically, learning a continuous score function should enable coordinated refinement and ease of external guidance. However, recent works have 
+              moved towards pure discrete diffusion methods that lack the continuous geometry of Gaussian diffusion. 
+              These methods tend to outperform continuous methods. 
+            </p>
+            <p>
+              We introduce <strong>token identifiability</strong>, a framework for studying Gaussian noise on discrete data. Using this analysis, we discover a temporal dissonance between
+              <strong>discrete identity corruption</strong> (is an incorrect token closest to the noisy latent) and <strong>continuous rank degradation</strong> (how many incorrect tokens are closer to the noisy latent than the correct token). 
+              Both are vital for continuous diffusion to work well on discrete data, yet they become severely misaligned when the number of categories increases.
+            </p>
+
+            <p>
+              Given this, we introduce <strong>CANDI</strong>: Continuous and Discrete Diffusion. We disentangle the two forms of corruption by introducing an explicit masking schedule that directly controls discrete identity corruption. 
+              By decoupling the two forms of corruption, we paradoxically allow them to be coordinated with each other.
+              We demonstrate that this brings the benefits of continuous diffusion towards discrete spaces.
+            </p>
+          </div>
+          <div class="experiment-description" style="margin-bottom: 20px;">
+            <h4 style="font-size: 1.3em;"><strong>TL;DR:</strong></h4>
+            <ul>
+              <li>We introduce <strong>token identifiability</strong> as a framework for understanding how Gaussian noise corrupts discrete data.</li>
+              <li>We discover a <strong>temporal dissonance</strong> between discrete identity corruption and continuous rank degradation, which results in continuous diffusion underperforming discrete methods.</li>
+              <li>We introduce <strong>CANDI</strong>: Continuous and Discrete Diffusion, which resolves the temporal dissonance and brings the benefits of continuous diffusion to discrete spaces.</li>
+            </ul>
+            <p>
+              <a href="#" target="_blank" style="color: #3498db;">🔗 ArXiv Link</a> |
+              <a href="https://github.com/patrickpynadath1/candi-diffusion" target="_blank" style="color: #3498db;">📁 GitHub</a> |
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- PROJECT 2 - Orange Theme -->
+    <div class="content-section">
+      <div class="problem-statement-section expandable-section">
+        <!-- Side cats for Project 2 -->
+        <div class="side-cat-left">
+          <img src="./static/images/missy_pic2.jpg" alt="Missy" class="side-cat-img">
+        </div>
+        <div class="side-cat-right">
+          <img src="./static/images/boba_pic2.jpg" alt="Boba" class="side-cat-img">
+        </div>
+        
+        <div class="section-header">
+          <div style="flex: 1;">
+            <h2 class="problem-title"><span class="section-emoji">⚡</span>VERA: Variational Inference Framework for
+Jailbreaking Large Language Models</h2>
+            <div class="paper-authors" style="margin-top: 8px; font-size: 1.1em; color: #666;">
+              <em>Authors:</em> <a href="https://anamikalochab.github.io/AL/" target="_blank">Anamika Lochab</a>, <a href="https://lunaryan.github.io/" target="_blank">Lu Yan</a>, 
+              <strong>Patrick Pynadath</strong>, <a href="https://www.cs.purdue.edu/homes/xyzhang/" target="_blank">Xiangyu Zhang</a>,  <a href="https://ruqizhang.github.io/" target="_blank">Ruqi Zhang</a>
+            </div>
+          </div>
+          <div style="display: flex; align-items: center; gap: 15px;">
+            <div class="conference-badge">
+              <span class="conference-text">NeurIPS 2025</span>
+            </div>
+            <span class="expand-icon">▼</span>
+          </div>
+        </div>
+        <div class="section-tldr">
+          <p>We use variational inference to introduce a scalable and effective framework for jailbreaking/red-teaming LLMs.</p>
+        </div>
+        <div class="section-content">
+          <div class="experiment-description" style="margin-bottom: 20px;">
+            <h4 style="font-size: 1.3em;"><strong>Overview</strong></h4>
+<p>
+  Most powerful language models today are only accessible through APIs—you can't see their internals. This makes it crucial to develop effective "black-box" methods to test their safety vulnerabilities. 
+  Current approaches rely on genetic algorithms that need carefully curated starting prompts and must be re-run from scratch for every new test case. They can't give us a broad view of where models are actually vulnerable.
+</p>
+<br>
+<p>
+  We introduce <strong>VERA</strong>: a framework that treats jailbreak generation as a probabilistic inference problem. Instead of optimizing individual prompts, we train a small attacker model to learn the distribution of adversarial prompts that work against a target model.
+  Once trained, VERA can instantly generate diverse, natural-sounding jailbreaks without extra optimization loops.
+</p>
+<br>
+<p>
+  Our experiments show that VERA consistently succeeds across different target models, demonstrating that probabilistic inference offers a principled and scalable approach to discovering model vulnerabilities.
+</p>
+          </div>
+          <div class="experiment-description" style="margin-bottom: 20px;">
+            <h4 style="font-size: 1.3em;"><strong>TL:DR;</strong></h4>
+            <ul>
+              <li>Black-box jailbreaking is crucial towards understanding model vulnerabilities in actual use-cases.</li>
+              <li>Current methods rely on genetic algorithms, which need well-designed starting prompts and must be re-run for each test case.</li>
+              <li>We introduce VERA, which can generate diverse, natural sounding jailbreaks without needing re-optimization.</li>
+            </ul>
+            <p>
+              <a href="https://arxiv.org/pdf/2506.22666" target="_blank" style="color: #f39c12;">🔗 ArXiv Link</a> |
+              <a href="#" target="_blank" style="color: #f39c12;">📁 GitHub</a> |
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- PROJECT 3 - Green Theme -->
+    <div class="content-section">
+      <div class="framework-section expandable-section">
+        <!-- Side cats for Project 3 -->
+        <div class="side-cat-left">
+          <img src="./static/images/missy_pic3.jpg" alt="Missy" class="side-cat-img">
+        </div>
+        <div class="side-cat-right">
+          <img src="./static/images/boba_pic3.jpg" alt="Boba" class="side-cat-img">
+        </div>
+        
+        <div class="section-header">
+          <div style="flex: 1;">
+            <h2 class="framework-title"><span class="section-emoji">🌟</span>Controlled LLM Decoding via Discrete Auto-regressive Biasing</h2>
+            <div class="paper-authors" style="margin-top: 8px; font-size: 1.1em; color: #666;">
+              <em>Authors:</em> <strong>Patrick Pynadath</strong>, <a href="https://ruqizhang.github.io/" target="_blank">Ruqi Zhang</a>
+            </div>
+          </div>
+          <div style="display: flex; align-items: center; gap: 15px;">
+            <a href="https://patrickpynadath1.github.io/dab/" target="_blank" class="website-badge">
+              <span class="conference-text">🌐 Website</span>
+            </a>
+            <div class="conference-badge">
+              <span class="conference-text">ICLR 2025</span>
+            </div>
+            <span class="expand-icon">▼</span>
+          </div>
+        </div>
+        <div class="section-tldr">
+          <p>We use gradient-based discrete sampling to enable plug-and-play control over LLM generation.</p>
+        </div>
+        <div class="section-content">
+          <div class="experiment-description" style="margin-bottom: 20px;">
+            <h4 style="font-size: 1.3em;"><strong>Overview</strong></h4>
+            <p>
+              As LLMs become ubiquitous, we increasingly need ways to control their outputs—enforcing constraints like sentiment, safety, or specific keywords. 
+              Current methods use energy-based decoding, which combines multiple constraints into a weighted score. But these approaches struggle to balance fluency with actually satisfying the constraints, even with careful tuning.
+            </p>
+            <br>
+            <p>
+              We identify the core issue: these methods sample in continuous space, but text is fundamentally discrete tokens. 
+              We introduce <strong>Discrete Auto-regressive Biasing</strong>, a controlled decoding algorithm that leverages gradients while staying entirely in the discrete text domain.
+              Our key insight is to define a joint distribution over both the generated text and an auxiliary bias sequence, then sample from it using gradient-based discrete MCMC within a Langevin-within-Gibbs framework.
+            </p>
+            <br>
+            <p>
+              The result? Significantly better constraint satisfaction with comparable or better fluency—and lower computational cost.
+              We demonstrate these benefits across sentiment control, detoxification, and keyword-guided generation.
+            </p>
+          </div>
+          <div class="experiment-description" style="margin-bottom: 20px;">
+            <h4 style="font-size: 1.3em;"><strong>TL:DR;</strong></h4>
+            <ul>
+              <li>Current controlled text generation methods struggle to balance fluency and constraint satisfaction because they sample in continuous space rather than discrete token space.</li>
+              <li>We introduce <strong>Discrete Auto-regressive Biasing</strong> (DAB), which uses gradient-based discrete MCMC to control LLM outputs while staying entirely in the discrete text domain.</li>
+              <li>Our method achieves better constraint satisfaction, comparable fluency, and lower computational cost across sentiment control, detoxification, and keyword generation tasks.</li>
+            </ul>
+            <p>
+              <a href="https://www.arxiv.org/abs/2502.03685" target="_blank" style="color: #27ae60;">🔗 ArXiv Link</a> |
+              <a href="https://github.com/patrickpynadath1/dab" target="_blank" style="color: #27ae60;">📁 GitHub</a> |
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- PROJECT 4 - Purple Theme -->
+    <div class="content-section">
+      <div class="algorithm-section expandable-section">
+        <!-- Side cats for Project 4 -->
+        <div class="side-cat-left">
+          <img src="./static/images/missy_pic4.jpg" alt="Missy" class="side-cat-img">
+        </div>
+        <div class="side-cat-right">
+          <img src="./static/images/boba_pic4.jpg" alt="Boba" class="side-cat-img">
+        </div>
+        
+        <div class="section-header">
+          <div style="flex: 1;">
+            <h2 class="algorithm-title"><span class="section-emoji">🔬</span>Gradient-based Discrete Sampling with Automatic Cyclical Scheduling</h2>
+            <div class="paper-authors" style="margin-top: 8px; font-size: 1.1em; color: #666;">
+              <em>Authors:</em> <strong>Patrick Pynadath</strong>, <a href="https://scholar.google.com/citations?user=fdyRnbgAAAAJ&hl=en" target="_blank">Riddhiman Bhattacharya</a>,
+              Arun Hariharan, <a href="https://ruqizhang.github.io/" target="_blank">Ruqi Zhang</a>
+            </div>
+          </div>
+          <div style="display: flex; align-items: center; gap: 15px;">
+            <div class="conference-badge">
+              <span class="conference-text">NeurIPS 2024</span>
+            </div>
+            <span class="expand-icon">▼</span>
+          </div>
+        </div>
+        <div class="section-tldr">
+          <p>We enable discrete gradient-based sampling methods to deal with multi-modal distributions by introducing automatically tuned cyclical schedules.</p>
+        </div>
+        <div class="section-content">
+          <div class="experiment-description" style="margin-bottom: 20px;">
+            <h4 style="font-size: 1.3em;"><strong>Overview</strong></h4>
+            <p>
+              Discrete distributions in deep models are highly multimodal—full of peaks and valleys due to inherent discontinuities. 
+              Gradient-based samplers work well for exploring these distributions, but they have a critical flaw: they get trapped in local modes, missing the broader landscape.
+            </p>
+            <br>
+            <p>
+              We introduce <strong>automatic cyclical scheduling</strong> for efficient multimodal sampling. 
+              The key idea is simple: large steps discover new modes, small steps exploit each mode thoroughly. We combine this with a cyclical balancing schedule that ensures efficient proposals and an automatic tuning scheme that adapts to different datasets without manual hyperparameter tweaking.
+            </p>
+            <br>
+            <p>
+              We provide non-asymptotic convergence guarantees and show through extensive experiments that our method significantly outperforms existing approaches at sampling complex multimodal discrete distributions.
+            </p>            
+          </div>
+          <div class="experiment-description" style="margin-bottom: 20px;">
+            <h4 style="font-size: 1.3em;"><strong>Technical Details</strong></h4>
+            <ul>
+              <li>Discrete distributions in deep models are highly multimodal, and gradient-based samplers often get stuck in local modes instead of exploring the full distribution.</li>
+              <li>We propose automatic cyclical scheduling with three components: large steps to discover new modes and small steps to exploit them, balanced proposals for efficient sampling, and automatic hyperparameter tuning that adapts across datasets.</li>
+              <li>We prove non-asymptotic convergence guarantees and demonstrate superior performance in sampling complex multimodal discrete distributions with minimal manual tuning.</li>
+            </ul>
+            <p>
+              <a href="https://arxiv.org/abs/2402.17699" target="_blank" style="color: #9b59b6;">🔗 ArXiv Link</a> |
+              <a href="https://github.com/patrickpynadath1/automatic_cyclical_sampling/tree/main" target="_blank" style="color: #9b59b6;">📁 GitHub</a> |
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- PERSONAL INFO TITLE -->
+    <div style="text-align: center; margin: 80px 0 50px 0;">
+      <h2 class="title is-2" style="color: #2c3e50; margin-bottom: 10px;">About Me</h2>
+      <p style="font-size: 1.2em; color: #7f8c8d; font-style: italic;">Background, education, and how to connect</p>
+    </div>
+
+    <!-- EDUCATION -->
+    <div class="content-section">
+      <div class="methodology-section expandable-section">
+        <div class="section-header">
+          <h2 class="methodology-title"><span class="section-emoji">🎓</span>Education</h2>
+          <span class="expand-icon">▼</span>
+        </div>
+        <div class="section-tldr">
+          <p>My academic background</p>
+        </div>
+        <div class="section-content">
+          <div class="experiment-description" style="margin-bottom: 20px;">
+            <h4 style="font-size: 1.3em;"><strong>PhD in Computer Science</strong></h4>
+            <p style="font-style: italic; color: #666;">Purdue University • Ongoing</p>
+            <h4 style="font-size: 1.3em;"><strong>MS in Computer Science</strong></h4>
+            <p style="font-style: italic; color: #666;">Northwestern University • December 2022</p>
+            <h4 style="font-size: 1.3em;"><strong>BA in Mathematics</strong></h4>
+            <p style="font-style: italic; color: #666;">Northwestern University • June 2022</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- CONTACT -->
+    <div class="content-section">
+      <div class="results-analysis expandable-section">
+        <div class="section-header">
+          <h2 style="font-size: 1.8em; margin-bottom: 15px; color: #0d6efd;">
+            <span class="section-emoji">📬</span>Get In Touch
+          </h2>
+          <span class="expand-icon">▼</span>
+        </div>
+        <div class="section-tldr">
+          <p>I'm always interested in connecting with like-minded people and exploring new opportunities.</p>
+        </div>
+        <div class="section-content">
+          <p>
+            Whether you're looking to collaborate on a project, have a question about my work, 
+            or just want to say hello, I'd love to hear from you!
+          </p>
+          <div class="experiment-description" style="margin-top: 20px;">
+            <h4 style="font-size: 1.3em;"><strong>Let's Connect</strong></h4>
+            <ul style="list-style: none; padding-left: 0;">
+              <li>📧 <strong>Email:</strong> <a href="mailto:your.email@example.com">ppynadat@purdue.edu</a></li>
+              <li>💼 <strong>LinkedIn:</strong> <a href="https://www.linkedin.com/in/patrick-pynadath-a17434123/" target="_blank">linkedin.com/in/patrick-pynadath-a17434123</a></li>
+              <li>🐙 <strong>GitHub:</strong> <a href="https://github.com/patrickpynadath1" target="_blank">github.com/patrickpynadath1</a></li>
+              <li>🐦 <strong>Twitter:</strong> <a href="https://x.com/PatrickPyn35903" target="_blank">@PatrickPyn35903</a></li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</section>
+
+
+
+<footer class="footer">
+  <div class="container">
+    <div class="content has-text-centered">
+      <a class="icon-link" href="mailto:ppynadat@purdue.edu">
+        <i class="fas fa-envelope"></i>
+      </a>
+      <a class="icon-link" href="https://twitter.com/PatrickPyn35903" class="external-link" target="_blank">
+        <i class="fab fa-twitter"></i>
+      </a>
+      <a class="icon-link" href="https://github.com/patrickpynadath1" class="external-link" target="_blank">
+        <i class="fab fa-github"></i>
+      </a>
+      <a class="icon-link" href="https://www.linkedin.com/in/patrick-pynadath-a17434123/" class="external-link" target="_blank">
+        <i class="fab fa-linkedin"></i>
+      </a>
+    </div>
+    <div class="columns is-centered">
+      <div class="column is-8">
+        <div class="content">
+          <p>
+            © 2025 . This website template is based on the <a href="https://github.com/nerfies/nerfies.github.io">Nerfies project page</a>.
+          </p>
+        </div>
+      </div>
+    </div>
+  </div>
+</footer>
+<script>
+// Expandable sections - all sections
+document.addEventListener('DOMContentLoaded', function() {
+  const expandableSections = document.querySelectorAll('.expandable-section');
+  
+  expandableSections.forEach(section => {
+    section.addEventListener('click', function() {
+      const isExpanded = this.classList.contains('expanded');
+      
+      // Toggle expansion
+      if (isExpanded) {
+        this.classList.remove('expanded');
+      } else {
+        this.classList.add('expanded');
+      }
+    });
+  });
+});
+</script>
+</body>
+</html>
