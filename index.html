@@ -721,6 +721,48 @@
   text-decoration: none;
 }
 
+/* ArXiv badge styling */
+.arxiv-badge {
+  background: linear-gradient(135deg, #b91d47 0%, #e74c3c 100%);
+  color: white;
+  padding: 6px 12px;
+  border-radius: 20px;
+  font-size: 0.85em;
+  font-weight: bold;
+  box-shadow: 0 2px 8px rgba(185, 29, 71, 0.3);
+  white-space: nowrap;
+  transition: all 0.3s ease;
+  text-decoration: none;
+}
+
+.arxiv-badge:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(185, 29, 71, 0.4);
+  color: white;
+  text-decoration: none;
+}
+
+/* GitHub badge styling */
+.github-badge {
+  background: linear-gradient(135deg, #333333 0%, #555555 100%);
+  color: white;
+  padding: 6px 12px;
+  border-radius: 20px;
+  font-size: 0.85em;
+  font-weight: bold;
+  box-shadow: 0 2px 8px rgba(51, 51, 51, 0.3);
+  white-space: nowrap;
+  transition: all 0.3s ease;
+  text-decoration: none;
+}
+
+.github-badge:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(51, 51, 51, 0.4);
+  color: white;
+  text-decoration: none;
+}
+
 /* Paper authors styling */
 .paper-authors {
   line-height: 1.4;
@@ -739,9 +781,24 @@
 
 /* Hide conference badges on small screens */
 @media (max-width: 768px) {
-  .conference-badge {
+  .conference-badge, .website-badge, .arxiv-badge, .github-badge {
     font-size: 0.75em;
     padding: 4px 8px;
+  }
+  
+  /* Make badge container wrap and stack better on mobile */
+  .section-header > div:last-child {
+    flex-wrap: wrap !important;
+    gap: 8px !important;
+    justify-content: center !important;
+  }
+  
+  /* Ensure expand icon stays visible */
+  .expand-icon {
+    order: 99;
+    margin-top: 8px;
+    width: 100%;
+    text-align: center;
   }
 }
   </style>
@@ -937,6 +994,12 @@
             <a href="https://patrickpynadath1.github.io/candi-lander/#" target="_blank" class="website-badge">
               <span class="conference-text">🌐 Website</span>
             </a>
+            <a href="#" target="_blank" class="arxiv-badge">
+              <span class="conference-text">📄 arXiv</span>
+            </a>
+            <a href="https://github.com/patrickpynadath1/candi-diffusion" target="_blank" class="github-badge">
+              <span class="conference-text">💻 GitHub</span>
+            </a>
             <div class="conference-badge">
               <span class="conference-text">Preprint</span>
             </div>
@@ -972,10 +1035,6 @@
               <li>We discover a <strong>temporal dissonance</strong> between discrete identity corruption and continuous rank degradation, which results in continuous diffusion underperforming discrete methods.</li>
               <li>We introduce <strong>CANDI</strong>: Continuous and Discrete Diffusion, which resolves the temporal dissonance and brings the benefits of continuous diffusion to discrete spaces.</li>
             </ul>
-            <p>
-              <a href="#" target="_blank" style="color: #3498db;">🔗 ArXiv Link</a> |
-              <a href="https://github.com/patrickpynadath1/candi-diffusion" target="_blank" style="color: #3498db;">📁 GitHub</a> |
-            </p>
           </div>
         </div>
       </div>
@@ -1002,6 +1061,9 @@ Jailbreaking Large Language Models</h2>
             </div>
           </div>
           <div style="display: flex; align-items: center; gap: 15px;">
+            <a href="https://arxiv.org/pdf/2506.22666" target="_blank" class="arxiv-badge">
+              <span class="conference-text">📄 arXiv</span>
+            </a>
             <div class="conference-badge">
               <span class="conference-text">NeurIPS 2025</span>
             </div>
@@ -1036,7 +1098,7 @@ Jailbreaking Large Language Models</h2>
               <li>We introduce VERA, which can generate diverse, natural sounding jailbreaks without needing re-optimization.</li>
             </ul>
             <p>
-              <a href="https://arxiv.org/pdf/2506.22666" target="_blank" style="color: #f39c12;">🔗 ArXiv Link</a> |
+              <a href="https://arxiv.org/abs/2506.22666" target="_blank" style="color: #f39c12;">🔗 ArXiv Link</a> |
               <a href="#" target="_blank" style="color: #f39c12;">📁 GitHub</a> |
             </p>
           </div>
@@ -1065,6 +1127,12 @@ Jailbreaking Large Language Models</h2>
           <div style="display: flex; align-items: center; gap: 15px;">
             <a href="https://patrickpynadath1.github.io/dab/" target="_blank" class="website-badge">
               <span class="conference-text">🌐 Website</span>
+            </a>
+            <a href="https://www.arxiv.org/abs/2502.03685" target="_blank" class="arxiv-badge">
+              <span class="conference-text">📄 arXiv</span>
+            </a>
+            <a href="https://github.com/patrickpynadath1/dab" target="_blank" class="github-badge">
+              <span class="conference-text">💻 GitHub</span>
             </a>
             <div class="conference-badge">
               <span class="conference-text">ICLR 2025</span>
@@ -1101,10 +1169,6 @@ Jailbreaking Large Language Models</h2>
               <li>We introduce <strong>Discrete Auto-regressive Biasing</strong> (DAB), which uses gradient-based discrete MCMC to control LLM outputs while staying entirely in the discrete text domain.</li>
               <li>Our method achieves better constraint satisfaction, comparable fluency, and lower computational cost across sentiment control, detoxification, and keyword generation tasks.</li>
             </ul>
-            <p>
-              <a href="https://www.arxiv.org/abs/2502.03685" target="_blank" style="color: #27ae60;">🔗 ArXiv Link</a> |
-              <a href="https://github.com/patrickpynadath1/dab" target="_blank" style="color: #27ae60;">📁 GitHub</a> |
-            </p>
           </div>
         </div>
       </div>
@@ -1130,6 +1194,12 @@ Jailbreaking Large Language Models</h2>
             </div>
           </div>
           <div style="display: flex; align-items: center; gap: 15px;">
+            <a href="https://arxiv.org/abs/2402.17699" target="_blank" class="arxiv-badge">
+              <span class="conference-text">📄 arXiv</span>
+            </a>
+            <a href="https://github.com/patrickpynadath1/automatic_cyclical_sampling" target="_blank" class="github-badge">
+              <span class="conference-text">💻 GitHub</span>
+            </a>
             <div class="conference-badge">
               <span class="conference-text">NeurIPS 2024</span>
             </div>
@@ -1163,10 +1233,6 @@ Jailbreaking Large Language Models</h2>
               <li>We propose automatic cyclical scheduling with three components: large steps to discover new modes and small steps to exploit them, balanced proposals for efficient sampling, and automatic hyperparameter tuning that adapts across datasets.</li>
               <li>We prove non-asymptotic convergence guarantees and demonstrate superior performance in sampling complex multimodal discrete distributions with minimal manual tuning.</li>
             </ul>
-            <p>
-              <a href="https://arxiv.org/abs/2402.17699" target="_blank" style="color: #9b59b6;">🔗 ArXiv Link</a> |
-              <a href="https://github.com/patrickpynadath1/automatic_cyclical_sampling/tree/main" target="_blank" style="color: #9b59b6;">📁 GitHub</a> |
-            </p>
           </div>
         </div>
       </div>
