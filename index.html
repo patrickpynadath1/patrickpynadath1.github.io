@@ -273,6 +273,7 @@
     margin-left: auto;
     margin-right: auto;
     max-width: 100%;
+    overflow: visible;
 }
 
 /* Collapsed state - narrower width */
@@ -782,8 +783,34 @@
 /* Hide conference badges on small screens */
 @media (max-width: 768px) {
   .conference-badge, .website-badge, .arxiv-badge, .github-badge {
-    font-size: 0.75em;
-    padding: 4px 8px;
+    font-size: 0.8em;
+    padding: 6px 10px;
+  }
+  
+  /* Adjust conference badge position for mobile */
+  .section-header .conference-badge {
+    position: relative !important;
+    top: unset !important;
+    left: unset !important;
+    margin-bottom: 15px;
+    display: block;
+    width: fit-content;
+  }
+  
+  /* Move action badges inside section and stack vertically for mobile */
+  .section-header > div[style*="position: absolute"] {
+    position: relative !important;
+    top: unset !important;
+    right: unset !important;
+    flex-direction: column !important;
+    align-items: center !important;
+    margin-top: 15px !important;
+    margin-bottom: 15px !important;
+  }
+  
+  /* Remove top margin on mobile since conference badge is no longer absolute */
+  .section-header > div:first-child {
+    margin-top: 0 !important;
   }
   
   /* Make badge container wrap and stack better on mobile */
@@ -791,6 +818,7 @@
     flex-wrap: wrap !important;
     gap: 8px !important;
     justify-content: center !important;
+    margin-top: 15px !important;
   }
   
   /* Ensure expand icon stays visible */
@@ -799,6 +827,20 @@
     margin-top: 8px;
     width: 100%;
     text-align: center;
+  }
+  
+  /* Remove hover effects on mobile for expandable sections */
+  .expandable-section:hover:not(.expanded) {
+    transform: none !important;
+  }
+  
+  /* Make expandable sections expand vertically only on mobile */
+  .expandable-section:not(.expanded) {
+    max-width: 100% !important;
+  }
+  
+  .expandable-section.expanded {
+    max-width: 100% !important;
   }
 }
   </style>
@@ -983,14 +1025,21 @@
           <img src="./static/images/boba_pic1.jpg" alt="Boba" class="side-cat-img">
         </div>
         
-        <div class="section-header">
-          <div style="flex: 1;">
+        <div class="section-header" style="position: relative;">
+          <!-- Conference badge extending from top left corner -->
+          <div class="conference-badge" style="position: absolute; top: -25px; left: -25px; z-index: 10;">
+            <span class="conference-text">Preprint</span>
+          </div>
+          
+          <div style="flex: 1; margin-top: 40px;">
             <h2 class="abstract-title"><span class="section-emoji">🍭</span>CANDI: Hybrid Discrete-Continuous Diffusion Models</h2>
             <div class="paper-authors" style="margin-top: 8px; font-size: 1.1em; color: #666;">
               <em>Authors:</em> <strong>Patrick Pynadath</strong>, <a href="https://jiaxins.io/" target="_blank">Jiaxin Shi</a>, <a href="https://ruqizhang.github.io/" target="_blank">Ruqi Zhang</a>
             </div>
           </div>
-          <div style="display: flex; align-items: center; gap: 15px;">
+          
+          <!-- Badges positioned in top right corner -->
+          <div style="position: absolute; top: -25px; right: -25px; display: flex; flex-direction: row; gap: 8px; z-index: 10;">
             <a href="https://patrickpynadath1.github.io/candi-lander/#" target="_blank" class="website-badge">
               <span class="conference-text">🌐 Website</span>
             </a>
@@ -1000,9 +1049,9 @@
             <a href="https://github.com/patrickpynadath1/candi-diffusion" target="_blank" class="github-badge">
               <span class="conference-text">💻 GitHub</span>
             </a>
-            <div class="conference-badge">
-              <span class="conference-text">Preprint</span>
-            </div>
+          </div>
+          
+          <div style="display: flex; align-items: center; gap: 15px; margin-top: 40px;">
             <span class="expand-icon">▼</span>
           </div>
         </div>
@@ -1051,8 +1100,13 @@
           <img src="./static/images/boba_pic2.jpg" alt="Boba" class="side-cat-img">
         </div>
         
-        <div class="section-header">
-          <div style="flex: 1;">
+        <div class="section-header" style="position: relative;">
+          <!-- Conference badge extending from top left corner -->
+          <div class="conference-badge" style="position: absolute; top: -25px; left: -25px; z-index: 10;">
+            <span class="conference-text">NeurIPS 2025</span>
+          </div>
+          
+          <div style="flex: 1; margin-top: 40px;">
             <h2 class="problem-title"><span class="section-emoji">🔓</span>VERA: Variational Inference Framework for
 Jailbreaking Large Language Models</h2>
             <div class="paper-authors" style="margin-top: 8px; font-size: 1.1em; color: #666;">
@@ -1060,16 +1114,18 @@ Jailbreaking Large Language Models</h2>
               <strong>Patrick Pynadath</strong>, <a href="https://www.cs.purdue.edu/homes/xyzhang/" target="_blank">Xiangyu Zhang</a>,  <a href="https://ruqizhang.github.io/" target="_blank">Ruqi Zhang</a>
             </div>
           </div>
-          <div style="display: flex; align-items: center; gap: 15px;">
+          
+          <!-- Badges positioned in top right corner -->
+          <div style="position: absolute; top: -25px; right: -25px; display: flex; flex-direction: row; gap: 8px; z-index: 10;">
             <a href="https://patrickpynadath1.github.io/vera-lander/" target="_blank" class="website-badge">
               <span class="conference-text">🌐 Website</span>
             </a>
             <a href="https://arxiv.org/pdf/2506.22666" target="_blank" class="arxiv-badge">
               <span class="conference-text">📄 arXiv</span>
             </a>
-            <div class="conference-badge">
-              <span class="conference-text">NeurIPS 2025</span>
-            </div>
+          </div>
+          
+          <div style="display: flex; align-items: center; gap: 15px; margin-top: 40px;">
             <span class="expand-icon">▼</span>
           </div>
         </div>
@@ -1120,14 +1176,21 @@ Jailbreaking Large Language Models</h2>
           <img src="./static/images/boba_pic3.jpg" alt="Boba" class="side-cat-img">
         </div>
         
-        <div class="section-header">
-          <div style="flex: 1;">
+        <div class="section-header" style="position: relative;">
+          <!-- Conference badge extending from top left corner -->
+          <div class="conference-badge" style="position: absolute; top: -25px; left: -25px; z-index: 10;">
+            <span class="conference-text">ICLR 2025</span>
+          </div>
+          
+          <div style="flex: 1; margin-top: 40px;">
             <h2 class="framework-title"><span class="section-emoji">🎛️</span>Controlled LLM Decoding via Discrete Auto-regressive Biasing</h2>
             <div class="paper-authors" style="margin-top: 8px; font-size: 1.1em; color: #666;">
               <em>Authors:</em> <strong>Patrick Pynadath</strong>, <a href="https://ruqizhang.github.io/" target="_blank">Ruqi Zhang</a>
             </div>
           </div>
-          <div style="display: flex; align-items: center; gap: 15px;">
+          
+          <!-- Badges positioned in top right corner -->
+          <div style="position: absolute; top: -25px; right: -25px; display: flex; flex-direction: row; gap: 8px; z-index: 10;">
             <a href="https://patrickpynadath1.github.io/dab/" target="_blank" class="website-badge">
               <span class="conference-text">🌐 Website</span>
             </a>
@@ -1137,9 +1200,9 @@ Jailbreaking Large Language Models</h2>
             <a href="https://github.com/patrickpynadath1/dab" target="_blank" class="github-badge">
               <span class="conference-text">💻 GitHub</span>
             </a>
-            <div class="conference-badge">
-              <span class="conference-text">ICLR 2025</span>
-            </div>
+          </div>
+          
+          <div style="display: flex; align-items: center; gap: 15px; margin-top: 40px;">
             <span class="expand-icon">▼</span>
           </div>
         </div>
@@ -1188,24 +1251,31 @@ Jailbreaking Large Language Models</h2>
           <img src="./static/images/boba_pic4.jpg" alt="Boba" class="side-cat-img">
         </div>
         
-        <div class="section-header">
-          <div style="flex: 1;">
+        <div class="section-header" style="position: relative;">
+          <!-- Conference badge extending from top left corner -->
+          <div class="conference-badge" style="position: absolute; top: -25px; left: -25px; z-index: 10;">
+            <span class="conference-text">NeurIPS 2024</span>
+          </div>
+          
+          <div style="flex: 1; margin-top: 40px;">
             <h2 class="algorithm-title"><span class="section-emoji">🚲</span>Gradient-based Discrete Sampling with Automatic Cyclical Scheduling</h2>
             <div class="paper-authors" style="margin-top: 8px; font-size: 1.1em; color: #666;">
               <em>Authors:</em> <strong>Patrick Pynadath</strong>, <a href="https://scholar.google.com/citations?user=fdyRnbgAAAAJ&hl=en" target="_blank">Riddhiman Bhattacharya</a>,
               Arun Hariharan, <a href="https://ruqizhang.github.io/" target="_blank">Ruqi Zhang</a>
             </div>
           </div>
-          <div style="display: flex; align-items: center; gap: 15px;">
+          
+          <!-- Badges positioned in top right corner -->
+          <div style="position: absolute; top: -25px; right: -25px; display: flex; flex-direction: row; gap: 8px; z-index: 10;">
             <a href="https://arxiv.org/abs/2402.17699" target="_blank" class="arxiv-badge">
               <span class="conference-text">📄 arXiv</span>
             </a>
             <a href="https://github.com/patrickpynadath1/automatic_cyclical_sampling" target="_blank" class="github-badge">
               <span class="conference-text">💻 GitHub</span>
             </a>
-            <div class="conference-badge">
-              <span class="conference-text">NeurIPS 2024</span>
-            </div>
+          </div>
+          
+          <div style="display: flex; align-items: center; gap: 15px; margin-top: 40px;">
             <span class="expand-icon">▼</span>
           </div>
         </div>
@@ -1290,7 +1360,7 @@ Jailbreaking Large Language Models</h2>
           <div class="experiment-description" style="margin-top: 20px;">
             <h4 style="font-size: 1.3em;"><strong>Let's Connect</strong></h4>
             <ul style="list-style: none; padding-left: 0;">
-              <li>📧 <strong>Email:</strong> <a href="mailto:your.email@example.com">ppynadat@purdue.edu</a></li>
+              <li>📧 <strong>Email:</strong> <a href="mailto:ppynadat@purdue.edu">ppynadat@purdue.edu</a></li>
               <li>💼 <strong>LinkedIn:</strong> <a href="https://www.linkedin.com/in/patrick-pynadath-a17434123/" target="_blank">linkedin.com/in/patrick-pynadath-a17434123</a></li>
               <li>🐙 <strong>GitHub:</strong> <a href="https://github.com/patrickpynadath1" target="_blank">github.com/patrickpynadath1</a></li>
               <li>🐦 <strong>Twitter:</strong> <a href="https://x.com/PatrickPyn35903" target="_blank">@PatrickPyn35903</a></li>
