@@ -12,53 +12,16 @@ body {
   margin-bottom: 60px;
 }
 
-.section-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
-  margin-bottom: 15px;
-  position: relative;
-}
-
 .section-emoji {
   margin-right: 8px;
 }
 
-.section-tldr {
-  font-size: 1.05em;
-  line-height: 1.6;
-  font-style: italic;
-  color: #555;
-}
-
-.expand-icon {
-  font-size: 1.5em;
-  transition: transform 0.3s ease;
-  flex-shrink: 0;
-  margin-left: 10px;
-}
-
-.expanded .expand-icon {
-  transform: rotate(180deg);
-}
-
-.section-content {
-  max-height: 0;
-  overflow: hidden;
-  transition: max-height 0.6s cubic-bezier(0.4, 0, 0.2, 1),
-    opacity 0.5s ease,
-    margin-top 0.4s ease;
-  opacity: 0;
-}
-
-.expanded .section-content {
-  max-height: 3000px;
-  opacity: 1;
-  margin-top: 20px;
-}
-
 .experiment-description {
-  margin-bottom: 20px;
+  margin-bottom: 25px;
+  padding: 15px;
+  background-color: white;
+  border-left: 4px solid #4a4a4a;
+  border-radius: 4px;
 }
 
 .experiment-description ul {
@@ -66,29 +29,49 @@ body {
   padding-left: 20px;
 }
 
-.side-cat-left,
-.side-cat-right {
+.side-cat-left {
   position: absolute;
-  top: -40px;
-  z-index: 0;
+  left: -80px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  overflow: hidden;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  opacity: 0.7;
+  transition: all 0.3s ease;
 }
 
-.side-cat-left {
-  left: -40px;
-}
 .side-cat-right {
-  right: -40px;
+  position: absolute;
+  right: -80px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  overflow: hidden;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  opacity: 0.7;
+  transition: all 0.3s ease;
+}
+
+.side-cat-left:hover,
+.side-cat-right:hover {
+  opacity: 1;
+  transform: translateY(-50%) scale(1.1);
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.15);
 }
 
 .side-cat-img {
-  width: 120px;
-  height: 120px;
-  border-radius: 50%;
+  width: 100%;
+  height: 100%;
   object-fit: cover;
-  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.2);
+  object-position: center center;
 }
 
-@media (max-width: 768px) {
+@media (max-width: 1200px) {
   .side-cat-left,
   .side-cat-right {
     display: none;

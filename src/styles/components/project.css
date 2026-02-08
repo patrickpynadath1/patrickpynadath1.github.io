@@ -25,3 +25,85 @@
 .content-section {
   margin-bottom: 40px;
 }
+
+.abstract-section {
+  margin-bottom: 25px;
+  padding: 15px;
+  background-color: #f0f4f8;
+  border-left: 4px solid #3498db;
+  border-radius: 4px;
+}
+.abstract-title,
+.abstract-section .project-title {
+  font-size: 1.8em;
+  margin-bottom: 15px;
+  color: #3498db;
+}
+
+.problem-statement-section {
+  margin-bottom: 25px;
+  padding: 15px;
+  background-color: #fef6e6;
+  border-left: 4px solid #f39c12;
+  border-radius: 4px;
+}
+.problem-title,
+.problem-statement-section .project-title {
+  font-size: 1.8em;
+  margin-bottom: 15px;
+  color: #f39c12;
+}
+
+.framework-section {
+  margin-bottom: 25px;
+  padding: 15px;
+  background-color: #eafaf1;
+  border-left: 4px solid #27ae60;
+  border-radius: 4px;
+}
+.framework-title,
+.framework-section .project-title {
+  font-size: 1.8em;
+  margin-bottom: 15px;
+  color: #27ae60;
+}
+
+.algorithm-section {
+  margin-bottom: 25px;
+  padding: 15px;
+  background-color: #f7f5fe;
+  border-left: 4px solid #9b59b6;
+  border-radius: 4px;
+}
+.algorithm-title,
+.algorithm-section .project-title {
+  font-size: 1.8em;
+  margin-bottom: 15px;
+  color: #9b59b6;
+}
+
+.problem-statement-section .expand-icon { color: #f39c12; }
+.abstract-section .expand-icon { color: #3498db; }
+.framework-section .expand-icon { color: #27ae60; }
+.algorithm-section .expand-icon { color: #9b59b6; }
+
+.section-header {
+  position: relative;
+}
+
+.conference-pin {
+  position: absolute;
+  top: -25px;
+  left: -25px;
+  z-index: 10;
+}
+
+.action-badges {
+  position: absolute;
+  top: -25px;
+  right: -25px;
+  display: flex;
+  flex-direction: row;
+  gap: 8px;
+  z-index: 10;
+}

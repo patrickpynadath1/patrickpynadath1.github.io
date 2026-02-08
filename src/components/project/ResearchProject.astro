@@ -10,9 +10,16 @@ interface Props {
 }
 
 const { project } = Astro.props as Props;
+const sectionClassMap: Record<string, string> = {
+  blue: 'abstract-section',
+  orange: 'problem-statement-section',
+  green: 'framework-section',
+  purple: 'algorithm-section',
+};
+const sectionClass = sectionClassMap[project.theme] ?? '';
 ---
 <div class="content-section">
-  <ExpandableSection theme={project.theme}>
+  <ExpandableSection theme={project.theme} sectionClass={sectionClass}>
     <div slot="header" class="project-header-wrapper">
       <ProjectCats cats={project.cats} />
       <ProjectHeader

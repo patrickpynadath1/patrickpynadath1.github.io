@@ -29,6 +29,10 @@
 .theme-blue .section-emoji {
   color: var(--theme-blue-text);
 }
+.theme-blue {
+  border-radius: 4px;
+  padding: 15px;
+}
 
 .theme-orange {
   background-color: var(--theme-orange-bg);
@@ -38,6 +42,10 @@
 .theme-orange .project-title,
 .theme-orange .section-emoji {
   color: var(--theme-orange-text);
+}
+.theme-orange {
+  border-radius: 4px;
+  padding: 15px;
 }
 
 .theme-green {
@@ -49,6 +57,10 @@
 .theme-green .section-emoji {
   color: var(--theme-green-text);
 }
+.theme-green {
+  border-radius: 4px;
+  padding: 15px;
+}
 
 .theme-purple {
   background-color: var(--theme-purple-bg);
@@ -59,8 +71,16 @@
 .theme-purple .section-emoji {
   color: var(--theme-purple-text);
 }
+.theme-purple {
+  border-radius: 4px;
+  padding: 15px;
+}
 
 .theme-neutral {
   background-color: var(--theme-neutral-bg);
   border-left: 4px solid var(--theme-neutral-border);
+}
+.theme-neutral {
+  border-radius: 4px;
+  padding: 15px;
 }

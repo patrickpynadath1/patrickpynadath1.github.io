@@ -3,10 +3,18 @@ import '../../styles/components/expandable.css';
 
 interface Props {
   theme?: string;
+  sectionClass?: string;
 }
 
-const { theme } = Astro.props as Props;
-const classes = ['expandable-section', theme ? `theme-${theme}` : ''].join(' ').trim();
+const { theme, sectionClass } = Astro.props as Props;
+const classes = [
+  'expandable-section',
+  theme ? `theme-${theme}` : '',
+  sectionClass ?? '',
+]
+  .join(' ')
+  .replace(/\s+/g, ' ')
+  .trim();
 ---
 <div class={classes} data-expandable>
   <slot name="header" />

@@ -11,12 +11,13 @@ interface Links {
 interface Props {
   conference: string;
   links: Links;
+  showConference?: boolean;
 }
 
-const { conference, links } = Astro.props as Props;
+const { conference, links, showConference = true } = Astro.props as Props;
 ---
 <div class="badge-cluster">
-  <Badge label={conference} kind="conference" />
+  {showConference && <Badge label={conference} kind="conference" />}
   {links.website && <Badge href={links.website} label="🌐 Website" kind="website" />}
   {links.arxiv && <Badge href={links.arxiv} label="📄 arXiv" kind="arxiv" />}
   {links.github && <Badge href={links.github} label="💻 GitHub" kind="github" />}

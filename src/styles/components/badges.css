@@ -11,29 +11,60 @@
 .github-badge {
   display: inline-flex;
   align-items: center;
-  padding: 6px 10px;
-  background-color: #2c3e50;
+  padding: 6px 12px;
   color: white;
-  border-radius: 6px;
-  font-weight: 600;
+  border-radius: 20px;
+  font-size: 0.85em;
+  font-weight: bold;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  white-space: nowrap;
+  transition: all 0.3s ease;
   text-decoration: none;
-  box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
 }
 
 .conference-badge {
-  background-color: #2c3e50;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  box-shadow: 0 2px 8px rgba(102, 126, 234, 0.3);
 }
+.conference-badge:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+}
+
 .website-badge {
-  background-color: #3498db;
+  background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
+  box-shadow: 0 2px 8px rgba(17, 153, 142, 0.3);
 }
+.website-badge:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(17, 153, 142, 0.4);
+  color: white;
+  text-decoration: none;
+}
+
 .arxiv-badge {
-  background-color: #f39c12;
+  background: linear-gradient(135deg, #b91d47 0%, #e74c3c 100%);
+  box-shadow: 0 2px 8px rgba(185, 29, 71, 0.3);
 }
+.arxiv-badge:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(185, 29, 71, 0.4);
+  color: white;
+  text-decoration: none;
+}
+
 .github-badge {
-  background-color: #2ecc71;
+  background: linear-gradient(135deg, #333333 0%, #555555 100%);
+  box-shadow: 0 2px 8px rgba(51, 51, 51, 0.3);
+}
+.github-badge:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(51, 51, 51, 0.4);
+  color: white;
+  text-decoration: none;
 }
 
 .conference-text {
+  letter-spacing: 0.5px;
   color: white;
-  font-size: 0.95em;
 }
