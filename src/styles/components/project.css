@@ -20,7 +20,7 @@
 
 .project-header-wrapper {
   position: relative;
-  padding-top: 30px;
+  padding-top: 40px;
 }
 
 .content-section {
@@ -94,15 +94,15 @@
 
 .conference-pin {
   position: absolute;
-  top: -30px;
-  left: -20px;
+  top: -40px;
+  left: -35px;
   z-index: 10;
 }
 
 .action-badges {
   position: absolute;
-  top: -30px;
-  right: -20px;
+  top: -40px;
+  right: -35px;
   display: flex;
   flex-direction: row;
   gap: 8px;
