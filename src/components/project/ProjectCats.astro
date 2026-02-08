@@ -1,0 +1,15 @@
+---
+import '../../styles/components/project.css';
+
+interface Props {
+  cats: { left: string; right: string };
+}
+
+const { cats } = Astro.props as Props;
+---
+<div class="side-cat-left">
+  <img src={cats.left} alt="Side cat left" class="side-cat-img" />
+</div>
+<div class="side-cat-right">
+  <img src={cats.right} alt="Side cat right" class="side-cat-img" />
+</div>

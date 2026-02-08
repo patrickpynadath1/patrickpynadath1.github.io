@@ -1,0 +1,22 @@
+---
+import '../../styles/components/project.css';
+import ResearchProject from '../project/ResearchProject.astro';
+
+import type { Project } from '../types';
+
+interface Props {
+  projects: Project[];
+}
+
+const { projects } = Astro.props as Props;
+---
+<section class="section">
+  <div class="container is-max-desktop">
+    <div class="projects-header">
+      <h2 class="title is-2">Research Projects</h2>
+    </div>
+    {projects.map((project) => (
+      <ResearchProject project={project} />
+    ))}
+  </div>
+</section>

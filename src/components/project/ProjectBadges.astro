@@ -1,0 +1,23 @@
+---
+import Badge from '../ui/Badge.astro';
+import '../../styles/components/badges.css';
+
+interface Links {
+  website?: string;
+  arxiv?: string;
+  github?: string;
+}
+
+interface Props {
+  conference: string;
+  links: Links;
+}
+
+const { conference, links } = Astro.props as Props;
+---
+<div class="badge-cluster">
+  <Badge label={conference} kind="conference" />
+  {links.website && <Badge href={links.website} label="🌐 Website" kind="website" />}
+  {links.arxiv && <Badge href={links.arxiv} label="📄 arXiv" kind="arxiv" />}
+  {links.github && <Badge href={links.github} label="💻 GitHub" kind="github" />}
+</div>

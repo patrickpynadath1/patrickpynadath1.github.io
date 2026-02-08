@@ -1,0 +1,45 @@
+---
+import ExpandableSection from '../ui/ExpandableSection.astro';
+import ProjectCats from './ProjectCats.astro';
+import ProjectHeader from './ProjectHeader.astro';
+import type { Project } from '../types';
+import '../../styles/components/project.css';
+
+interface Props {
+  project: Project;
+}
+
+const { project } = Astro.props as Props;
+---
+<div class="content-section">
+  <ExpandableSection theme={project.theme}>
+    <div slot="header" class="project-header-wrapper">
+      <ProjectCats cats={project.cats} />
+      <ProjectHeader
+        title={project.title}
+        emoji={project.emoji}
+        authors={project.authors}
+        conference={project.conference}
+        links={project.links}
+      />
+    </div>
+    <div slot="tldr">
+      <p>{project.tldr}</p>
+    </div>
+    <div class="project-body">
+      {project.sections.map((section) => (
+        <div class="experiment-description">
+          <h4><strong>{section.title}</strong></h4>
+          {section.content && <p>{section.content}</p>}
+          {section.bullets && (
+            <ul>
+              {section.bullets.map((bullet) => (
+                <li set:html={bullet}></li>
+              ))}
+            </ul>
+          )}
+        </div>
+      ))}
+    </div>
+  </ExpandableSection>
+</div>

@@ -1,0 +1,39 @@
+.badge-cluster {
+  display: flex;
+  flex-direction: row;
+  gap: 8px;
+  align-items: center;
+}
+
+.conference-badge,
+.website-badge,
+.arxiv-badge,
+.github-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 6px 10px;
+  background-color: #2c3e50;
+  color: white;
+  border-radius: 6px;
+  font-weight: 600;
+  text-decoration: none;
+  box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
+}
+
+.conference-badge {
+  background-color: #2c3e50;
+}
+.website-badge {
+  background-color: #3498db;
+}
+.arxiv-badge {
+  background-color: #f39c12;
+}
+.github-badge {
+  background-color: #2ecc71;
+}
+
+.conference-text {
+  color: white;
+  font-size: 0.95em;
+}

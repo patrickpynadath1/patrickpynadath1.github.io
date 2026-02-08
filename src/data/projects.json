@@ -1,0 +1,146 @@
+[
+  {
+    "id": "candi",
+    "title": "CANDI: Hybrid Discrete-Continuous Diffusion Models",
+    "theme": "blue",
+    "conference": "Preprint",
+    "emoji": "🍭",
+    "authors": [
+      { "name": "Patrick Pynadath", "isMe": true },
+      { "name": "Jiaxin Shi", "link": "https://jiaxins.io/" },
+      { "name": "Ruqi Zhang", "link": "https://ruqizhang.github.io/" }
+    ],
+    "links": {
+      "website": "https://patrickpynadath1.github.io/candi-lander/",
+      "arxiv": "https://arxiv.org/abs/2510.22510",
+      "github": "https://github.com/patrickpynadath1/candi-diffusion"
+    },
+    "cats": {
+      "left": "/images/missy_pic1.jpg",
+      "right": "/images/boba_pic1.jpg"
+    },
+    "tldr": "We figure out why continuous diffusion has struggled on discrete data, and introduce CANDI, a principled solution.",
+    "sections": [
+      {
+        "title": "Overview",
+        "content": "Continuous diffusion does extremely well on images, but struggles on discrete data. We introduce token identifiability to study Gaussian noise on discrete data and discover a temporal dissonance between discrete identity corruption and continuous rank degradation. Both are vital for continuous diffusion but become misaligned as the number of categories increases. We introduce CANDI, disentangling the two forms of corruption with an explicit masking schedule to coordinate them and bring continuous diffusion benefits to discrete spaces."
+      },
+      {
+        "title": "TL;DR",
+        "bullets": [
+          "Token identifiability explains how Gaussian noise corrupts discrete data.",
+          "We find temporal dissonance between identity corruption and rank degradation that hurts continuous diffusion.",
+          "CANDI decouples and coordinates the corruptions to improve discrete diffusion."
+        ]
+      }
+    ]
+  },
+  {
+    "id": "vera",
+    "title": "VERA: Variational Inference Framework for Jailbreaking Large Language Models",
+    "theme": "orange",
+    "conference": "NeurIPS 2025",
+    "emoji": "🔓",
+    "authors": [
+      { "name": "Anamika Lochab", "link": "https://anamikalochab.github.io/AL/" },
+      { "name": "Lu Yan", "link": "https://lunaryan.github.io/" },
+      { "name": "Patrick Pynadath", "isMe": true },
+      { "name": "Xiangyu Zhang", "link": "https://www.cs.purdue.edu/homes/xyzhang/" },
+      { "name": "Ruqi Zhang", "link": "https://ruqizhang.github.io/" }
+    ],
+    "links": {
+      "website": "https://patrickpynadath1.github.io/vera-lander/",
+      "arxiv": "https://arxiv.org/pdf/2506.22666"
+    },
+    "cats": {
+      "left": "/images/missy_pic2.jpg",
+      "right": "/images/boba_pic2.jpg"
+    },
+    "tldr": "We use variational inference to introduce a scalable and effective framework for jailbreaking/red-teaming LLMs.",
+    "sections": [
+      {
+        "title": "Overview",
+        "content": "Black-box safety testing is crucial as many powerful LLMs are API-only. Existing genetic-algorithm jailbreakers need curated seeds and re-running per test case. VERA treats jailbreak generation as probabilistic inference: we train a small attacker model to learn the distribution of adversarial prompts. Once trained, VERA instantly produces diverse, natural jailbreaks without additional optimization, succeeding across target models."
+      },
+      {
+        "title": "TL;DR",
+        "bullets": [
+          "Black-box jailbreaking reveals realistic vulnerabilities.",
+          "Genetic algorithms are brittle and costly to rerun.",
+          "VERA learns a distribution of jailbreaks for fast, diverse attacks."
+        ]
+      }
+    ]
+  },
+  {
+    "id": "dab",
+    "title": "Controlled LLM Decoding via Discrete Auto-regressive Biasing",
+    "theme": "green",
+    "conference": "ICLR 2025",
+    "emoji": "🎛️",
+    "authors": [
+      { "name": "Patrick Pynadath", "isMe": true },
+      { "name": "Ruqi Zhang", "link": "https://ruqizhang.github.io/" }
+    ],
+    "links": {
+      "website": "https://patrickpynadath1.github.io/dab/",
+      "arxiv": "https://www.arxiv.org/abs/2502.03685",
+      "github": "https://github.com/patrickpynadath1/dab"
+    },
+    "cats": {
+      "left": "/images/missy_pic3.jpg",
+      "right": "/images/boba_pic3.jpg"
+    },
+    "tldr": "We use gradient-based discrete sampling to enable plug-and-play control over LLM generation.",
+    "sections": [
+      {
+        "title": "Overview",
+        "content": "Controlling LLM outputs requires balancing fluency with constraint satisfaction. Energy-based decoding in continuous space struggles with this trade-off. We introduce Discrete Auto-regressive Biasing (DAB), a decoding algorithm that stays in the discrete token domain using gradient-based discrete MCMC within a Langevin-within-Gibbs framework. It defines a joint distribution over text and auxiliary bias sequences to deliver better constraints, fluency, and lower cost."
+      },
+      {
+        "title": "TL;DR",
+        "bullets": [
+          "Continuous-space control struggles with discrete text constraints.",
+          "DAB keeps sampling discrete while leveraging gradients.",
+          "Achieves better constraint satisfaction and fluency at lower cost."
+        ]
+      }
+    ]
+  },
+  {
+    "id": "acs",
+    "title": "Gradient-based Discrete Sampling with Automatic Cyclical Scheduling",
+    "theme": "purple",
+    "conference": "NeurIPS 2024",
+    "emoji": "🚲",
+    "authors": [
+      { "name": "Patrick Pynadath", "isMe": true },
+      { "name": "Riddhiman Bhattacharya", "link": "https://scholar.google.com/citations?user=fdyRnbgAAAAJ&hl=en" },
+      { "name": "Arun Hariharan" },
+      { "name": "Ruqi Zhang", "link": "https://ruqizhang.github.io/" }
+    ],
+    "links": {
+      "arxiv": "https://arxiv.org/abs/2402.17699",
+      "github": "https://github.com/patrickpynadath1/automatic_cyclical_sampling"
+    },
+    "cats": {
+      "left": "/images/missy_pic4.jpg",
+      "right": "/images/boba_pic4.jpg"
+    },
+    "tldr": "We enable discrete gradient-based sampling methods to deal with multi-modal distributions by introducing automatically tuned cyclical schedules.",
+    "sections": [
+      {
+        "title": "Overview",
+        "content": "Discrete distributions in deep models are highly multimodal. Gradient-based samplers get trapped in local modes. We propose automatic cyclical scheduling that alternates large exploratory steps with small exploitative steps, combines balanced proposals, and auto-tunes hyperparameters across datasets. This yields efficient multimodal sampling with convergence guarantees and strong empirical performance."
+      },
+      {
+        "title": "Technical Details",
+        "bullets": [
+          "Multimodal discrete targets trap vanilla gradient samplers.",
+          "Cyclical schedules alternate exploration and exploitation with balanced proposals.",
+          "Automatic tuning adapts across datasets while retaining theoretical guarantees."
+        ]
+      }
+    ]
+  }
+]

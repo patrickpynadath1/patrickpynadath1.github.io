@@ -1,0 +1,66 @@
+:root {
+  --theme-blue-bg: #f0f4f8;
+  --theme-blue-border: #3498db;
+  --theme-blue-text: #3498db;
+
+  --theme-orange-bg: #fef6e6;
+  --theme-orange-border: #f39c12;
+  --theme-orange-text: #f39c12;
+
+  --theme-green-bg: #eafaf1;
+  --theme-green-border: #27ae60;
+  --theme-green-text: #27ae60;
+
+  --theme-purple-bg: #f7f5fe;
+  --theme-purple-border: #9b59b6;
+  --theme-purple-text: #9b59b6;
+
+  --theme-neutral-bg: #faf8f3;
+  --theme-neutral-border: #d4a373;
+  --theme-neutral-text: #4a4a4a;
+}
+
+.theme-blue {
+  background-color: var(--theme-blue-bg);
+  border-left: 4px solid var(--theme-blue-border);
+}
+.theme-blue .section-title,
+.theme-blue .project-title,
+.theme-blue .section-emoji {
+  color: var(--theme-blue-text);
+}
+
+.theme-orange {
+  background-color: var(--theme-orange-bg);
+  border-left: 4px solid var(--theme-orange-border);
+}
+.theme-orange .section-title,
+.theme-orange .project-title,
+.theme-orange .section-emoji {
+  color: var(--theme-orange-text);
+}
+
+.theme-green {
+  background-color: var(--theme-green-bg);
+  border-left: 4px solid var(--theme-green-border);
+}
+.theme-green .section-title,
+.theme-green .project-title,
+.theme-green .section-emoji {
+  color: var(--theme-green-text);
+}
+
+.theme-purple {
+  background-color: var(--theme-purple-bg);
+  border-left: 4px solid var(--theme-purple-border);
+}
+.theme-purple .section-title,
+.theme-purple .project-title,
+.theme-purple .section-emoji {
+  color: var(--theme-purple-text);
+}
+
+.theme-neutral {
+  background-color: var(--theme-neutral-bg);
+  border-left: 4px solid var(--theme-neutral-border);
+}

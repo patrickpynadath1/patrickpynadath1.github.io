@@ -1,0 +1,19 @@
+---
+import '../../styles/components/expandable.css';
+
+interface Props {
+  theme?: string;
+}
+
+const { theme } = Astro.props as Props;
+const classes = ['expandable-section', theme ? `theme-${theme}` : ''].join(' ').trim();
+---
+<div class={classes} data-expandable>
+  <slot name="header" />
+  <div class="section-tldr">
+    <slot name="tldr" />
+  </div>
+  <div class="section-content">
+    <slot />
+  </div>
+</div>

@@ -1,0 +1,19 @@
+---
+import '../../styles/components/about.css';
+
+interface Props {
+  bio: string[];
+}
+
+const { bio } = Astro.props as Props;
+---
+<section class="section">
+  <div class="container is-max-desktop">
+    <div class="content about-content">
+      <h2 class="title is-3 has-text-centered">About Me</h2>
+      {bio.map((paragraph) => (
+        <p class="about-paragraph">{paragraph}</p>
+      ))}
+    </div>
+  </div>
+</section>

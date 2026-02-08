@@ -1,0 +1,9 @@
+.icon-link {
+  margin: 0 10px;
+  color: #4a4a4a;
+  font-size: 1.4em;
+}
+
+.icon-link:hover {
+  color: #2c3e50;
+}

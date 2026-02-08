@@ -1,0 +1,40 @@
+---
+import '../../styles/components/education.css';
+
+interface EducationItem {
+  degree: string;
+  institution: string;
+  timeframe: string;
+}
+
+interface Props {
+  items: EducationItem[];
+}
+
+const { items } = Astro.props as Props;
+---
+<section class="section">
+  <div class="container is-max-desktop">
+    <div class="content-section">
+      <div class="methodology-section expandable-section theme-neutral" data-expandable>
+        <div class="section-header">
+          <h2 class="methodology-title"><span class="section-emoji">🎓</span>Education</h2>
+          <span class="expand-icon">▼</span>
+        </div>
+        <div class="section-tldr">
+          <p>My academic background</p>
+        </div>
+        <div class="section-content">
+          <div class="experiment-description">
+            {items.map((edu) => (
+              <div class="education-item">
+                <h4><strong>{edu.degree}</strong></h4>
+                <p class="education-meta">{edu.institution} • {edu.timeframe}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>

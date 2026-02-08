@@ -1,0 +1,21 @@
+---
+import '../../styles/components/badges.css';
+
+interface Props {
+  href?: string;
+  label: string;
+  kind?: 'conference' | 'website' | 'arxiv' | 'github';
+}
+
+const { href, label, kind = 'conference' } = Astro.props as Props;
+const classes = `${kind}-badge`;
+---
+{href ? (
+  <a href={href} class={classes} target="_blank" rel="noreferrer">
+    <span class="conference-text">{label}</span>
+  </a>
+) : (
+  <span class={classes}>
+    <span class="conference-text">{label}</span>
+  </span>
+)}

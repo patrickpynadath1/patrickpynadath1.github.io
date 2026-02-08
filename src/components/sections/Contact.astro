@@ -1,0 +1,44 @@
+---
+import '../../styles/components/contact.css';
+
+interface Props {
+  links: {
+    email?: string;
+    linkedin?: string;
+    github?: string;
+    twitter?: string;
+  };
+}
+
+const { links } = Astro.props as Props;
+---
+<section class="section">
+  <div class="container is-max-desktop">
+    <div class="content-section">
+      <div class="results-analysis expandable-section theme-blue" data-expandable>
+        <div class="section-header">
+          <h2 class="contact-title"><span class="section-emoji">📬</span>Get In Touch</h2>
+          <span class="expand-icon">▼</span>
+        </div>
+        <div class="section-tldr">
+          <p>I'm always interested in connecting with like-minded people and exploring new opportunities.</p>
+        </div>
+        <div class="section-content">
+          <p>
+            Whether you're looking to collaborate on a project, have a question about my work,
+            or just want to say hello, I'd love to hear from you!
+          </p>
+          <div class="experiment-description contact-links">
+            <h4><strong>Let's Connect</strong></h4>
+            <ul>
+              {links.email && <li>📧 <strong>Email:</strong> <a href={`mailto:${links.email}`}>{links.email}</a></li>}
+              {links.linkedin && <li>💼 <strong>LinkedIn:</strong> <a href={links.linkedin} target="_blank">{links.linkedin}</a></li>}
+              {links.github && <li>🐙 <strong>GitHub:</strong> <a href={links.github} target="_blank">{links.github}</a></li>}
+              {links.twitter && <li>🐦 <strong>Twitter:</strong> <a href={links.twitter} target="_blank">{links.twitter}</a></li>}
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>

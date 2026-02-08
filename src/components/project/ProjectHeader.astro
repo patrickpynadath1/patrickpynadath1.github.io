@@ -1,0 +1,39 @@
+---
+import '../../styles/components/project.css';
+import ProjectBadges from './ProjectBadges.astro';
+import type { ProjectAuthor, ProjectLinks } from '../types';
+
+interface Props {
+  title: string;
+  emoji?: string;
+  authors: ProjectAuthor[];
+  conference: string;
+  links: ProjectLinks;
+}
+
+const { title, emoji, authors, conference, links } = Astro.props as Props;
+---
+<div class="section-header">
+  <div class="header-main">
+    <h2 class="project-title">
+      {emoji && <span class="section-emoji">{emoji}</span>}
+      {title}
+    </h2>
+    <div class="paper-authors">
+      <em>Authors:</em>
+      {authors.map((author, index) => (
+        <>
+          {' '}
+          {author.link ? (
+            <a href={author.link} target="_blank"><strong>{author.name}</strong></a>
+          ) : (
+            <strong>{author.name}</strong>
+          )}
+          {index < authors.length - 1 ? ',' : ''}
+        </>
+      ))}
+    </div>
+  </div>
+  <ProjectBadges conference={conference} links={links} />
+  <span class="expand-icon">▼</span>
+</div>

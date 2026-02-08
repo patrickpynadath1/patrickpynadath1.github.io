@@ -1,0 +1,37 @@
+---
+import '../../styles/components/cats.css';
+
+interface Cat {
+  name: string;
+  image: string;
+}
+
+interface Props {
+  cats: Cat[];
+}
+
+const { cats } = Astro.props as Props;
+---
+<section class="section">
+  <div class="container is-max-desktop">
+    <div class="content">
+      <h2 class="title is-3 has-text-centered">My Cats</h2>
+      <div class="cat-grid">
+        {cats.map((cat) => (
+          <div class="cat-container">
+            <div class="cat-picture">
+              <img src={cat.image} alt={cat.name} class="cat-img" />
+            </div>
+            <div class="cat-name">{cat.name}</div>
+          </div>
+        ))}
+      </div>
+      <div class="cat-note">
+        <p>
+          Meet my two research assistants. Missy specializes in Supervised Keyboard Tuning (SKT) (demonstrated when I am coding);
+          while Boba is our resident expert in discrete nap optimization. They are a crucial component of every research project.
+        </p>
+      </div>
+    </div>
+  </div>
+</section>
