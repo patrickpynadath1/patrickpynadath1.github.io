@@ -20,6 +20,7 @@
 
 .project-header-wrapper {
   position: relative;
+  padding-top: 30px;
 }
 
 .content-section {
@@ -106,4 +107,8 @@
   flex-direction: row;
   gap: 8px;
   z-index: 10;
+}
+
+.expand-icon {
+  margin-top: 10px;
 }

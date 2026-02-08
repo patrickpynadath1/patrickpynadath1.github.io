@@ -29,8 +29,28 @@ const description = 'Patrick Pynadath Website';
   <Contact links={personalInfo.links} />
   <Footer links={personalInfo.links} />
 
-  <script is:inline type="module">
-    import { initExpandableSections } from '../scripts/expandable-sections';
-    initExpandableSections();
+  <script is:inline>
+    (() => {
+      const expandableSections = Array.from(
+        document.querySelectorAll('[data-expandable]')
+      );
+
+      expandableSections.forEach((section) => {
+        section.addEventListener('click', (event) => {
+          const target = event.target;
+          if (target && target.closest('.conference-badge, .website-badge, .arxiv-badge, .github-badge')) {
+            return;
+          }
+          section.classList.toggle('expanded');
+        });
+      });
+
+      const badges = Array.from(
+        document.querySelectorAll('.conference-badge, .website-badge, .arxiv-badge, .github-badge')
+      );
+      badges.forEach((badge) => {
+        badge.addEventListener('click', (event) => event.stopPropagation());
+      });
+    })();
   </script>
 </BaseLayout>

@@ -9,13 +9,11 @@
 }
 
 .expandable-section:not(.expanded) {
-  max-width: 85%;
+  max-width: 90%;
 }
 
 .expandable-section:hover:not(.expanded) {
-  transform: translateY(-3px);
   box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
-  max-width: 87%;
 }
 
 .expandable-section.expanded {
@@ -28,6 +26,7 @@
   justify-content: space-between;
   align-items: flex-start;
   margin-bottom: 15px;
+  padding-top: 30px;
 }
 
 .section-tldr {
