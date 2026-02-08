@@ -1,0 +1,42 @@
+---
+import '../styles/global.css';
+
+interface Props {
+  title?: string;
+  description?: string;
+}
+
+const {
+  title = 'Patrick Pynadath',
+  description = 'Patrick Pynadath Website',
+} = Astro.props;
+---
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="description" content={description} />
+  <meta name="keywords" content="Patrick Pynadath, personal website, portfolio, about me" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="generator" content={Astro.generator} />
+  <title>{title}</title>
+
+  <link href="https://fonts.googleapis.com/css?family=Google+Sans|Noto+Sans|Castoro" rel="stylesheet" />
+  <link rel="stylesheet" href="/css/bulma.min.css" />
+  <link rel="stylesheet" href="/css/bulma-carousel.min.css" />
+  <link rel="stylesheet" href="/css/bulma-slider.min.css" />
+  <link rel="stylesheet" href="/css/fontawesome.all.min.css" />
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/jpswalsh/academicons@1/css/academicons.min.css" />
+  <link rel="stylesheet" href="/css/index.css" />
+  <link rel="icon" href="/images/favicon.png" />
+</head>
+<body>
+  <slot />
+
+  <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js" is:inline></script>
+  <script defer src="/js/fontawesome.all.min.js" is:inline></script>
+  <script src="/js/bulma-carousel.min.js" is:inline></script>
+  <script src="/js/bulma-slider.min.js" is:inline></script>
+  <script src="/js/index.js" is:inline></script>
+</body>
+</html>

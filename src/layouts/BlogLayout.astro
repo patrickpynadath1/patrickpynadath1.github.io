@@ -1,0 +1,39 @@
+---
+import BaseLayout from './BaseLayout.astro';
+import TagPill from '../components/TagPill.astro';
+
+interface Props {
+  title: string;
+  description?: string;
+  publishDate?: Date;
+  tags?: string[];
+  heroImage?: string;
+}
+
+const { title, description, publishDate, tags = [], heroImage } = Astro.props as Props;
+const formattedDate = publishDate
+  ? new Intl.DateTimeFormat('en', { dateStyle: 'long' }).format(publishDate)
+  : null;
+---
+<BaseLayout title={`${title} | Blog`} description={description}>
+  <main class="blog-shell">
+    <article class="blog-article">
+      <header>
+        <p class="blog-meta">
+          {formattedDate && <span>{formattedDate}</span>}
+          {tags.length > 0 && (
+            <span class="tag-list">
+              {tags.map((tag) => <TagPill label={tag} />)}
+            </span>
+          )}
+        </p>
+        <h1>{title}</h1>
+        {description && <p class="post-description">{description}</p>}
+        {heroImage && <img class="blog-hero-image" src={heroImage} alt="" loading="lazy" />}
+      </header>
+      <section class="blog-content">
+        <slot />
+      </section>
+    </article>
+  </main>
+</BaseLayout>

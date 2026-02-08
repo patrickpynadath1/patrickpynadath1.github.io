@@ -1,0 +1,30 @@
+---
+import TagPill from './TagPill.astro';
+
+interface Props {
+  href: string;
+  title: string;
+  description: string;
+  publishDate?: Date;
+  tags?: string[];
+}
+
+const { href, title, description, publishDate, tags = [] } = Astro.props as Props;
+const formattedDate = publishDate
+  ? new Intl.DateTimeFormat('en', { dateStyle: 'medium' }).format(publishDate)
+  : null;
+---
+<article class="post-card">
+  <a href={href}>
+    <h2>{title}</h2>
+    <p class="post-description">{description}</p>
+    <div class="post-meta">
+      {formattedDate && <span>{formattedDate}</span>}
+      {tags.length > 0 && (
+        <span class="tag-list">
+          {tags.map((tag) => <TagPill label={tag} />)}
+        </span>
+      )}
+    </div>
+  </a>
+</article>
