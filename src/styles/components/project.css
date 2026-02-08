@@ -94,14 +94,14 @@
 
 .conference-pin {
   position: absolute;
-  top: -40px;
+  top: -70px;
   left: -35px;
   z-index: 10;
 }
 
 .action-badges {
   position: absolute;
-  top: -40px;
+  top: -70px;
   right: -35px;
   display: flex;
   flex-direction: row;

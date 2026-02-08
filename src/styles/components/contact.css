@@ -1,7 +1,7 @@
 .contact-title {
   font-size: 1.8em;
   margin-bottom: 15px;
-  color: #0d6efd;
+  color: var(--theme-blue-text);
 }
 
 .contact-links ul {
@@ -13,10 +13,6 @@
   margin-bottom: 8px;
 }
 
-.results-analysis {
-  margin: 25px 0 25px 0;
-  padding: 15px;
-  background-color: #f0f7ff;
-  border-left: 4px solid #0d6efd;
-  border-radius: 4px;
+.contact-section {
+  margin-bottom: 25px;
 }
