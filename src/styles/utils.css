@@ -27,11 +27,11 @@ body {
 
 .side-cat-left {
   position: absolute;
-  left: -110px;
+  left: -130px;
   top: 50%;
   transform: translateY(-50%);
-  width: 90px;
-  height: 90px;
+  width: 70px;
+  height: 70px;
   border-radius: 50%;
   overflow: hidden;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
@@ -42,11 +42,11 @@ body {
 
 .side-cat-right {
   position: absolute;
-  right: -110px;
+  right: -130px;
   top: 50%;
   transform: translateY(-50%);
-  width: 90px;
-  height: 90px;
+  width: 70px;
+  height: 70px;
   border-radius: 50%;
   overflow: hidden;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);

@@ -1,0 +1,772 @@
+ @article{Austin_Johnson_Ho_Tarlow_Berg_2023, title={Structured Denoising Diffusion Models in Discrete State-Spaces}, url={http://arxiv.org/abs/2107.03006}, DOI={10.48550/arXiv.2107.03006}, abstractNote={Denoising diffusion probabilistic models (DDPMs) (Ho et al. 2020) have shown impressive results on image and waveform generation in continuous state spaces. Here, we introduce Discrete Denoising Diffusion Probabilistic Models (D3PMs), diffusion-like generative models for discrete data that generalize the multinomial diffusion model of Hoogeboom et al. 2021, by going beyond corruption processes with uniform transition probabilities. This includes corruption with transition matrices that mimic Gaussian kernels in continuous space, matrices based on nearest neighbors in embedding space, and matrices that introduce absorbing states. The third allows us to draw a connection between diffusion models and autoregressive and mask-based generative models. We show that the choice of transition matrix is an important design decision that leads to improved results in image and text domains. We also introduce a new loss function that combines the variational lower bound with an auxiliary cross entropy loss. For text, this model class achieves strong results on character-level text generation while scaling to large vocabularies on LM1B. On the image dataset CIFAR-10, our models approach the sample quality and exceed the log-likelihood of the continuous-space DDPM model.}, note={arXiv:2107.03006}, number={arXiv:2107.03006}, publisher={arXiv}, author={Austin, Jacob and Johnson, Daniel D. and Ho, Jonathan and Tarlow, Daniel and Berg, Rianne van den}, year={2023}, month=feb }
+ @article{Campbell_Benton_Bortoli_Rainforth_Deligiannidis_Doucet_2022, title={`}, url={http://arxiv.org/abs/2205.14987}, DOI={10.48550/arXiv.2205.14987}, abstractNote={We provide the first complete continuous time framework for denoising diffusion models of discrete data. This is achieved by formulating the forward noising process and corresponding reverse time generative process as Continuous Time Markov Chains (CTMCs). The model can be efficiently trained using a continuous time version of the ELBO. We simulate the high dimensional CTMC using techniques developed in chemical physics and exploit our continuous time framework to derive high performance samplers that we show can outperform discrete time methods for discrete data. The continuous time treatment also enables us to derive a novel theoretical result bounding the error between the generated sample distribution and the true data distribution.}, note={arXiv:2205.14987}, number={arXiv:2205.14987}, publisher={arXiv}, author={Campbell, Andrew and Benton, Joe and Bortoli, Valentin De and Rainforth, Tom and Deligiannidis, George and Doucet, Arnaud}, year={2022}, month=oct }
+ @article{Campbell_Yim_Barzilay_Rainforth_Jaakkola_2024, title={Generative Flows on Discrete State-Spaces: Enabling Multimodal Flows with Applications to Protein Co-Design}, url={http://arxiv.org/abs/2402.04997}, DOI={10.48550/arXiv.2402.04997}, abstractNote={Combining discrete and continuous data is an important capability for generative models. We present Discrete Flow Models (DFMs), a new flow-based model of discrete data that provides the missing link in enabling flow-based generative models to be applied to multimodal continuous and discrete data problems. Our key insight is that the discrete equivalent of continuous space flow matching can be realized using Continuous Time Markov Chains. DFMs benefit from a simple derivation that includes discrete diffusion models as a specific instance while allowing improved performance over existing diffusion-based approaches. We utilize our DFMs method to build a multimodal flow-based modeling framework. We apply this capability to the task of protein co-design, wherein we learn a model for jointly generating protein structure and sequence. Our approach achieves state-of-the-art co-design performance while allowing the same multimodal model to be used for flexible generation of the sequence or structure.}, note={arXiv:2402.04997}, number={arXiv:2402.04997}, publisher={arXiv}, author={Campbell, Andrew and Yim, Jason and Barzilay, Regina and Rainforth, Tom and Jaakkola, Tommi}, year={2024}, month=jun }
+ @article{Chen_Zhang_Hinton_2023, title={Analog Bits: Generating Discrete Data using Diffusion Models with Self-Conditioning}, url={http://arxiv.org/abs/2208.04202}, abstractNote={We present Bit Diffusion: a simple and generic approach for generating discrete data with continuous state and continuous time diffusion models. The main idea behind our approach is to first represent the discrete data as binary bits, and then train a continuous diffusion model to model these bits as real numbers which we call analog bits. To generate samples, the model first generates the analog bits, which are then thresholded to obtain the bits that represent the discrete variables. We further propose two simple techniques, namely Self-Conditioning and Asymmetric Time Intervals, which lead to a significant improvement in sample quality. Despite its simplicity, the proposed approach can achieve strong performance in both discrete image generation and image captioning tasks. For discrete image generation, we significantly improve previous state-of-the-art on both CIFAR-10 (which has 3K discrete 8-bit tokens) and ImageNet-64x64 (which has 12K discrete 8-bit tokens), outperforming the best autoregressive model in both sample quality (measured by FID) and efficiency. For image captioning on MS-COCO dataset, our approach achieves competitive results compared to autoregressive models.}, note={arXiv:2208.04202}, number={arXiv:2208.04202}, publisher={arXiv}, author={Chen, Ting and Zhang, Ruixiang and Hinton, Geoffrey}, year={2023}, month=mar }
+ @article{Chen_Yuan_Li_Kou_Zhang_Gu_2023, title={Fast Sampling via De-randomization for Discrete Diffusion Models}, url={https://openreview.net/forum?id=m4Ya9RkEEW}, abstractNote={Diffusion models have emerged as powerful tools for high-quality data generation, such as image generation. Despite its success in continuous spaces, discrete diffusion models, which apply to domains such as texts and natural languages, remain under-studied and often suffer from slow generation speed. In this paper, we propose a novel de-randomized diffusion process, which leads to an accelerated algorithm for discrete diffusion models. Our technique significantly reduces the number of function evaluations (i.e., calls to the score network), making the sampling process much faster. Furthermore, we introduce a continuous-time (i.e., infinite-step) sampling algorithm that can provide even better sample qualities than its discrete-time (finite-step) counterpart. Extensive experiments on natural language generation and machine translation tasks demonstrate the superior performance of our method in terms of both generation speed and sample quality over existing methods for discrete diffusion models.}, author={Chen, Zixiang and Yuan, Huizhuo and Li, Yongqian and Kou, Yiwen and Zhang, Junkai and Gu, Quanquan}, year={2023}, month=oct, language={en} }
+ @article{Deschenaux_Gulcehre_2024a, title={Promises, Outlooks and Challenges of Diffusion Language Modeling}, url={http://arxiv.org/abs/2406.11473}, DOI={10.48550/arXiv.2406.11473}, abstractNote={The modern autoregressive Large Language Models (LLMs) have achieved outstanding performance on NLP benchmarks, and they are deployed in the real world. However, they still suffer from limitations of the autoregressive training paradigm. For example, autoregressive token generation is notably slow and can be prone to textit{exposure bias}. The diffusion-based language models were proposed as an alternative to autoregressive generation to address some of these limitations. We evaluate the recently proposed Score Entropy Discrete Diffusion (SEDD) approach and show it is a promising alternative to autoregressive generation but it has some short-comings too. We empirically demonstrate the advantages and challenges of SEDD, and observe that SEDD generally matches autoregressive models in perplexity and on benchmarks such as HellaSwag, Arc or WinoGrande. Additionally, we show that in terms of inference latency, SEDD can be up to 4.5$times$ more efficient than GPT-2. While SEDD allows conditioning on tokens at abitrary positions, SEDD appears slightly weaker than GPT-2 for conditional generation given short prompts. Finally, we reproduced the main results from the original SEDD paper.}, note={arXiv:2406.11473 [cs]}, number={arXiv:2406.11473}, publisher={arXiv}, author={Deschenaux, Justin and Gulcehre, Caglar}, year={2024}, month=jul }
+ @article{Deschenaux_Gulcehre_2024b, title={Beyond Autoregression: Fast LLMs via Self-Distillation Through Time}, url={http://arxiv.org/abs/2410.21035}, DOI={10.48550/arXiv.2410.21035}, abstractNote={Autoregressive (AR) Large Language Models (LLMs) have demonstrated significant success across numerous tasks. However, the AR modeling paradigm presents certain limitations; for instance, contemporary autoregressive LLMs are trained to generate one token at a time, which can result in noticeable latency. Recent advances have indicated that search and repeated sampling can enhance performance in various applications, such as theorem proving, code generation, and alignment, by utilizing greater computational resources during inference. In this study, we demonstrate that diffusion language models are capable of generating at least 32 tokens simultaneously, while exceeding the performance of AR models in text quality and on the LAMBADA natural language understanding benchmark. This outcome is achieved through a novel distillation method for discrete diffusion models, which reduces the number of inference steps by a factor of 32-64. Practically, our models, even without caching, can generate tokens at a rate that is up to 8 times faster than AR models employing KV caching, and we anticipate further improvements with the inclusion of caching. Moreover, we demonstrate the efficacy of our approach for diffusion language models with up to 860M parameters.}, note={arXiv:2410.21035 [cs]}, number={arXiv:2410.21035}, publisher={arXiv}, author={Deschenaux, Justin and Gulcehre, Caglar}, year={2024}, month=oct }
+ @article{Eijkelboom_Bartosh_Naesseth_Welling_Meent_2024, title={Variational Flow Matching for Graph Generation}, url={http://arxiv.org/abs/2406.04843}, DOI={10.48550/arXiv.2406.04843}, abstractNote={We present a formulation of flow matching as variational inference, which we refer to as variational flow matching (VFM). Based on this formulation we develop CatFlow, a flow matching method for categorical data. CatFlow is easy to implement, computationally efficient, and achieves strong results on graph generation tasks. In VFM, the objective is to approximate the posterior probability path, which is a distribution over possible end points of a trajectory. We show that VFM admits both the CatFlow objective and the original flow matching objective as special cases. We also relate VFM to score-based models, in which the dynamics are stochastic rather than deterministic, and derive a bound on the model likelihood based on a reweighted VFM objective. We evaluate CatFlow on one abstract graph generation task and two molecular generation tasks. In all cases, CatFlow exceeds or matches performance of the current state-of-the-art models.}, note={arXiv:2406.04843 [cs]}, number={arXiv:2406.04843}, publisher={arXiv}, author={Eijkelboom, Floor and Bartosh, Grigory and Naesseth, Christian Andersson and Welling, Max and Meent, Jan-Willem van de}, year={2024}, month=jun }
+ @article{Floto_Jonsson_Nica_Sanner_Zhu_2023, title={Diffusion on the Probability Simplex}, url={http://arxiv.org/abs/2309.02530}, DOI={10.48550/arXiv.2309.02530}, abstractNote={Diffusion models learn to reverse the progressive noising of a data distribution to create a generative model. However, the desired continuous nature of the noising process can be at odds with discrete data. To deal with this tension between continuous and discrete objects, we propose a method of performing diffusion on the probability simplex. Using the probability simplex naturally creates an interpretation where points correspond to categorical probability distributions. Our method uses the softmax function applied to an Ornstein-Unlenbeck Process, a well-known stochastic differential equation. We find that our methodology also naturally extends to include diffusion on the unit cube which has applications for bounded image generation.}, note={arXiv:2309.02530}, number={arXiv:2309.02530}, publisher={arXiv}, author={Floto, Griffin and Jonsson, Thorsteinn and Nica, Mihai and Sanner, Scott and Zhu, Eric Zhengyu}, year={2023}, month=sep }
+ @article{Gao_Guo_Tan_Zhu_Zhang_Bian_Xu_2024, title={Empowering Diffusion Models on the Embedding Space for Text Generation}, url={http://arxiv.org/abs/2212.09412}, DOI={10.48550/arXiv.2212.09412}, abstractNote={Diffusion models have achieved state-of-the-art synthesis quality on both visual and audio tasks, and recent works further adapt them to textual data by diffusing on the embedding space. In this paper, we conduct systematic studies of the optimization challenges encountered with both the embedding space and the denoising model, which have not been carefully explored. Firstly, the data distribution is learnable for embeddings, which may lead to the collapse of the embedding space and unstable training. To alleviate this problem, we propose a new objective called the anchor loss which is more efficient than previous methods. Secondly, we find the noise levels of conventional schedules are insufficient for training a desirable denoising model while introducing varying degrees of degeneration in consequence. To address this challenge, we propose a novel framework called noise rescaling. Based on the above analysis, we propose Difformer, an embedding diffusion model based on Transformer. Experiments on varieties of seminal text generation tasks show the effectiveness of the proposed methods and the superiority of Difformer over previous state-of-the-art embedding diffusion baselines.}, note={arXiv:2212.09412 [cs]}, number={arXiv:2212.09412}, publisher={arXiv}, author={Gao, Zhujin and Guo, Junliang and Tan, Xu and Zhu, Yongxin and Zhang, Fang and Bian, Jiang and Xu, Linli}, year={2024}, month=apr }
+ @article{Gat_Remez_Shaul_Kreuk_Chen_Synnaeve_Adi_Lipman_2024, title={Discrete Flow Matching}, url={http://arxiv.org/abs/2407.15595}, DOI={10.48550/arXiv.2407.15595}, abstractNote={Despite Flow Matching and diffusion models having emerged as powerful generative paradigms for continuous variables such as images and videos, their application to high-dimensional discrete data, such as language, is still limited. In this work, we present Discrete Flow Matching, a novel discrete flow paradigm designed specifically for generating discrete data. Discrete Flow Matching offers several key contributions:(i) it works with a general family of probability paths interpolating between source and target distributions; (ii) it allows for a generic formula for sampling from these probability paths using learned posteriors such as the probability denoiser ($x$-prediction) and noise-prediction ($epsilon$-prediction); (iii) practically, focusing on specific probability paths defined with different schedulers improves generative perplexity compared to previous discrete diffusion and flow models; and (iv) by scaling Discrete Flow Matching models up to 1.7B parameters, we reach 6.7% Pass@1 and 13.4% Pass@10 on HumanEval and 6.7% Pass@1 and 20.6% Pass@10 on 1-shot MBPP coding benchmarks. Our approach is capable of generating high-quality discrete data in a non-autoregressive fashion, significantly closing the gap between autoregressive models and discrete flow models.}, note={arXiv:2407.15595 [cs]}, number={arXiv:2407.15595}, publisher={arXiv}, author={Gat, Itai and Remez, Tal and Shaul, Neta and Kreuk, Felix and Chen, Ricky T. Q. and Synnaeve, Gabriel and Adi, Yossi and Lipman, Yaron}, year={2024}, month=nov }
+ @article{Gu_Feng_Huang_Wu_Zhou_Zhong_Zhu_Qin_2024, title={Discrete Modeling via Boundary Conditional Diffusion Processes}, url={http://arxiv.org/abs/2410.22380}, DOI={10.48550/arXiv.2410.22380}, abstractNote={We present an novel framework for efficiently and effectively extending the powerful continuous diffusion processes to discrete modeling. Previous approaches have suffered from the discrepancy between discrete data and continuous modeling. Our study reveals that the absence of guidance from discrete boundaries in learning probability contours is one of the main reasons. To address this issue, we propose a two-step forward process that first estimates the boundary as a prior distribution and then rescales the forward trajectory to construct a boundary conditional diffusion model. The reverse process is proportionally adjusted to guarantee that the learned contours yield more precise discrete data. Experimental results indicate that our approach achieves strong performance in both language modeling and discrete image generation tasks. In language modeling, our approach surpasses previous state-of-the-art continuous diffusion language models in three translation tasks and a summarization task, while also demonstrating competitive performance compared to auto-regressive transformers. Moreover, our method achieves comparable results to continuous diffusion models when using discrete ordinal pixels and establishes a new state-of-the-art for categorical image generation on the Cifar-10 dataset.}, note={arXiv:2410.22380 [cs]}, number={arXiv:2410.22380}, publisher={arXiv}, author={Gu, Yuxuan and Feng, Xiaocheng and Huang, Lei and Wu, Yingsheng and Zhou, Zekun and Zhong, Weihong and Zhu, Kun and Qin, Bing}, year={2024}, month=oct }
+ @article{Gulrajani_Hashimoto_2023, title={Likelihood-Based Diffusion Language Models}, url={http://arxiv.org/abs/2305.18619}, DOI={10.48550/arXiv.2305.18619}, abstractNote={Despite a growing interest in diffusion-based language models, existing work has not shown that these models can attain nontrivial likelihoods on standard language modeling benchmarks. In this work, we take the first steps towards closing the likelihood gap between autoregressive and diffusion-based language models, with the goal of building and releasing a diffusion model which outperforms a small but widely-known autoregressive model. We pursue this goal through algorithmic improvements, scaling laws, and increased compute. On the algorithmic front, we introduce several methodological improvements for the maximum-likelihood training of diffusion language models. We then study scaling laws for our diffusion models and find compute-optimal training regimes which differ substantially from autoregressive models. Using our methods and scaling analysis, we train and release Plaid 1B, a large diffusion language model which outperforms GPT-2 124M in likelihood on benchmark datasets and generates fluent samples in unconditional and zero-shot control settings.}, note={arXiv:2305.18619 [cs]}, number={arXiv:2305.18619}, publisher={arXiv}, author={Gulrajani, Ishaan and Hashimoto, Tatsunori B.}, year={2023}, month=may }
+ @article{Han_Kumar_Tsvetkov_2023, title={SSD-LM: Semi-autoregressive Simplex-based Diffusion Language Model for Text Generation and Modular Control}, url={http://arxiv.org/abs/2210.17432}, DOI={10.48550/arXiv.2210.17432}, abstractNote={Despite the growing success of diffusion models in continuous-valued domains (e.g., images), similar efforts for discrete domains such as text have yet to match the performance of autoregressive language models. In this work, we present SSD-LM -- a diffusion-based language model with two key design choices. First, SSD-LM is semi-autoregressive, iteratively generating blocks of text, allowing for flexible output length at decoding time while enabling local bidirectional context updates. Second, it is simplex-based, performing diffusion on the natural vocabulary space rather than a learned latent space, allowing us to incorporate classifier guidance and modular control using off-the-shelf classifiers without any adaptation. We evaluate SSD-LM on unconstrained text generation benchmarks, and show that it matches or outperforms strong autoregressive GPT-2 models across standard quality and diversity metrics, while vastly outperforming diffusion-based baselines. On controlled text generation, SSD-LM also outperforms competitive baselines, with an extra advantage in modularity.}, note={arXiv:2210.17432 [cs]}, number={arXiv:2210.17432}, publisher={arXiv}, author={Han, Xiaochuang and Kumar, Sachin and Tsvetkov, Yulia}, year={2023}, month=jun }
+ @article{Han_Kumar_Tsvetkov_Ghazvininejad_2024, title={David helps Goliath: Inference-Time Collaboration Between Small Specialized and Large General Diffusion LMs}, url={http://arxiv.org/abs/2305.14771}, DOI={10.48550/arXiv.2305.14771}, abstractNote={Diffusion-based language models are emerging as a promising alternative to autoregressive LMs: they approach the competence of autoregressive LMs while offering nuanced controllability at inference time. While autoregressive LMs have benefited immensely from scaling and instruction-based learning, existing studies of diffusion LMs have been conducted on a smaller scale. Starting with a recently proposed diffusion model SSD-LM, in this work we first explore methods to scale it from 0.4B to 13B parameters, proposing techniques to improve its training and inference efficiency, and to finetune the model to follow instructions. Armed with a more powerful, general purpose diffusion LM, we introduce the primary contribution of this work -- SSD-2 -- an approach to easily ensemble at inference time a large general-purpose diffusion LM with smaller, but specialized and contextualized diffusion LMs. We show that SSD-2 facilitates novel ensembles with 100x smaller models that can be customized and deployed by individual users. We find that compared to autoregressive models, the collaboration between diffusion LMs is more effective, leading to higher-quality model responses due to their ability to dynamically incorporate bi-directional contexts.}, note={arXiv:2305.14771 [cs]}, number={arXiv:2305.14771}, publisher={arXiv}, author={Han, Xiaochuang and Kumar, Sachin and Tsvetkov, Yulia and Ghazvininejad, Marjan}, year={2024}, month=feb }
+ @article{He_Sun_Wang_Huang_Qiu_2022, title={DiffusionBERT: Improving Generative Masked Language Models with Diffusion Models}, url={http://arxiv.org/abs/2211.15029}, DOI={10.48550/arXiv.2211.15029}, abstractNote={We present DiffusionBERT, a new generative masked language model based on discrete diffusion models. Diffusion models and many pre-trained language models have a shared training objective, i.e., denoising, making it possible to combine the two powerful models and enjoy the best of both worlds. On the one hand, diffusion models offer a promising training strategy that helps improve the generation quality. On the other hand, pre-trained denoising language models (e.g., BERT) can be used as a good initialization that accelerates convergence. We explore training BERT to learn the reverse process of a discrete diffusion process with an absorbing state and elucidate several designs to improve it. First, we propose a new noise schedule for the forward diffusion process that controls the degree of noise added at each step based on the information of each token. Second, we investigate several designs of incorporating the time step into BERT. Experiments on unconditional text generation demonstrate that DiffusionBERT achieves significant improvement over existing diffusion models for text (e.g., D3PM and Diffusion-LM) and previous generative masked language models in terms of perplexity and BLEU score.}, note={arXiv:2211.15029}, number={arXiv:2211.15029}, publisher={arXiv}, author={He, Zhengfu and Sun, Tianxiang and Wang, Kuanning and Huang, Xuanjing and Qiu, Xipeng}, year={2022}, month=nov }
+ @article{Hoogeboom_Gritsenko_Bastings_Poole_Berg_Salimans_2022, title={Autoregressive Diffusion Models}, url={http://arxiv.org/abs/2110.02037}, DOI={10.48550/arXiv.2110.02037}, abstractNote={We introduce Autoregressive Diffusion Models (ARDMs), a model class encompassing and generalizing order-agnostic autoregressive models (Uria et al., 2014) and absorbing discrete diffusion (Austin et al., 2021), which we show are special cases of ARDMs under mild assumptions. ARDMs are simple to implement and easy to train. Unlike standard ARMs, they do not require causal masking of model representations, and can be trained using an efficient objective similar to modern probabilistic diffusion models that scales favourably to highly-dimensional data. At test time, ARDMs support parallel generation which can be adapted to fit any given generation budget. We find that ARDMs require significantly fewer steps than discrete diffusion models to attain the same performance. Finally, we apply ARDMs to lossless compression, and show that they are uniquely suited to this task. Contrary to existing approaches based on bits-back coding, ARDMs obtain compelling results not only on complete datasets, but also on compressing single data points. Moreover, this can be done using a modest number of network calls for (de)compression due to the model’s adaptable parallel generation.}, note={arXiv:2110.02037}, number={arXiv:2110.02037}, publisher={arXiv}, author={Hoogeboom, Emiel and Gritsenko, Alexey A. and Bastings, Jasmijn and Poole, Ben and Berg, Rianne van den and Salimans, Tim}, year={2022}, month=feb }
+ @article{Hoogeboom_Nielsen_Jaini_Forré_Welling_2021, title={Argmax Flows and Multinomial Diffusion: Learning Categorical Distributions}, url={http://arxiv.org/abs/2102.05379}, DOI={10.48550/arXiv.2102.05379}, abstractNote={Generative flows and diffusion models have been predominantly trained on ordinal data, for example natural images. This paper introduces two extensions of flows and diffusion for categorical data such as language or image segmentation: Argmax Flows and Multinomial Diffusion. Argmax Flows are defined by a composition of a continuous distribution (such as a normalizing flow), and an argmax function. To optimize this model, we learn a probabilistic inverse for the argmax that lifts the categorical data to a continuous space. Multinomial Diffusion gradually adds categorical noise in a diffusion process, for which the generative denoising process is learned. We demonstrate that our method outperforms existing dequantization approaches on text modelling and modelling on image segmentation maps in log-likelihood.}, note={arXiv:2102.05379}, number={arXiv:2102.05379}, publisher={arXiv}, author={Hoogeboom, Emiel and Nielsen, Didrik and Jaini, Priyank and Forré, Patrick and Welling, Max}, year={2021}, month=oct }
+ @article{Li_Thickstun_Gulrajani_Liang_Hashimoto_2022, title={Diffusion-LM Improves Controllable Text Generation}, url={http://arxiv.org/abs/2205.14217}, abstractNote={Controlling the behavior of language models (LMs) without re-training is a major open problem in natural language generation. While recent works have demonstrated successes on controlling simple sentence attributes (e.g., sentiment), there has been little progress on complex, fine-grained controls (e.g., syntactic structure). To address this challenge, we develop a new non-autoregressive language model based on continuous diffusions that we call Diffusion-LM. Building upon the recent successes of diffusion models in continuous domains, Diffusion-LM iteratively denoises a sequence of Gaussian vectors into word vectors, yielding a sequence of intermediate latent variables. The continuous, hierarchical nature of these intermediate variables enables a simple gradient-based algorithm to perform complex, controllable generation tasks. We demonstrate successful control of Diffusion-LM for six challenging fine-grained control tasks, significantly outperforming prior work.}, note={arXiv:2205.14217}, number={arXiv:2205.14217}, publisher={arXiv}, author={Li, Xiang Lisa and Thickstun, John and Gulrajani, Ishaan and Liang, Percy and Hashimoto, Tatsunori B.}, year={2022}, month=may }
+ @article{Lipman_Chen_Ben-Hamu_Nickel_Le_2023, title={Flow Matching for Generative Modeling}, url={http://arxiv.org/abs/2210.02747}, DOI={10.48550/arXiv.2210.02747}, abstractNote={We introduce a new paradigm for generative modeling built on Continuous Normalizing Flows (CNFs), allowing us to train CNFs at unprecedented scale. Specifically, we present the notion of Flow Matching (FM), a simulation-free approach for training CNFs based on regressing vector fields of fixed conditional probability paths. Flow Matching is compatible with a general family of Gaussian probability paths for transforming between noise and data samples -- which subsumes existing diffusion paths as specific instances. Interestingly, we find that employing FM with diffusion paths results in a more robust and stable alternative for training diffusion models. Furthermore, Flow Matching opens the door to training CNFs with other, non-diffusion probability paths. An instance of particular interest is using Optimal Transport (OT) displacement interpolation to define the conditional probability paths. These paths are more efficient than diffusion paths, provide faster training and sampling, and result in better generalization. Training CNFs using Flow Matching on ImageNet leads to consistently better performance than alternative diffusion-based methods in terms of both likelihood and sample quality, and allows fast and reliable sample generation using off-the-shelf numerical ODE solvers.}, note={arXiv:2210.02747}, number={arXiv:2210.02747}, publisher={arXiv}, author={Lipman, Yaron and Chen, Ricky T. Q. and Ben-Hamu, Heli and Nickel, Maximilian and Le, Matt}, year={2023}, month=feb }
+ @article{Liu_Broadrick_Niepert_Broeck_2024, title={Discrete Copula Diffusion}, url={http://arxiv.org/abs/2410.01949}, DOI={10.48550/arXiv.2410.01949}, abstractNote={Discrete diffusion models have recently shown significant progress in modeling complex data, such as natural languages and DNA sequences. However, unlike diffusion models for continuous data, which can generate high-quality samples in just a few denoising steps, modern discrete diffusion models still require hundreds or even thousands of denoising steps to perform well. In this paper, we identify a fundamental limitation that prevents discrete diffusion models from achieving strong performance with fewer steps -- they fail to capture dependencies between output variables at each denoising step. To address this issue, we provide a formal explanation and introduce a general approach to supplement the missing dependency information by incorporating another deep generative model, termed the copula model. Our method does not require fine-tuning either the diffusion model or the copula model, yet it enables high-quality sample generation with significantly fewer denoising steps. When we apply this approach to autoregressive copula models, the combined model outperforms both models individually in unconditional and conditional text generation. Specifically, the hybrid model achieves better (un)conditional text generation using 8 to 32 times fewer denoising steps than the diffusion model alone. In addition to presenting an effective discrete diffusion generation algorithm, this paper emphasizes the importance of modeling inter-variable dependencies in discrete diffusion.}, note={arXiv:2410.01949}, number={arXiv:2410.01949}, publisher={arXiv}, author={Liu, Anji and Broadrick, Oliver and Niepert, Mathias and Broeck, Guy Van den}, year={2024}, month=oct }
+ @article{Lou_Meng_Ermon_2024, title={Discrete Diffusion Modeling by Estimating the Ratios of the Data Distribution}, url={http://arxiv.org/abs/2310.16834}, DOI={10.48550/arXiv.2310.16834}, abstractNote={Despite their groundbreaking performance for many generative modeling tasks, diffusion models have fallen short on discrete data domains such as natural language. Crucially, standard diffusion models rely on the well-established theory of score matching, but efforts to generalize this to discrete structures have not yielded the same empirical gains. In this work, we bridge this gap by proposing score entropy, a novel loss that naturally extends score matching to discrete spaces, integrates seamlessly to build discrete diffusion models, and significantly boosts performance. Experimentally, we test our Score Entropy Discrete Diffusion models (SEDD) on standard language modeling tasks. For comparable model sizes, SEDD beats existing language diffusion paradigms (reducing perplexity by $25$-$75$%) and is competitive with autoregressive models, in particular outperforming GPT-2. Furthermore, compared to autoregressive mdoels, SEDD generates faithful text without requiring distribution annealing techniques like temperature scaling (around $6$-$8times$ better generative perplexity than un-annealed GPT-2), can trade compute and quality (similar quality with $32times$ fewer network evaluations), and enables controllable infilling (matching nucleus sampling quality while enabling other strategies besides left to right prompting).}, note={arXiv:2310.16834}, number={arXiv:2310.16834}, publisher={arXiv}, author={Lou, Aaron and Meng, Chenlin and Ermon, Stefano}, year={2024}, month=jun }
+ @article{Lovelace_Kishore_Wan_Shekhtman_Weinberger_2023, title={Latent Diffusion for Language Generation}, url={http://arxiv.org/abs/2212.09462}, DOI={10.48550/arXiv.2212.09462}, abstractNote={Diffusion models have achieved great success in modeling continuous data modalities such as images, audio, and video, but have seen limited use in discrete domains such as language. Recent attempts to adapt diffusion to language have presented diffusion as an alternative to existing pretrained language models. We view diffusion and existing language models as complementary. We demonstrate that encoder-decoder language models can be utilized to efficiently learn high-quality language autoencoders. We then demonstrate that continuous diffusion models can be learned in the latent space of the language autoencoder, enabling us to sample continuous latent representations that can be decoded into natural language with the pretrained decoder. We validate the effectiveness of our approach for unconditional, class-conditional, and sequence-to-sequence language generation. We demonstrate across multiple diverse data sets that our latent language diffusion models are significantly more effective than previous diffusion language models.}, note={arXiv:2212.09462}, number={arXiv:2212.09462}, publisher={arXiv}, author={Lovelace, Justin and Kishore, Varsha and Wan, Chao and Shekhtman, Eliot and Weinberger, Kilian Q.}, year={2023}, month=nov }
+ @article{Mahabadi_Ivison_Tae_Henderson_Beltagy_Peters_Cohan_2024, title={TESS: Text-to-Text Self-Conditioned Simplex Diffusion}, url={http://arxiv.org/abs/2305.08379}, DOI={10.48550/arXiv.2305.08379}, abstractNote={Diffusion models have emerged as a powerful paradigm for generation, obtaining strong performance in various continuous domains. However, applying continuous diffusion models to natural language remains challenging due to its discrete nature and the need for a large number of diffusion steps to generate text, making diffusion-based generation expensive. In this work, we propose Text-to-text Self-conditioned Simplex Diffusion (TESS), a text diffusion model that is fully non-autoregressive, employs a new form of self-conditioning, and applies the diffusion process on the logit simplex space rather than the learned embedding space. Through extensive experiments on natural language understanding and generation tasks including summarization, text simplification, paraphrase generation, and question generation, we demonstrate that TESS outperforms state-of-the-art non-autoregressive models, requires fewer diffusion steps with minimal drop in performance, and is competitive with pretrained autoregressive sequence-to-sequence models. We publicly release our codebase at https://github.com/allenai/tess-diffusion.}, note={arXiv:2305.08379 [cs]}, number={arXiv:2305.08379}, publisher={arXiv}, author={Mahabadi, Rabeeh Karimi and Ivison, Hamish and Tae, Jaesung and Henderson, James and Beltagy, Iz and Peters, Matthew E. and Cohan, Arman}, year={2024}, month=feb }
+ @article{Meng_Choi_Song_Ermon_2023, title={Concrete Score Matching: Generalized Score Matching for Discrete Data}, url={http://arxiv.org/abs/2211.00802}, DOI={10.48550/arXiv.2211.00802}, abstractNote={Representing probability distributions by the gradient of their density functions has proven effective in modeling a wide range of continuous data modalities. However, this representation is not applicable in discrete domains where the gradient is undefined. To this end, we propose an analogous score function called the “Concrete score”, a generalization of the (Stein) score for discrete settings. Given a predefined neighborhood structure, the Concrete score of any input is defined by the rate of change of the probabilities with respect to local directional changes of the input. This formulation allows us to recover the (Stein) score in continuous domains when measuring such changes by the Euclidean distance, while using the Manhattan distance leads to our novel score function in discrete domains. Finally, we introduce a new framework to learn such scores from samples called Concrete Score Matching (CSM), and propose an efficient training objective to scale our approach to high dimensions. Empirically, we demonstrate the efficacy of CSM on density estimation tasks on a mixture of synthetic, tabular, and high-dimensional image datasets, and demonstrate that it performs favorably relative to existing baselines for modeling discrete data.}, note={arXiv:2211.00802}, number={arXiv:2211.00802}, publisher={arXiv}, author={Meng, Chenlin and Choi, Kristy and Song, Jiaming and Ermon, Stefano}, year={2023}, month=jan }
+ @article{Nguyen_Lai_Takida_Murata_Uesaka_Ermon_Mitsufuji_2024, title={Mitigating Embedding Collapse in Diffusion Models for Categorical Data}, url={http://arxiv.org/abs/2410.14758}, DOI={10.48550/arXiv.2410.14758}, abstractNote={Latent diffusion models have enabled continuous-state diffusion models to handle a variety of datasets, including categorical data. However, most methods rely on fixed pretrained embeddings, limiting the benefits of joint training with the diffusion model. While jointly learning the embedding (via reconstruction loss) and the latent diffusion model (via score matching loss) could enhance performance, our analysis shows that end-to-end training risks embedding collapse, degrading generation quality. To address this issue, we introduce CATDM, a continuous diffusion framework within the embedding space that stabilizes training. We propose a novel objective combining the joint embedding-diffusion variational lower bound with a Consistency-Matching (CM) regularizer, alongside a shifted cosine noise schedule and random dropping strategy. The CM regularizer ensures the recovery of the true data distribution. Experiments on benchmarks show that CATDM mitigates embedding collapse, yielding superior results on FFHQ, LSUN Churches, and LSUN Bedrooms. In particular, CATDM achieves an FID of 6.81 on ImageNet $256times256$ with 50 steps. It outperforms non-autoregressive models in machine translation and is on a par with previous methods in text generation.}, note={arXiv:2410.14758 [cs]}, number={arXiv:2410.14758}, publisher={arXiv}, author={Nguyen, Bac and Lai, and Chieh-Hsin and Takida, Yuhta and Murata, Naoki and Uesaka, Toshimitsu and Ermon, Stefano and Mitsufuji, Yuki}, year={2024}, month=oct }
+ @article{Nie_Zhu_Du_Pang_Liu_Zeng_Lin_Li_2024, title={Scaling up Masked Diffusion Models on Text}, url={http://arxiv.org/abs/2410.18514}, DOI={10.48550/arXiv.2410.18514}, abstractNote={Masked diffusion models (MDMs) have shown promise in language modeling, yet their scalability and effectiveness in core language tasks, such as text generation and language understanding, remain underexplored. This paper establishes the first scaling law for MDMs, demonstrating a scaling rate comparable to autoregressive models (ARMs) and a relatively small compute gap. Motivated by their scalability, we train a family of MDMs with up to 1.1 billion (B) parameters to systematically evaluate their performance against ARMs of comparable or larger sizes. Fully leveraging the probabilistic formulation of MDMs, we propose a simple yet effective emph{unsupervised classifier-free guidance} that effectively exploits large-scale unpaired data, boosting performance for conditional inference. In language understanding, a 1.1B MDM shows competitive results, outperforming the larger 1.5B GPT-2 model on four out of eight zero-shot benchmarks. In text generation, MDMs provide a flexible trade-off compared to ARMs utilizing KV-cache: MDMs match the performance of ARMs while being 1.4 times faster, or achieve higher quality than ARMs at a higher computational cost. Moreover, MDMs address challenging tasks for ARMs by effectively handling bidirectional reasoning and adapting to temporal shifts in data. Notably, a 1.1B MDM breaks the emph{reverse curse} encountered by much larger ARMs with significantly more data and computation, such as Llama-2 (13B) and GPT-3 (175B). Our code is available at url{https://github.com/ML-GSAI/SMDM}.}, note={arXiv:2410.18514 [cs]}, number={arXiv:2410.18514}, publisher={arXiv}, author={Nie, Shen and Zhu, Fengqi and Du, Chao and Pang, Tianyu and Liu, Qian and Zeng, Guangtao and Lin, Min and Li, Chongxuan}, year={2024}, month=oct }
+ @article{Ou_Nie_Xue_Zhu_Sun_Li_Li_2024, title={Your Absorbing Discrete Diffusion Secretly Models the Conditional Distributions of Clean Data}, url={http://arxiv.org/abs/2406.03736}, DOI={10.48550/arXiv.2406.03736}, abstractNote={Discrete diffusion models with absorbing processes have shown promise in language modeling. The key quantities to be estimated are the ratios between the marginal probabilities of two transitive states at all timesteps, called the concrete score. In this paper, we reveal that the concrete score in absorbing diffusion can be expressed as conditional probabilities of clean data, multiplied by a time-dependent scalar in an analytic form. Motivated by this finding, we propose reparameterized absorbing discrete diffusion (RADD), a dedicated diffusion model without time-condition that characterizes the time-independent conditional probabilities. Besides its simplicity, RADD can reduce the number of function evaluations (NFEs) by caching the output of the time-independent network when the noisy sample remains unchanged in a sampling interval. Empirically, RADD is up to 3.5 times faster while achieving similar performance with the strongest baseline. Built upon the new perspective of conditional distributions, we further unify absorbing discrete diffusion and any-order autoregressive models (AO-ARMs), showing that the upper bound on the negative log-likelihood for the diffusion model can be interpreted as an expected negative log-likelihood for AO-ARMs. Further, our RADD models achieve SOTA performance among diffusion models on 5 zero-shot language modeling benchmarks (measured by perplexity) at the GPT-2 scale. Our code is available at https://github.com/ML-GSAI/RADD.}, note={arXiv:2406.03736}, number={arXiv:2406.03736}, publisher={arXiv}, author={Ou, Jingyang and Nie, Shen and Xue, Kaiwen and Zhu, Fengqi and Sun, Jiacheng and Li, Zhenguo and Li, Chongxuan}, year={2024}, month=jul }
+ @article{Peebles_Xie_2023, title={Scalable Diffusion Models with Transformers}, url={http://arxiv.org/abs/2212.09748}, DOI={10.48550/arXiv.2212.09748}, abstractNote={We explore a new class of diffusion models based on the transformer architecture. We train latent diffusion models of images, replacing the commonly-used U-Net backbone with a transformer that operates on latent patches. We analyze the scalability of our Diffusion Transformers (DiTs) through the lens of forward pass complexity as measured by Gflops. We find that DiTs with higher Gflops -- through increased transformer depth/width or increased number of input tokens -- consistently have lower FID. In addition to possessing good scalability properties, our largest DiT-XL/2 models outperform all prior diffusion models on the class-conditional ImageNet 512x512 and 256x256 benchmarks, achieving a state-of-the-art FID of 2.27 on the latter.}, note={arXiv:2212.09748 [cs]}, number={arXiv:2212.09748}, publisher={arXiv}, author={Peebles, William and Xie, Saining}, year={2023}, month=mar }
+ @article{Reid_Hellendoorn_Neubig_2022, title={DiffusER: Discrete Diffusion via Edit-based Reconstruction}, url={http://arxiv.org/abs/2210.16886}, DOI={10.48550/arXiv.2210.16886}, abstractNote={In text generation, models that generate text from scratch one token at a time are currently the dominant paradigm. Despite being performant, these models lack the ability to revise existing text, which limits their usability in many practical scenarios. We look to address this, with DiffusER (Diffusion via Edit-based Reconstruction), a new edit-based generative model for text based on denoising diffusion models -- a class of models that use a Markov chain of denoising steps to incrementally generate data. DiffusER is not only a strong generative model in general, rivalling autoregressive models on several tasks spanning machine translation, summarization, and style transfer; it can also perform other varieties of generation that standard autoregressive models are not well-suited for. For instance, we demonstrate that DiffusER makes it possible for a user to condition generation on a prototype, or an incomplete sequence, and continue revising based on previous edit steps.}, note={arXiv:2210.16886}, number={arXiv:2210.16886}, publisher={arXiv}, author={Reid, Machel and Hellendoorn, Vincent J. and Neubig, Graham}, year={2022}, month=oct }
+ @article{Richemond_Dieleman_Doucet_2022, title={Categorical SDEs with Simplex Diffusion}, url={http://arxiv.org/abs/2210.14784}, DOI={10.48550/arXiv.2210.14784}, abstractNote={Diffusion models typically operate in the standard framework of generative modelling by producing continuously-valued datapoints. To this end, they rely on a progressive Gaussian smoothing of the original data distribution, which admits an SDE interpretation involving increments of a standard Brownian motion. However, some applications such as text generation or reinforcement learning might naturally be better served by diffusing categorical-valued data, i.e., lifting the diffusion to a space of probability distributions. To this end, this short theoretical note proposes Simplex Diffusion, a means to directly diffuse datapoints located on an n-dimensional probability simplex. We show how this relates to the Dirichlet distribution on the simplex and how the analogous SDE is realized thanks to a multi-dimensional Cox-Ingersoll-Ross process (abbreviated as CIR), previously used in economics and mathematical finance. Finally, we make remarks as to the numerical implementation of trajectories of the CIR process, and discuss some limitations of our approach.}, note={arXiv:2210.14784}, number={arXiv:2210.14784}, publisher={arXiv}, author={Richemond, Pierre H. and Dieleman, Sander and Doucet, Arnaud}, year={2022}, month=oct }
+ @article{Sahoo_Arriola_Schiff_Gokaslan_Marroquin_Chiu_Rush_Kuleshov_2024, title={Simple and Effective Masked Diffusion Language Models}, url={http://arxiv.org/abs/2406.07524}, DOI={10.48550/arXiv.2406.07524}, abstractNote={While diffusion models excel at generating high-quality images, prior work reports a significant performance gap between diffusion and autoregressive (AR) methods in language modeling. In this work, we show that simple masked discrete diffusion is more performant than previously thought. We apply an effective training recipe that improves the performance of masked diffusion models and derive a simplified, Rao-Blackwellized objective that results in additional improvements. Our objective has a simple form -- it is a mixture of classical masked language modeling losses -- and can be used to train encoder-only language models that admit efficient samplers, including ones that can generate arbitrary lengths of text semi-autoregressively like a traditional language model. On language modeling benchmarks, a range of masked diffusion models trained with modern engineering practices achieves a new state-of-the-art among diffusion models, and approaches AR perplexity. We provide the code, along with a blog post and video tutorial on the project page: https://s-sahoo.com/mdlm}, note={arXiv:2406.07524}, number={arXiv:2406.07524}, publisher={arXiv}, author={Sahoo, Subham Sekhar and Arriola, Marianne and Schiff, Yair and Gokaslan, Aaron and Marroquin, Edgar and Chiu, Justin T. and Rush, Alexander and Kuleshov, Volodymyr}, year={2024}, month=nov }
+ @article{Savinov_Chung_Binkowski_Elsen_Oord_2022, title={Step-unrolled Denoising Autoencoders for Text Generation}, url={http://arxiv.org/abs/2112.06749}, abstractNote={In this paper we propose a new generative model of text, Step-unrolled Denoising Autoencoder (SUNDAE), that does not rely on autoregressive models. Similarly to denoising diffusion techniques, SUNDAE is repeatedly applied on a sequence of tokens, starting from random inputs and improving them each time until convergence. We present a simple new improvement operator that converges in fewer iterations than diffusion methods, while qualitatively producing better samples on natural language datasets. SUNDAE achieves state-of-the-art results (among non-autoregressive methods) on the WMT’14 English-to-German translation task and good qualitative results on unconditional language modeling on the Colossal Cleaned Common Crawl dataset and a dataset of Python code from GitHub. The non-autoregressive nature of SUNDAE opens up possibilities beyond left-to-right prompted generation, by filling in arbitrary blank patterns in a template.}, note={arXiv:2112.06749}, number={arXiv:2112.06749}, publisher={arXiv}, author={Savinov, Nikolay and Chung, Junyoung and Binkowski, Mikolaj and Elsen, Erich and Oord, Aaron van den}, year={2022}, month=apr }
+ @article{Shi_Han_Wang_Doucet_Titsias_2024, title={Simplified and Generalized Masked Diffusion for Discrete Data}, url={http://arxiv.org/abs/2406.04329}, DOI={10.48550/arXiv.2406.04329}, abstractNote={Masked (or absorbing) diffusion is actively explored as an alternative to autoregressive models for generative modeling of discrete data. However, existing work in this area has been hindered by unnecessarily complex model formulations and unclear relationships between different perspectives, leading to suboptimal parameterization, training objectives, and ad hoc adjustments to counteract these issues. In this work, we aim to provide a simple and general framework that unlocks the full potential of masked diffusion models. We show that the continuous-time variational objective of masked diffusion models is a simple weighted integral of cross-entropy losses. Our framework also enables training generalized masked diffusion models with state-dependent masking schedules. When evaluated by perplexity, our models trained on OpenWebText surpass prior diffusion language models at GPT-2 scale and demonstrate superior performance on 4 out of 5 zero-shot language modeling tasks. Furthermore, our models vastly outperform previous discrete diffusion models on pixel-level image modeling, achieving 2.78~(CIFAR-10) and 3.42 (ImageNet 64$times$64) bits per dimension that are comparable or better than autoregressive models of similar sizes.}, note={arXiv:2406.04329}, number={arXiv:2406.04329}, publisher={arXiv}, author={Shi, Jiaxin and Han, Kehang and Wang, Zhe and Doucet, Arnaud and Titsias, Michalis K.}, year={2024}, month=jun }
+ @article{Shi_Han_Wang_Doucet_Titsias_2025, title={Simplified and Generalized Masked Diffusion for Discrete Data}, url={http://arxiv.org/abs/2406.04329}, DOI={10.48550/arXiv.2406.04329}, abstractNote={Masked (or absorbing) diffusion is actively explored as an alternative to autoregressive models for generative modeling of discrete data. However, existing work in this area has been hindered by unnecessarily complex model formulations and unclear relationships between different perspectives, leading to suboptimal parameterization, training objectives, and ad hoc adjustments to counteract these issues. In this work, we aim to provide a simple and general framework that unlocks the full potential of masked diffusion models. We show that the continuous-time variational objective of masked diffusion models is a simple weighted integral of cross-entropy losses. Our framework also enables training generalized masked diffusion models with state-dependent masking schedules. When evaluated by perplexity, our models trained on OpenWebText surpass prior diffusion language models at GPT-2 scale and demonstrate superior performance on 4 out of 5 zero-shot language modeling tasks. Furthermore, our models vastly outperform previous discrete diffusion models on pixel-level image modeling, achieving 2.75 (CIFAR-10) and 3.40 (ImageNet 64x64) bits per dimension that are better than autoregressive models of similar sizes. Our code is available at https://github.com/google-deepmind/md4.}, note={arXiv:2406.04329 [cs]}, number={arXiv:2406.04329}, publisher={arXiv}, author={Shi, Jiaxin and Han, Kehang and Wang, Zhe and Doucet, Arnaud and Titsias, Michalis K.}, year={2025}, month=jan }
+ @article{Sun_Yu_Dai_Schuurmans_Dai_2023, title={Score-based Continuous-time Discrete Diffusion Models}, url={http://arxiv.org/abs/2211.16750}, DOI={10.48550/arXiv.2211.16750}, abstractNote={Score-based modeling through stochastic differential equations (SDEs) has provided a new perspective on diffusion models, and demonstrated superior performance on continuous data. However, the gradient of the log-likelihood function, i.e., the score function, is not properly defined for discrete spaces. This makes it non-trivial to adapt textcolor{cdiff}{the score-based modeling} to categorical data. In this paper, we extend diffusion models to discrete variables by introducing a stochastic jump process where the reverse process denoises via a continuous-time Markov chain. This formulation admits an analytical simulation during backward sampling. To learn the reverse process, we extend score matching to general categorical data and show that an unbiased estimator can be obtained via simple matching of the conditional marginal distributions. We demonstrate the effectiveness of the proposed method on a set of synthetic and real-world music and image benchmarks.}, note={arXiv:2211.16750}, number={arXiv:2211.16750}, publisher={arXiv}, author={Sun, Haoran and Yu, Lijun and Dai, Bo and Schuurmans, Dale and Dai, Hanjun}, year={2023}, month=mar }
+ @article{Varma_Nagaraj_Shanmugam_2024, title={Glauber Generative Model: Discrete Diffusion Models via Binary Classification}, url={http://arxiv.org/abs/2405.17035}, DOI={10.48550/arXiv.2405.17035}, abstractNote={We introduce the Glauber Generative Model (GGM), a new class of discrete diffusion models, to obtain new samples from a distribution given samples from a discrete space. GGM deploys a discrete Markov chain called the heat bath dynamics (or the Glauber dynamics) to denoise a sequence of noisy tokens to a sample from a joint distribution of discrete tokens. Our novel conceptual framework provides an exact reduction of the task of learning the denoising Markov chain to solving a class of binary classification tasks. More specifically, the model learns to classify a given token in a noisy sequence as signal or noise. In contrast, prior works on discrete diffusion models either solve regression problems to learn importance ratios, or minimize loss functions given by variational approximations. We apply GGM to language modeling and image generation, where images are discretized using image tokenizers like VQGANs. We show that it outperforms existing discrete diffusion models in language generation, and demonstrates strong performance for image generation without using dataset-specific image tokenizers. We also show that our model is capable of performing well in zero-shot control settings like text and image infilling.}, note={arXiv:2405.17035 [cs]}, number={arXiv:2405.17035}, publisher={arXiv}, author={Varma, Harshit and Nagaraj, Dheeraj and Shanmugam, Karthikeyan}, year={2024}, month=aug }
+ @article{Vignac_Krawczuk_Siraudin_Wang_Cevher_Frossard_2023, title={DiGress: Discrete Denoising diffusion for graph generation}, url={http://arxiv.org/abs/2209.14734}, DOI={10.48550/arXiv.2209.14734}, abstractNote={This work introduces DiGress, a discrete denoising diffusion model for generating graphs with categorical node and edge attributes. Our model utilizes a discrete diffusion process that progressively edits graphs with noise, through the process of adding or removing edges and changing the categories. A graph transformer network is trained to revert this process, simplifying the problem of distribution learning over graphs into a sequence of node and edge classification tasks. We further improve sample quality by introducing a Markovian noise model that preserves the marginal distribution of node and edge types during diffusion, and by incorporating auxiliary graph-theoretic features. A procedure for conditioning the generation on graph-level features is also proposed. DiGress achieves state-of-the-art performance on molecular and non-molecular datasets, with up to 3x validity improvement on a planar graph dataset. It is also the first model to scale to the large GuacaMol dataset containing 1.3M drug-like molecules without the use of molecule-specific representations.}, note={arXiv:2209.14734 [cs]}, number={arXiv:2209.14734}, publisher={arXiv}, author={Vignac, Clement and Krawczuk, Igor and Siraudin, Antoine and Wang, Bohan and Cevher, Volkan and Frossard, Pascal}, year={2023}, month=may }
+ @article{Xu_Geffner_Kreis_Nie_Xu_Leskovec_Ermon_Vahdat_2024, title={Energy-Based Diffusion Language Models for Text Generation}, url={http://arxiv.org/abs/2410.21357}, abstractNote={Despite remarkable progress in autoregressive language models, alternative generative paradigms beyond left-to-right generation are still being actively explored. Discrete diffusion models, with the capacity for parallel generation, have recently emerged as a promising alternative. Unfortunately, these models still underperform the autoregressive counterparts, with the performance gap increasing when reducing the number of sampling steps. Our analysis reveals that this degradation is a consequence of an imperfect approximation used by diffusion models. In this work, we propose Energy-based Diffusion Language Model (EDLM), an energy-based model operating at the full sequence level for each diffusion step, introduced to improve the underlying approximation used by diffusion models. More specifically, we introduce an EBM in a residual form, and show that its parameters can be obtained by leveraging a pretrained autoregressive model or by finetuning a bidirectional transformer via noise contrastive estimation. We also propose an efficient generation algorithm via parallel important sampling. Comprehensive experiments on language modeling benchmarks show that our model can consistently outperform state-of-the-art diffusion models by a significant margin, and approaches autoregressive models’ perplexity. We further show that, without any generation performance drop, our framework offers a 1.3$times$ sampling speedup over existing diffusion models.}, note={arXiv:2410.21357}, number={arXiv:2410.21357}, publisher={arXiv}, author={Xu, Minkai and Geffner, Tomas and Kreis, Karsten and Nie, Weili and Xu, Yilun and Leskovec, Jure and Ermon, Stefano and Vahdat, Arash}, year={2024}, month=oct }
+ @article{Ye_Zheng_Bao_Qian_Wang_2024, title={DINOISER: Diffused Conditional Sequence Learning by Manipulating Noises}, url={http://arxiv.org/abs/2302.10025}, DOI={10.48550/arXiv.2302.10025}, abstractNote={While diffusion models have achieved great success in generating continuous signals such as images and audio, it remains elusive for diffusion models in learning discrete sequence data like natural languages. Although recent advances circumvent this challenge of discreteness by embedding discrete tokens as continuous surrogates, they still fall short of satisfactory generation quality. To understand this, we first dive deep into the denoised training protocol of diffusion-based sequence generative models and determine their three severe problems, i.e., 1) failing to learn, 2) lack of scalability, and 3) neglecting source conditions. We argue that these problems can be boiled down to the pitfall of the not completely eliminated discreteness in the embedding space, and the scale of noises is decisive herein. In this paper, we introduce DINOISER to facilitate diffusion models for sequence generation by manipulating noises. We propose to adaptively determine the range of sampled noise scales for counter-discreteness training; and encourage the proposed diffused sequence learner to leverage source conditions with amplified noise scales during inference. Experiments show that DINOISER enables consistent improvement over the baselines of previous diffusion-based sequence generative models on several conditional sequence modeling benchmarks thanks to both effective training and inference strategies. Analyses further verify that DINOISER can make better use of source conditions to govern its generative process.}, note={arXiv:2302.10025 [cs]}, number={arXiv:2302.10025}, publisher={arXiv}, author={Ye, Jiasheng and Zheng, Zaixiang and Bao, Yu and Qian, Lihua and Wang, Mingxuan}, year={2024}, month=may }
+ @article{Yuan_Yuan_Tan_Huang_Huang_2023, title={SeqDiffuSeq: Text Diffusion with Encoder-Decoder Transformers}, url={http://arxiv.org/abs/2212.10325}, DOI={10.48550/arXiv.2212.10325}, abstractNote={Diffusion model, a new generative modelling paradigm, has achieved great success in image, audio, and video generation. However, considering the discrete categorical nature of text, it is not trivial to extend continuous diffusion models to natural language, and text diffusion models are less studied. Sequence-to-sequence text generation is one of the essential natural language processing topics. In this work, we apply diffusion models to approach sequence-to-sequence text generation, and explore whether the superiority generation performance of diffusion model can transfer to natural language domain. We propose SeqDiffuSeq, a text diffusion model for sequence-to-sequence generation. SeqDiffuSeq uses an encoder-decoder Transformers architecture to model denoising function. In order to improve generation quality, SeqDiffuSeq combines the self-conditioning technique and a newly proposed adaptive noise schedule technique. The adaptive noise schedule has the difficulty of denoising evenly distributed across time steps, and considers exclusive noise schedules for tokens at different positional order. Experiment results illustrate the good performance on sequence-to-sequence generation in terms of text quality and inference time.}, note={arXiv:2212.10325 [cs]}, number={arXiv:2212.10325}, publisher={arXiv}, author={Yuan, Hongyi and Yuan, Zheng and Tan, Chuanqi and Huang, Fei and Huang, Songfang}, year={2023}, month=may }
+ @article{Zheng_Yuan_Yu_Kong_2024, title={A Reparameterized Discrete Diffusion Model for Text Generation}, url={http://arxiv.org/abs/2302.05737}, DOI={10.48550/arXiv.2302.05737}, abstractNote={This work studies discrete diffusion probabilistic models with applications to natural language generation. We derive an alternative yet equivalent formulation of the sampling from discrete diffusion processes and leverage this insight to develop a family of reparameterized discrete diffusion models. The derived generic framework is highly flexible, offers a fresh perspective of the generation process in discrete diffusion models, and features more effective training and decoding techniques. We conduct extensive experiments to evaluate the text generation capability of our model, demonstrating significant improvements over existing diffusion models.}, note={arXiv:2302.05737 [cs]}, number={arXiv:2302.05737}, publisher={arXiv}, author={Zheng, Lin and Yuan, Jianbo and Yu, Lei and Kong, Lingpeng}, year={2024}, month=aug }
+
+@inproceedings{zhang2022langevin,
+  title={A Langevin-like sampler for discrete distributions},
+  author={Zhang, Ruqi and Liu, Xingchao and Liu, Qiang},
+  booktitle={International Conference on Machine Learning},
+  pages={26375--26396},
+  year={2022},
+  organization={PMLR}
+}
+
+
+// change of variables source 
+@article{netuka2011change,
+  title={The change-of-variables theorem for the Lebesgue integral},
+  author={Netuka, Ivan},
+  journal={Acta Univ. M. Belii Ser. Math},
+  volume={19},
+  pages={37--42},
+  year={2011}
+}
+
+// They do a similar approach of integrating over all paths that end in X0
+@article{wu2020stochastic,
+  title={Stochastic normalizing flows},
+  author={Wu, Hao and K{\"o}hler, Jonas and No{\'e}, Frank},
+  journal={Advances in neural information processing systems},
+  volume={33},
+  pages={5933--5944},
+  year={2020}
+}
+
+@article{karras2022elucidating,
+  title={Elucidating the design space of diffusion-based generative models},
+  author={Karras, Tero and Aittala, Miika and Aila, Timo and Laine, Samuli},
+  journal={Advances in neural information processing systems},
+  volume={35},
+  pages={26565--26577},
+  year={2022}
+}
+
+@article{kong1994sequential,
+  title={Sequential imputations and Bayesian missing data problems},
+  author={Kong, Augustine and Liu, Jun S and Wong, Wing Hung},
+  journal={Journal of the American statistical association},
+  volume={89},
+  number={425},
+  pages={278--288},
+  year={1994},
+  publisher={Taylor \& Francis}
+}
+
+@article{vignac2022digress,
+  title={Digress: Discrete denoising diffusion for graph generation},
+  author={Vignac, Clement and Krawczuk, Igor and Siraudin, Antoine and Wang, Bohan and Cevher, Volkan and Frossard, Pascal},
+  journal={arXiv preprint arXiv:2209.14734},
+  year={2022}
+}
+
+@inproceedings{
+sun2023anyscale,
+title={Any-scale Balanced Samplers for Discrete Space},
+author={Haoran Sun and Bo Dai and Charles Sutton and Dale Schuurmans and Hanjun Dai},
+booktitle={The Eleventh International Conference on Learning Representations },
+year={2023},
+url={https://openreview.net/forum?id=lEkl0jdSb7B}
+}
+
+
+@inproceedings{grathwohl2021oops,
+  title={Oops i took a gradient: Scalable sampling for discrete distributions},
+  author={Grathwohl, Will and Swersky, Kevin and Hashemi, Milad and Duvenaud, David and Maddison, Chris},
+  booktitle={International Conference on Machine Learning},
+  pages={3831--3841},
+  year={2021},
+  organization={PMLR}
+}
+
+
+@InProceedings{pmlr-v206-sun23f,
+  title = 	 {Discrete Langevin Samplers via Wasserstein Gradient Flow},
+  author =       {Sun, Haoran and Dai, Hanjun and Dai, Bo and Zhou, Haomin and Schuurmans, Dale},
+  booktitle = 	 {Proceedings of The 26th International Conference on Artificial Intelligence and Statistics},
+  pages = 	 {6290--6313},
+  year = 	 {2023},
+  editor = 	 {Ruiz, Francisco and Dy, Jennifer and van de Meent, Jan-Willem},
+  volume = 	 {206},
+  series = 	 {Proceedings of Machine Learning Research},
+  month = 	 {25--27 Apr},
+  publisher =    {PMLR},
+  pdf = 	 {https://proceedings.mlr.press/v206/sun23f/sun23f.pdf},
+  url = 	 {https://proceedings.mlr.press/v206/sun23f.html},
+  abstract = 	 {It is known that gradient based MCMC samplers for continuous spaces, such as Langevin Monte Carlo (LMC), can be derived as particle versions of a gradient flow that minimizes KL divergence on a Wasserstein manifold. The superior efficiency of such samplers has motivated several recent attempts to generalize LMC to discrete spaces. However, a fully principled extension of Langevin dynamics to discrete has yet to be achieved, due to the lack of well-defined gradients in the sample space. In this work, we show how the Wasserstein gradient flow can be generalized naturally to discrete spaces. Given the proposed formulation, we demonstrate how a discrete analogue of Langevin dynamics can subsequently be developed. With this new understanding, we reveal how recent gradient-based samplers in discrete space can be obtained as special cases by choosing particular discretizations. More importantly, the framework also allows for the derivation of novel algorithms, one of which, discrete Langevin Monte Carlo (DLMC), is obtained by a factorized estimate of the transition matrix. The DLMC method admits a convenient parallel implementation and time-uniform sampling that achieves larger jump distances. We demonstrate the advantages of DLMC for sampling and learning in various binary and categorical distributions.}
+}
+
+@inproceedings{
+arriola2025block,
+title={Block Diffusion: Interpolating Between Autoregressive and Diffusion Language Models},
+author={Marianne Arriola and Aaron Gokaslan and Justin T Chiu and Zhihan Yang and Zhixuan Qi and Jiaqi Han and Subham Sekhar Sahoo and Volodymyr Kuleshov},
+booktitle={The Thirteenth International Conference on Learning Representations},
+year={2025},
+url={https://arxiv.org/abs/2503.09573}
+}
+
+@article{vincent2011connection,
+  title={A connection between score matching and denoising autoencoders},
+  author={Vincent, Pascal},
+  journal={Neural computation},
+  volume={23},
+  number={7},
+  pages={1661--1674},
+  year={2011},
+  publisher={MIT Press}
+}
+
+@article{song2020score,
+  title={Score-based generative modeling through stochastic differential equations},
+  author={Song, Yang and Sohl-Dickstein, Jascha and Kingma, Diederik P and Kumar, Abhishek and Ermon, Stefano and Poole, Ben},
+  journal={arXiv preprint arXiv:2011.13456},
+  year={2020}
+}
+
+@article{jo2025continuous,
+  title={Continuous Diffusion Model for Language Modeling},
+  author={Jo, Jaehyeong and Hwang, Sung Ju},
+  journal={arXiv preprint arXiv:2502.11564},
+  year={2025}
+}
+
+@article{dieleman2022continuous,
+  title={Continuous diffusion for categorical data},
+  author={Dieleman, Sander and Sartran, Laurent and Roshannai, Arman and Savinov, Nikolay and Ganin, Yaroslav and Richemond, Pierre H and Doucet, Arnaud and Strudel, Robin and Dyer, Chris and Durkan, Conor and others},
+  journal={arXiv preprint arXiv:2211.15089},
+  year={2022}
+}
+
+@article{lovelace2023latent,
+  title={Latent diffusion for language generation},
+  author={Lovelace, Justin and Kishore, Varsha and Wan, Chao and Shekhtman, Eliot and Weinberger, Kilian Q},
+  journal={Advances in Neural Information Processing Systems},
+  volume={36},
+  pages={56998--57025},
+  year={2023}
+}
+
+@article{li2022diffusion,
+  title={Diffusion-lm improves controllable text generation},
+  author={Li, Xiang and Thickstun, John and Gulrajani, Ishaan and Liang, Percy S and Hashimoto, Tatsunori B},
+  journal={Advances in neural information processing systems},
+  volume={35},
+  pages={4328--4343},
+  year={2022}
+}
+
+@inproceedings{rombach2022high,
+  title={High-resolution image synthesis with latent diffusion models},
+  author={Rombach, Robin and Blattmann, Andreas and Lorenz, Dominik and Esser, Patrick and Ommer, Bj{\"o}rn},
+  booktitle={Proceedings of the IEEE/CVF conference on computer vision and pattern recognition},
+  pages={10684--10695},
+  year={2022}
+}
+
+@inproceedings{radford2021learning,
+  title={Learning transferable visual models from natural language supervision},
+  author={Radford, Alec and Kim, Jong Wook and Hallacy, Chris and Ramesh, Aditya and Goh, Gabriel and Agarwal, Sandhini and Sastry, Girish and Askell, Amanda and Mishkin, Pamela and Clark, Jack and others},
+  booktitle={International conference on machine learning},
+  pages={8748--8763},
+  year={2021},
+  organization={PmLR}
+}
+
+@article{song2019generative,
+  title={Generative modeling by estimating gradients of the data distribution},
+  author={Song, Yang and Ermon, Stefano},
+  journal={Advances in neural information processing systems},
+  volume={32},
+  year={2019}
+}
+
+@article{hoogeboom2021argmax,
+  title={Argmax flows and multinomial diffusion: Learning categorical distributions},
+  author={Hoogeboom, Emiel and Nielsen, Didrik and Jaini, Priyank and Forr{\'e}, Patrick and Welling, Max},
+  journal={Advances in neural information processing systems},
+  volume={34},
+  pages={12454--12465},
+  year={2021}
+}
+
+@article{strudel2022self,
+  title={Self-conditioned embedding diffusion for text generation},
+  author={Strudel, Robin and Tallec, Corentin and Altch{\'e}, Florent and Du, Yilun and Ganin, Yaroslav and Mensch, Arthur and Grathwohl, Will and Savinov, Nikolay and Dieleman, Sander and Sifre, Laurent and others},
+  journal={arXiv preprint arXiv:2211.04236},
+  year={2022}
+}
+
+@inproceedings{
+gu2024discrete,
+title={Discrete Modeling via Boundary Conditional Diffusion Processes},
+author={Yuxuan Gu and Xiaocheng Feng and Lei Huang and Yingsheng Wu and Zekun Zhou and Weihong Zhong and kun Zhu and Bing Qin},
+booktitle={The Thirty-eighth Annual Conference on Neural Information Processing Systems},
+year={2024},
+url={https://openreview.net/forum?id=7AWMTPMZES}
+} 
+
+@article{jo2025continuous,
+  title={Continuous Diffusion Model for Language Modeling},
+  author={Jo, Jaehyeong and Hwang, Sung Ju},
+  journal={arXiv preprint arXiv:2502.11564},
+  year={2025}
+}
+
+@article{song2020denoising,
+  title={Denoising diffusion implicit models},
+  author={Song, Jiaming and Meng, Chenlin and Ermon, Stefano},
+  journal={arXiv preprint arXiv:2010.02502},
+  year={2020}
+}
+
+@article{ho2022classifier,
+  title={Classifier-free diffusion guidance},
+  author={Ho, Jonathan and Salimans, Tim},
+  journal={arXiv preprint arXiv:2207.12598},
+  year={2022}
+}
+
+@book{cover2006elements,
+  title={Elements of Information Theory},
+  author={Cover, Thomas M. and Thomas, Joy A.},
+  year={2006},
+  edition={2},
+  publisher={Wiley-Interscience}
+}
+
+@misc{dieleman2024spectral,
+  author = {Dieleman, Sander},
+  title = {Diffusion is spectral autoregression},
+  url = {https://sander.ai/2024/09/02/spectral-autoregression.html},
+  year = {2024}
+}
+
+@article{schiff2024simple,
+  title={Simple Guidance Mechanisms for Discrete Diffusion Models},
+  author={Schiff, Yair and Sahoo, Subham Sekhar and Phung, Hao and Wang, Guanghan and Boshar, Sam and Dalla-torre, Hugo and de Almeida, Bernardo P and Rush, Alexander and Pierrot, Thomas and Kuleshov, Volodymyr},
+  journal={arXiv preprint arXiv:2412.10193},
+  year={2024}
+}
+
+@article{dobrushin1956central,
+  title={Central limit theorem for nonstationary Markov chains. II},
+  author={Dobrushin, Roland L},
+  journal={Theory of Probability \& Its Applications},
+  volume={1},
+  number={4},
+  pages={329--383},
+  year={1956},
+  publisher={SIAM}
+}
+
+@article{rosenthal1995minorization,
+  title={Minorization conditions and convergence rates for Markov chain Monte Carlo},
+  author={Rosenthal, Jeffrey S},
+  journal={Journal of the American Statistical Association},
+  volume={90},
+  number={430},
+  pages={558--566},
+  year={1995},
+  publisher={Taylor \& Francis}
+}
+
+@article{johndrow2015optimal,
+  title={Optimal approximating Markov chains for Bayesian inference},
+  author={Johndrow, James E and Mattingly, Jonathan C and Mukherjee, Sayan and Dunson, David},
+  journal={arXiv preprint arXiv:1508.03387},
+  year={2015}
+}
+
+@book{LevinPeresWilmer2006,
+  added-at = {2010-01-19T17:51:27.000+0100},
+  author = {Levin, David A. and Peres, Yuval and Wilmer, Elizabeth L.},
+  biburl = {https://www.bibsonomy.org/bibtex/2097dc4d1d0e412b2444f540b04110797/tmalsburg},
+  interhash = {61354795a6accb6407bfdbf04753a683},
+  intrahash = {097dc4d1d0e412b2444f540b04110797},
+  keywords = {markovchains probabilitytheory textbook},
+  publisher = {American Mathematical Society},
+  timestamp = {2010-01-19T17:51:27.000+0100},
+  title = {{Markov chains and mixing times}},
+  url = {http://scholar.google.com/scholar.bib?q=info:3wf9IU94tyMJ:scholar.google.com/&output=citation&hl=en&as_sdt=2000&ct=citation&cd=0},
+  year = 2006
+}
+@article{gaubert2015dobrushin,
+  title={Dobrushin’s ergodicity coefficient for Markov operators on cones},
+  author={Gaubert, St{\'e}phane and Qu, Zheng},
+  journal={Integral Equations and Operator Theory},
+  volume={81},
+  number={1},
+  pages={127--150},
+  year={2015},
+  publisher={Springer}
+}
+
+@article{barata2012moore,
+  title={The Moore--Penrose pseudoinverse: A tutorial review of the theory},
+  author={Barata, Jo{\~a}o Carlos Alves and Hussein, Mahir Saleh},
+  journal={Brazilian Journal of Physics},
+  volume={42},
+  number={1},
+  pages={146--165},
+  year={2012},
+  publisher={Springer}
+}
+
+@book{seneta2006non,
+  title={Non-negative matrices and Markov chains},
+  author={Seneta, Eugene},
+  year={2006},
+  publisher={Springer Science \& Business Media}
+}
+
+@article{wang2025remasking,
+  title={Remasking discrete diffusion models with inference-time scaling},
+  author={Wang, Guanghan and Schiff, Yair and Sahoo, Subham Sekhar and Kuleshov, Volodymyr},
+  journal={arXiv preprint arXiv:2503.00307},
+  year={2025}
+}
+@inproceedings{
+sahoo2025diffusion,
+title={The Diffusion Duality},
+author={Subham Sekhar Sahoo and Justin Deschenaux and Aaron Gokaslan and Guanghan Wang and Justin T Chiu and Volodymyr Kuleshov},
+booktitle={Forty-second International Conference on Machine Learning},
+year={2025},
+url={https://openreview.net/forum?id=9P9Y8FOSOk}
+}
+
+@article{sahoo2025esoteric,
+  title={Esoteric Language Models},
+  author={Sahoo, Subham Sekhar and Yang, Zhihan and Akhauri, Yash and Liu, Johnna and Singh, Deepansha and Cheng, Zhoujun and Liu, Zhengzhong and Xing, Eric and Thickstun, John and Vahdat, Arash},
+  journal={arXiv preprint arXiv:2506.01928},
+  year={2025}
+}
+
+@article{chen2022analog,
+  title={Analog bits: Generating discrete data using diffusion models with self-conditioning},
+  author={Chen, Ting and Zhang, Ruixiang and Hinton, Geoffrey},
+  journal={arXiv preprint arXiv:2208.04202},
+  year={2022}
+}
+
+@article{gulrajani2023likelihood,
+  title={Likelihood-based diffusion language models},
+  author={Gulrajani, Ishaan and Hashimoto, Tatsunori B},
+  journal={Advances in Neural Information Processing Systems},
+  volume={36},
+  pages={16693--16715},
+  year={2023}
+}
+
+@article{nie2025large,
+  title={Large language diffusion models},
+  author={Nie, Shen and Zhu, Fengqi and You, Zebin and Zhang, Xiaolu and Ou, Jingyang and Hu, Jun and Zhou, Jun and Lin, Yankai and Wen, Ji-Rong and Li, Chongxuan},
+  journal={arXiv preprint arXiv:2502.09992},
+  year={2025}
+}
+
+@article{ye2025dream,
+  title={Dream 7b: Diffusion large language models},
+  author={Ye, Jiacheng and Xie, Zhihui and Zheng, Lin and Gao, Jiahui and Wu, Zirui and Jiang, Xin and Li, Zhenguo and Kong, Lingpeng},
+  journal={arXiv preprint arXiv:2508.15487},
+  year={2025}
+}
+
+@article{zheng2024masked,
+  title={Masked diffusion models are secretly time-agnostic masked models and exploit inaccurate categorical sampling},
+  author={Zheng, Kaiwen and Chen, Yongxin and Mao, Hanzi and Liu, Ming-Yu and Zhu, Jun and Zhang, Qinsheng},
+  journal={arXiv preprint arXiv:2409.02908},
+  year={2024}
+}
+
+@article{pope2023efficiently,
+  title={Efficiently scaling transformer inference},
+  author={Pope, Reiner and Douglas, Sholto and Chowdhery, Aakanksha and Devlin, Jacob and Bradbury, James and Heek, Jonathan and Xiao, Kefan and Agrawal, Shivani and Dean, Jeff},
+  journal={Proceedings of machine learning and systems},
+  volume={5},
+  pages={606--624},
+  year={2023}
+}
+
+@article{ma2025dkv,
+  title={dkv-cache: The cache for diffusion language models},
+  author={Ma, Xinyin and Yu, Runpeng and Fang, Gongfan and Wang, Xinchao},
+  journal={arXiv preprint arXiv:2505.15781},
+  year={2025}
+}
+
+@article{deschenaux2024beyond,
+  title={Beyond autoregression: Fast llms via self-distillation through time},
+  author={Deschenaux, Justin and Gulcehre, Caglar},
+  journal={arXiv preprint arXiv:2410.21035},
+  year={2024}
+}
+
+@article{cetin2025large,
+  title={Large Language Models to Diffusion Finetuning},
+  author={Cetin, Edoardo and Zhao, Tianyu and Tang, Yujin},
+  journal={arXiv preprint arXiv:2501.15781},
+  year={2025}
+}
+
+@article{nie2024scaling,
+  title={Scaling up masked diffusion models on text},
+  author={Nie, Shen and Zhu, Fengqi and Du, Chao and Pang, Tianyu and Liu, Qian and Zeng, Guangtao and Lin, Min and Li, Chongxuan},
+  journal={arXiv preprint arXiv:2410.18514},
+  year={2024}
+}
+
+@misc{Gokaslan2019OpenWeb,
+    title={OpenWebText Corpus},
+    author={Gokaslan, Aaron and Cohen, Vanya and Pavlick, Ellie and Tellex, Stefanie},
+    howpublished={\url{http://Skylion007.github.io/OpenWebTextCorpus}},
+    year={2019}
+}
+
+@article{radford2019language,
+  title={Language models are unsupervised multitask learners},
+  author={Radford, Alec and Wu, Jeffrey and Child, Rewon and Luan, David and Amodei, Dario and Sutskever, Ilya and others},
+  journal={OpenAI blog},
+  volume={1},
+  number={8},
+  pages={9},
+  year={2019}
+}
+
+@article{li2025unifying,
+  title={Unifying Continuous and Discrete Text Diffusion with Non-simultaneous Diffusion Processes},
+  author={Li, Bocheng and Gao, Zhujin and Xu, Linli},
+  journal={arXiv preprint arXiv:2505.22165},
+  year={2025}
+}
+
+@article{chen2023cheaper,
+  title={A cheaper and better diffusion language model with soft-masked noise},
+  author={Chen, Jiaao and Zhang, Aston and Li, Mu and Smola, Alex and Yang, Diyi},
+  journal={arXiv preprint arXiv:2304.04746},
+  year={2023}
+}
+
+@article{zhu2025di,
+  title={DiMO: Distilling Masked Diffusion Models into One-step Generator},
+  author={Zhu, Yuanzhi and Wang, Xi and Lathuiliere, Stephane and Kalogeiton, Vicky},
+  journal={arXiv preprint arXiv:2503.15457},
+  year={2025}
+}
+
+@article{chen2025dlm,
+  title={DLM-One: Diffusion Language Models for One-Step Sequence Generation},
+  author={Chen, Tianqi and Zhang, Shujian and Zhou, Mingyuan},
+  journal={arXiv preprint arXiv:2506.00290},
+  year={2025}
+}
+
+@inproceedings{peebles2023scalable,
+  title={Scalable diffusion models with transformers},
+  author={Peebles, William and Xie, Saining},
+  booktitle={Proceedings of the IEEE/CVF international conference on computer vision},
+  pages={4195--4205},
+  year={2023}
+}
+
+@article{loshchilov2017decoupled,
+  title={Decoupled weight decay regularization},
+  author={Loshchilov, Ilya and Hutter, Frank},
+  journal={arXiv preprint arXiv:1711.05101},
+  year={2017}
+}
+
+@article{du2025optimizing,
+  title={Optimizing temperature for language models with multi-sample inference},
+  author={Du, Weihua and Yang, Yiming and Welleck, Sean},
+  journal={arXiv preprint arXiv:2502.05234},
+  year={2025}
+}
+
+@article{holtzman2019curious,
+  title={The curious case of neural text degeneration},
+  author={Holtzman, Ari and Buys, Jan and Du, Li and Forbes, Maxwell and Choi, Yejin},
+  journal={arXiv preprint arXiv:1904.09751},
+  year={2019}
+}
+
+@article{achiam2023gpt,
+  title={Gpt-4 technical report},
+  author={Achiam, Josh and Adler, Steven and Agarwal, Sandhini and Ahmad, Lama and Akkaya, Ilge and Aleman, Florencia Leoni and Almeida, Diogo and Altenschmidt, Janko and Altman, Sam and Anadkat, Shyamal and others},
+  journal={arXiv preprint arXiv:2303.08774},
+  year={2023}
+}
+
+@article{touvron2023llama,
+  title={Llama 2: Open foundation and fine-tuned chat models},
+  author={Touvron, Hugo and Martin, Louis and Stone, Kevin and Albert, Peter and Almahairi, Amjad and Babaei, Yasmine and Bashlykov, Nikolay and Batra, Soumya and Bhargava, Prajjwal and Bhosale, Shruti and others},
+  journal={arXiv preprint arXiv:2307.09288},
+  year={2023}
+}
+
+@article{liu2024deepseek,
+  title={Deepseek-v3 technical report},
+  author={Liu, Aixin and Feng, Bei and Xue, Bing and Wang, Bingxuan and Wu, Bochao and Lu, Chengda and Zhao, Chenggang and Deng, Chengqi and Zhang, Chenyu and Ruan, Chong and others},
+  journal={arXiv preprint arXiv:2412.19437},
+  year={2024}
+}
+@inproceedings{sohl2015deep,
+  title={Deep unsupervised learning using nonequilibrium thermodynamics},
+  author={Sohl-Dickstein, Jascha and Weiss, Eric and Maheswaranathan, Niru and Ganguli, Surya},
+  booktitle={International conference on machine learning},
+  pages={2256--2265},
+  year={2015},
+  organization={pmlr}
+}
+@article{pynadath2024gradient,
+  title={Gradient-based discrete sampling with automatic cyclical scheduling},
+  author={Pynadath, Patrick and Bhattacharya, Riddhiman and Hariharan, Arun and Zhang, Ruqi},
+  journal={Advances in Neural Information Processing Systems},
+  volume={37},
+  pages={46728--46763},
+  year={2024}
+}
+
+@misc{mahoney2011text8,
+  author       = {Matt Mahoney},
+  title        = {text8 dataset},
+  year         = {2011},
+  howpublished = {\url{http://mattmahoney.net/dc/textdata}},
+}
+
+@article{kingma2021variational,
+  title={Variational diffusion models},
+  author={Kingma, Diederik and Salimans, Tim and Poole, Ben and Ho, Jonathan},
+  journal={Advances in neural information processing systems},
+  volume={34},
+  pages={21696--21707},
+  year={2021}
+}
+
+@article{gao2022empowering,
+  title={Empowering diffusion models on the embedding space for text generation},
+  author={Gao, Zhujin and Guo, Junliang and Tan, Xu and Zhu, Yongxin and Zhang, Fang and Bian, Jiang and Xu, Linli},
+  journal={arXiv preprint arXiv:2212.09412},
+  year={2022}
+}
+
+@article{nguyen2024improving,
+  title={Improving vector-quantized image modeling with latent consistency-matching diffusion},
+  author={Nguyen, Bac and Lai, Chieh-Hsin and Takida, Yuhta and Murata, Naoki and Uesaka, Toshimitsu and Ermon, Stefano and Mitsufuji, Yuki},
+  journal={arXiv preprint arXiv:2410.14758},
+  year={2024}
+}
+
+@article{austin2021structured,
+  title={Structured denoising diffusion models in discrete state-spaces},
+  author={Austin, Jacob and Johnson, Daniel D and Ho, Jonathan and Tarlow, Daniel and Van Den Berg, Rianne},
+  journal={Advances in neural information processing systems},
+  volume={34},
+  pages={17981--17993},
+  year={2021}
+}
+
+@article{zheng2025continuously,
+  title={Continuously Augmented Discrete Diffusion model for Categorical Generative Modeling},
+  author={Zheng, Huangjie and Gong, Shansan and Zhang, Ruixiang and Chen, Tianrong and Gu, Jiatao and Zhou, Mingyuan and Jaitly, Navdeep and Zhang, Yizhe},
+  journal={arXiv preprint arXiv:2510.01329},
+  year={2025}
+}
+
+@article{zhou2025coevolutionary,
+  title={Coevolutionary Continuous Discrete Diffusion: Make Your Diffusion Language Model a Latent Reasoner},
+  author={Zhou, Cai and Yang, Chenxiao and Hu, Yi and Wang, Chenyu and Zhang, Chubin and Zhang, Muhan and Mackey, Lester and Jaakkola, Tommi and Bates, Stephen and Zhang, Dinghuai},
+  journal={arXiv preprint arXiv:2510.03206},
+  year={2025}
+}
+
+@article{stancevic2025entropic,
+  title={Entropic time schedulers for generative diffusion models},
+  author={Stancevic, Dejan and Handke, Florian and Ambrogioni, Luca},
+  journal={arXiv preprint arXiv:2504.13612},
+  year={2025}
+}
+
+@article{meshchaninov2025compressed,
+  title={Compressed and Smooth Latent Space for Text Diffusion Modeling},
+  author={Meshchaninov, Viacheslav and Chimbulatov, Egor and Shabalin, Alexander and Abramov, Aleksandr and Vetrov, Dmitry},
+  journal={arXiv preprint arXiv:2506.21170},
+  year={2025}
+}
+
+@inproceedings{shabalin2025tencdm,
+  title={Tencdm: Understanding the properties of the diffusion model in the space of language model encodings},
+  author={Shabalin, Alexander and Meshchaninov, Viacheslav and Chimbulatov, Egor and Lapikov, Vladislav and Kim, Roman and Bartosh, Grigory and Molchanov, Dmitry and Markov, Sergey and Vetrov, Dmitry},
+  booktitle={Proceedings of the AAAI Conference on Artificial Intelligence},
+  volume={39},
+  number={23},
+  pages={25110--25118},
+  year={2025}
+}
+
+@misc{lee2026onesteplanguagemodelingcontinuous,
+      title={One-step Language Modeling via Continuous Denoising}, 
+      author={Chanhyuk Lee and Jaehoon Yoo and Manan Agarwal and Sheel Shah and Jerry Huang and Aditi Raghunathan and Seunghoon Hong and Nicholas M. Boffi and Jinwoo Kim},
+      year={2026},
+      eprint={2602.16813},
+      archivePrefix={arXiv},
+      primaryClass={cs.CL},
+      url={https://arxiv.org/abs/2602.16813}, 
+}
+
+@misc{roos2026categoricalflowmaps,
+      title={Categorical Flow Maps}, 
+      author={Daan Roos and Oscar Davis and Floor Eijkelboom and Michael Bronstein and Max Welling and İsmail İlkan Ceylan and Luca Ambrogioni and Jan-Willem van de Meent},
+      year={2026},
+      eprint={2602.12233},
+      archivePrefix={arXiv},
+      primaryClass={cs.LG},
+      url={https://arxiv.org/abs/2602.12233}, 
+}
+
+@misc{pynadath2025candihybriddiscretecontinuousdiffusion,
+      title={CANDI: Hybrid Discrete-Continuous Diffusion Models}, 
+      author={Patrick Pynadath and Jiaxin Shi and Ruqi Zhang},
+      year={2025},
+      eprint={2510.22510},
+      archivePrefix={arXiv},
+      primaryClass={cs.LG},
+      url={https://arxiv.org/abs/2510.22510}, 
+}
+
+@misc{theis2016noteevaluationgenerativemodels,
+      title={A note on the evaluation of generative models}, 
+      author={Lucas Theis and Aäron van den Oord and Matthias Bethge},
+      year={2016},
+      eprint={1511.01844},
+      archivePrefix={arXiv},
+      primaryClass={stat.ML},
+      url={https://arxiv.org/abs/1511.01844}, 
+}
+
+@misc{brown2020languagemodelsfewshotlearners,
+      title={Language Models are Few-Shot Learners}, 
+      author={Tom B. Brown and Benjamin Mann and Nick Ryder and Melanie Subbiah and Jared Kaplan and Prafulla Dhariwal and Arvind Neelakantan and Pranav Shyam and Girish Sastry and Amanda Askell and Sandhini Agarwal and Ariel Herbert-Voss and Gretchen Krueger and Tom Henighan and Rewon Child and Aditya Ramesh and Daniel M. Ziegler and Jeffrey Wu and Clemens Winter and Christopher Hesse and Mark Chen and Eric Sigler and Mateusz Litwin and Scott Gray and Benjamin Chess and Jack Clark and Christopher Berner and Sam McCandlish and Alec Radford and Ilya Sutskever and Dario Amodei},
+      year={2020},
+      eprint={2005.14165},
+      archivePrefix={arXiv},
+      primaryClass={cs.CL},
+      url={https://arxiv.org/abs/2005.14165}, 
+}
+
+@misc{chelba2014billionwordbenchmarkmeasuring,
+      title={One Billion Word Benchmark for Measuring Progress in Statistical Language Modeling}, 
+      author={Ciprian Chelba and Tomas Mikolov and Mike Schuster and Qi Ge and Thorsten Brants and Phillipp Koehn and Tony Robinson},
+      year={2014},
+      eprint={1312.3005},
+      archivePrefix={arXiv},
+      primaryClass={cs.CL},
+      url={https://arxiv.org/abs/1312.3005}, 
+}
+
+@misc{wang2019bertmouthspeakbert,
+      title={BERT has a Mouth, and It Must Speak: BERT as a Markov Random Field Language Model}, 
+      author={Alex Wang and Kyunghyun Cho},
+      year={2019},
+      eprint={1902.04094},
+      archivePrefix={arXiv},
+      primaryClass={cs.CL},
+      url={https://arxiv.org/abs/1902.04094}, 
+}
+
+@misc{ou2025absorbingdiscretediffusionsecretly,
+      title={Your Absorbing Discrete Diffusion Secretly Models the Conditional Distributions of Clean Data}, 
+      author={Jingyang Ou and Shen Nie and Kaiwen Xue and Fengqi Zhu and Jiacheng Sun and Zhenguo Li and Chongxuan Li},
+      year={2025},
+      eprint={2406.03736},
+      archivePrefix={arXiv},
+      primaryClass={cs.LG},
+      url={https://arxiv.org/abs/2406.03736}, 
+}
+
+@misc{devlin2019bertpretrainingdeepbidirectional,
+      title={BERT: Pre-training of Deep Bidirectional Transformers for Language Understanding}, 
+      author={Jacob Devlin and Ming-Wei Chang and Kenton Lee and Kristina Toutanova},
+      year={2019},
+      eprint={1810.04805},
+      archivePrefix={arXiv},
+      primaryClass={cs.CL},
+      url={https://arxiv.org/abs/1810.04805}, 
+}
+
+@misc{zheng2025continuouslyaugmenteddiscretediffusion,
+      title={Continuously Augmented Discrete Diffusion model for Categorical Generative Modeling}, 
+      author={Huangjie Zheng and Shansan Gong and Ruixiang Zhang and Tianrong Chen and Jiatao Gu and Mingyuan Zhou and Navdeep Jaitly and Yizhe Zhang},
+      year={2025},
+      eprint={2510.01329},
+      archivePrefix={arXiv},
+      primaryClass={stat.ML},
+      url={https://arxiv.org/abs/2510.01329}, 
+}
+
+@misc{wang2026remaskingdiscretediffusionmodels,
+      title={Remasking Discrete Diffusion Models with Inference-Time Scaling}, 
+      author={Guanghan Wang and Yair Schiff and Subham Sekhar Sahoo and Volodymyr Kuleshov},
+      year={2026},
+      eprint={2503.00307},
+      archivePrefix={arXiv},
+      primaryClass={cs.LG},
+      url={https://arxiv.org/abs/2503.00307}, 
+}
+
+@misc{meshchaninov2026cosmoscompressedsmoothlatent,
+      title={Cosmos: Compressed and Smooth Latent Space for Text Diffusion Modeling}, 
+      author={Viacheslav Meshchaninov and Egor Chimbulatov and Alexander Shabalin and Aleksandr Abramov and Dmitry Vetrov},
+      year={2026},
+      eprint={2506.21170},
+      archivePrefix={arXiv},
+      primaryClass={cs.CL},
+      url={https://arxiv.org/abs/2506.21170}, 
+}
+
+@misc{pillutla2021mauvemeasuringgapneural,
+      title={MAUVE: Measuring the Gap Between Neural Text and Human Text using Divergence Frontiers}, 
+      author={Krishna Pillutla and Swabha Swayamdipta and Rowan Zellers and John Thickstun and Sean Welleck and Yejin Choi and Zaid Harchaoui},
+      year={2021},
+      eprint={2102.01454},
+      archivePrefix={arXiv},
+      primaryClass={cs.CL},
+      url={https://arxiv.org/abs/2102.01454}, 
+}

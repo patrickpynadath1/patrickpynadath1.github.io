@@ -1,0 +1,21 @@
+{
+  "pandocCiter.bibliographies": [
+    "/Users/patrickpynadath/Documents/patrickpynadath1.github.io/src/content/blog/dlm_bibliography.bib"
+  ],
+  "pandocCiter.useDefaultBib": true,
+  "pandocCiter.defaultBib": "/Users/patrickpynadath/Documents/patrickpynadath1.github.io/src/content/blog/dlm_bibliography.bib",
+  "pandocCiter.formatStyle": "pandoc",
+  "pandocCiter.citenameFormat": "author",
+  "files.associations": {
+    "*.mdx": "markdown"
+  },
+  "[markdown]": {
+    "editor.quickSuggestions": {
+      "other": true,
+      "comments": false,
+      "strings": true
+    },
+    "editor.suggest.showWords": false,
+    "editor.suggest.showSnippets": true
+  }
+}

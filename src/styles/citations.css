@@ -1,0 +1,42 @@
+/* Citation styling for better spacing and appearance */
+.citation {
+  margin: 0 0.2em;
+  padding: 0.1em 0.3em;
+  background: rgba(0, 0, 0, 0.05);
+  border-radius: 3px;
+  text-decoration: none;
+  font-weight: 500;
+}
+
+.citation:hover {
+  background: rgba(0, 0, 0, 0.1);
+}
+
+/* Bibliography styling */
+.csl-bib-body {
+  line-height: 1.6;
+  margin-top: 2rem;
+}
+
+.csl-entry {
+  margin-bottom: 1em;
+  display: flex;
+  align-items: flex-start;
+}
+
+/* Fix the numbered bibliography formatting */
+.csl-left-margin {
+  margin-right: 0.5em;
+  min-width: 2em;
+  display: inline-block;
+}
+
+.csl-right-inline {
+  flex: 1;
+  display: inline-block;
+}
+
+/* Numbered citation styling */
+.csl-citation {
+  margin: 0 0.25em;
+}

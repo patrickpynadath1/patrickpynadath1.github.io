@@ -1,6 +1,7 @@
 @import './tokens.css';
 @import './themes.css';
 @import './utils.css';
+@import './citations.css';
 @import './components/hero.css';
 @import './components/tldr.css';
 @import './components/project.css';

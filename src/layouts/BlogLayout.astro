@@ -16,24 +16,463 @@ const formattedDate = publishDate
   : null;
 ---
 <BaseLayout title={`${title} | Blog`} description={description}>
-  <main class="blog-shell">
-    <article class="blog-article">
-      <header>
-        <p class="blog-meta">
-          {formattedDate && <span>{formattedDate}</span>}
-          {tags.length > 0 && (
-            <span class="tag-list">
-              {tags.map((tag) => <TagPill label={tag} />)}
-            </span>
-          )}
-        </p>
-        <h1>{title}</h1>
-        {description && <p class="post-description">{description}</p>}
-        {heroImage && <img class="blog-hero-image" src={heroImage} alt="" loading="lazy" />}
-      </header>
-      <section class="blog-content">
-        <slot />
-      </section>
-    </article>
-  </main>
+  <meta name="robots" content="noindex, nofollow" slot="head" />
+  <div class="blog-theme">
+    <main class="blog-shell">
+      <div class="blog-body">
+        <!-- Navigation buttons -->
+        <div class="blog-nav-buttons">
+          <button class="nav-btn nav-btn--up" title="Previous section" aria-label="Go to previous section">
+            ↑
+          </button>
+          <button class="nav-btn nav-btn--down" title="Next section" aria-label="Go to next section">
+            ↓
+          </button>
+        </div>
+
+        <article class="blog-article">
+          <header>
+            <p class="blog-meta">
+              {formattedDate && <span>{formattedDate}</span>}
+              {tags.length > 0 && (
+                <span class="tag-list">
+                  {tags.map((tag) => <TagPill label={tag} />)}
+                </span>
+              )}
+            </p>
+            <h1>{title}</h1>
+            {description && <p class="post-description">{description}</p>}
+            {heroImage && <img class="blog-hero-image" src={heroImage} alt="" loading="lazy" />}
+          </header>
+          <section class="blog-content">
+            <slot />
+          </section>
+        </article>
+      </div>
+    </main>
+  </div>
+
+  <style is:global>
+    /* Global overrides to ensure headings stand out even when Bulma/content styles are present */
+    .blog-article .blog-content h1,
+    .blog-article .blog-content h2,
+    .blog-article .blog-content h3,
+    .blog-article .blog-content h4 {
+      font-family: var(--font-heading) !important;
+      font-weight: 700 !important;
+      letter-spacing: 0.01em !important;
+    }
+
+    .blog-article .blog-content h1 {
+      color: var(--color-accent) !important;
+      font-size: clamp(2.1rem, 3vw, 3rem) !important;
+      line-height: 1.15 !important;
+      margin: var(--space-xl) 0 var(--space-md) !important;
+      text-shadow: var(--glow-accent) !important;
+      scroll-margin-top: 96px;
+    }
+
+    .blog-article .blog-content h2 {
+      color: var(--color-text) !important;
+      font-size: clamp(1.5rem, 2.2vw, 2.2rem) !important;
+      line-height: 1.2 !important;
+      margin: var(--space-lg) 0 var(--space-sm) !important;
+      padding-left: 14px !important;
+      border-left: 3px solid var(--color-accent) !important;
+      box-shadow: inset 0 -1px 0 var(--color-border) !important;
+      scroll-margin-top: 96px;
+    }
+
+    .blog-article .blog-content h3 {
+      color: var(--color-accent) !important;
+      font-size: clamp(1.25rem, 1.8vw, 1.6rem) !important;
+      line-height: 1.25 !important;
+      margin: var(--space-md) 0 var(--space-sm) !important;
+      scroll-margin-top: 96px;
+    }
+
+    .blog-article .blog-content hr {
+      border: none !important;
+      height: 1px;
+      margin: var(--space-lg) 0;
+      background: linear-gradient(90deg, transparent, var(--color-border), transparent);
+    }
+
+    .blog-article .blog-content strong,
+    .blog-article .blog-content b {
+      color: var(--color-accent) !important;
+      font-weight: 700 !important;
+    }
+
+    .blog-article .blog-content ol,
+    .blog-article .blog-content ul {
+      padding-left: 1.5rem !important;
+      margin-left: 0 !important;
+      margin-bottom: var(--space-sm) !important;
+    }
+
+    .blog-article .blog-content ol ol,
+    .blog-article .blog-content ul ul {
+      padding-left: 1.25rem !important;
+    }
+
+    /* Expandable Section Styles - Added inline for better specificity */
+    .expandable-section {
+      background: linear-gradient(145deg, rgba(15, 24, 43, 0.6), rgba(31, 45, 74, 0.3));
+      border: 1px solid rgba(31, 45, 74, 0.8);
+      border-radius: 12px;
+      margin: 2rem 0;
+      overflow: hidden;
+      transition: all 0.3s ease;
+      backdrop-filter: blur(8px);
+    }
+
+    .expandable-section:hover {
+      border-color: rgba(143, 234, 255, 0.3);
+      box-shadow: 0 4px 20px rgba(3, 8, 21, 0.3);
+    }
+
+    .expandable-toggle {
+      width: 100%;
+      padding: 1.25rem 1.5rem;
+      background: transparent;
+      border: none;
+      color: #d6e7ff;
+      cursor: pointer;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 1.05rem;
+      font-weight: 600;
+      transition: all 0.3s ease;
+      text-align: left;
+      position: relative;
+    }
+
+    .expandable-toggle::before {
+      content: '';
+      position: absolute;
+      left: 0;
+      top: 0;
+      width: 4px;
+      height: 100%;
+      background: linear-gradient(180deg, #8feaff, rgba(143, 234, 255, 0.4));
+      opacity: 0;
+      transition: opacity 0.3s ease;
+    }
+
+    .expandable-toggle:hover::before {
+      opacity: 1;
+    }
+
+    .expandable-toggle:hover {
+      background: rgba(143, 234, 255, 0.05);
+      color: #8feaff;
+      padding-left: calc(1.5rem + 8px);
+    }
+
+    .expandable-title {
+      flex: 1;
+      font-family: var(--font-heading);
+      line-height: 1.4;
+      margin-right: 1rem;
+    }
+
+    .expandable-icon {
+      font-size: 1.4rem;
+      font-weight: bold;
+      color: #8feaff;
+      transition: all 0.3s ease;
+      width: 32px;
+      height: 32px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 50%;
+      background: rgba(143, 234, 255, 0.1);
+      border: 1px solid rgba(143, 234, 255, 0.2);
+    }
+
+    .expandable-toggle:hover .expandable-icon {
+      background: rgba(143, 234, 255, 0.2);
+      border-color: #8feaff;
+      transform: scale(1.05);
+    }
+
+    .expandable-content {
+      padding: 0 1.5rem 1.5rem;
+      border-top: 1px solid rgba(31, 45, 74, 0.6);
+      background: rgba(15, 24, 43, 0.4);
+      animation: slideDown 0.4s ease-out;
+      position: relative;
+    }
+
+    .expandable-content::before {
+      content: '';
+      position: absolute;
+      left: 1.5rem;
+      top: 0;
+      right: 1.5rem;
+      height: 1px;
+      background: linear-gradient(90deg, transparent, rgba(143, 234, 255, 0.3), transparent);
+    }
+
+    .expandable-content p {
+      margin-bottom: 1rem;
+      color: #d6e7ff;
+      line-height: 1.7;
+    }
+
+    .expandable-content p:last-child {
+      margin-bottom: 0;
+    }
+
+    .expandable-content p:first-child {
+      margin-top: 1.25rem;
+    }
+
+    @keyframes slideDown {
+      from {
+        opacity: 0;
+        transform: translateY(-8px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    @media (max-width: 768px) {
+      .expandable-toggle {
+        padding: 1rem 1.25rem;
+        font-size: 1rem;
+      }
+      
+      .expandable-toggle:hover {
+        padding-left: calc(1.25rem + 6px);
+      }
+      
+      .expandable-content {
+        padding: 0 1.25rem 1.25rem;
+      }
+      
+      .expandable-icon {
+        width: 28px;
+        height: 28px;
+        font-size: 1.2rem;
+      }
+    }
+
+    /* Table of Contents Styles */
+    .table-of-contents {
+      background: linear-gradient(145deg, rgba(15, 24, 43, 0.7), rgba(31, 45, 74, 0.4));
+      border: 1px solid rgba(31, 45, 74, 0.9);
+      border-radius: 16px;
+      padding: 1.5rem;
+      margin: 2rem 0;
+      backdrop-filter: blur(12px);
+      box-shadow: 0 8px 32px rgba(3, 8, 21, 0.4);
+    }
+
+    .toc-title {
+      color: #8feaff;
+      font-family: var(--font-heading);
+      font-size: 1.4rem;
+      font-weight: 700;
+      margin: 0 0 1.25rem 0;
+      text-align: center;
+      text-shadow: 0 0 10px rgba(143, 234, 255, 0.3);
+    }
+
+    .toc-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 0.75rem;
+    }
+
+    .toc-button {
+      background: linear-gradient(135deg, rgba(143, 234, 255, 0.05), rgba(143, 234, 255, 0.02));
+      border: 1px solid rgba(143, 234, 255, 0.15);
+      border-radius: 8px;
+      color: #d6e7ff;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      padding: 0.875rem 1rem;
+      text-align: left;
+      text-decoration: none;
+      transition: all 0.2s ease;
+      position: relative;
+      overflow: hidden;
+      font-size: 0.95rem;
+      line-height: 1.4;
+    }
+
+    .toc-button:hover {
+      background: linear-gradient(135deg, rgba(143, 234, 255, 0.08), rgba(143, 234, 255, 0.04));
+      border-color: rgba(143, 234, 255, 0.25);
+      color: #8feaff;
+      transform: translateY(-1px);
+      box-shadow: 0 2px 8px rgba(3, 8, 21, 0.2);
+    }
+
+    .toc-button:active {
+      transform: translateY(0);
+    }
+
+    .toc-number {
+      background: linear-gradient(135deg, rgba(143, 234, 255, 0.2), rgba(143, 234, 255, 0.1));
+      color: #8feaff;
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 600;
+      font-size: 0.875rem;
+      flex-shrink: 0;
+      border: 1px solid rgba(143, 234, 255, 0.2);
+      transition: all 0.2s ease;
+    }
+
+    .toc-button:hover .toc-number {
+      background: linear-gradient(135deg, rgba(143, 234, 255, 0.25), rgba(143, 234, 255, 0.15));
+      border-color: rgba(143, 234, 255, 0.3);
+      color: #ffffff;
+    }
+
+    .toc-text {
+      font-weight: 500;
+      flex: 1;
+    }
+
+    @media (max-width: 768px) {
+      .toc-grid {
+        grid-template-columns: 1fr;
+        gap: 0.5rem;
+      }
+      
+      .toc-button {
+        padding: 0.75rem 0.875rem;
+        font-size: 0.9rem;
+      }
+      
+      .toc-number {
+        width: 24px;
+        height: 24px;
+        font-size: 0.8rem;
+      }
+      
+      .table-of-contents {
+        padding: 1.25rem;
+        margin: 1.5rem 0;
+      }
+      
+      .toc-title {
+        font-size: 1.2rem;
+        margin-bottom: 1rem;
+      }
+    }
+  </style>
+
+  <script is:inline>
+    const slugify = (text) =>
+      text
+        .toLowerCase()
+        .trim()
+        .replace(/[^a-z0-9\s-]/g, "")
+        .replace(/\s+/g, "-")
+        .replace(/-+/g, "-");
+
+    const headings = Array.from(document.querySelectorAll('.blog-content h2'));
+    const upBtn = document.querySelector('.nav-btn--up');
+    const downBtn = document.querySelector('.nav-btn--down');
+    
+    let currentSectionIndex = 0;
+
+    // Set up heading IDs
+    headings.forEach((h) => {
+      if (!h.id) {
+        const base = slugify(h.textContent || '');
+        let id = base;
+        let i = 1;
+        while (document.getElementById(id)) {
+          id = `${base}-${i++}`;
+        }
+        h.id = id;
+      }
+    });
+
+    function scrollToSection(index) {
+      if (index >= 0 && index < headings.length) {
+        currentSectionIndex = index;
+        headings[index].scrollIntoView({ behavior: 'smooth', block: 'start' });
+        updateButtonStates();
+      } else if (index < 0) {
+        // Go to top if before first section
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+        currentSectionIndex = -1;
+        updateButtonStates();
+      } else if (index >= headings.length) {
+        // Go to bottom if past last section
+        window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
+        currentSectionIndex = headings.length;
+        updateButtonStates();
+      }
+    }
+
+    function updateButtonStates() {
+      if (upBtn) {
+        upBtn.style.opacity = currentSectionIndex <= 0 ? '0.4' : '1';
+        upBtn.style.cursor = currentSectionIndex <= 0 ? 'default' : 'pointer';
+      }
+      if (downBtn) {
+        downBtn.style.opacity = currentSectionIndex >= headings.length - 1 ? '0.4' : '1';
+        downBtn.style.cursor = currentSectionIndex >= headings.length - 1 ? 'default' : 'pointer';
+      }
+    }
+
+    function goToPreviousSection() {
+      if (currentSectionIndex > 0) {
+        scrollToSection(currentSectionIndex - 1);
+      } else if (currentSectionIndex === 0) {
+        scrollToSection(-1); // Go to top
+      }
+    }
+
+    function goToNextSection() {
+      if (currentSectionIndex < headings.length - 1) {
+        scrollToSection(currentSectionIndex + 1);
+      } else if (currentSectionIndex === headings.length - 1) {
+        scrollToSection(headings.length); // Go to bottom
+      }
+    }
+
+    // Set up button handlers
+    if (upBtn) upBtn.addEventListener('click', goToPreviousSection);
+    if (downBtn) downBtn.addEventListener('click', goToNextSection);
+
+    // Track current section based on scroll position
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            const index = headings.findIndex(h => h.id === entry.target.id);
+            if (index !== -1) {
+              currentSectionIndex = index;
+              updateButtonStates();
+            }
+          }
+        });
+      },
+      { rootMargin: '0px 0px -50% 0px', threshold: 0.1 }
+    );
+
+    headings.forEach((h) => observer.observe(h));
+    
+    // Initial button state
+    updateButtonStates();
+  </script>
 </BaseLayout>
