@@ -135,6 +135,7 @@ function MethodSlider({ method, value, onChange }) {
   useEffect(() => {
     const onMove = (e) => {
       if (!dragging.current) return;
+      if (e.cancelable) e.preventDefault();
       const cx = e.touches ? e.touches[0].clientX : e.clientX;
       onChange(method, getEntropyFromPointer(cx));
     };
@@ -191,7 +192,7 @@ function MethodSlider({ method, value, onChange }) {
           display: "flex",
           alignItems: "center",
           cursor: "ew-resize",
-          touchAction: "none",
+          touchAction: "pan-y",
         }}
       >
         {/* Track bg */}
@@ -291,7 +292,11 @@ export default function EntropyRankingWidget() {
 
   useEffect(() => {
     const mm = (e) => onPointerMove(e.clientX);
-    const tm = (e) => { e.preventDefault(); onPointerMove(e.touches[0].clientX); };
+    const tm = (e) => {
+      if (!dragging.current) return;
+      if (e.cancelable) e.preventDefault();
+      onPointerMove(e.touches[0].clientX);
+    };
     const up = () => { dragging.current = null; };
     window.addEventListener("mousemove", mm);
     window.addEventListener("mouseup", up);

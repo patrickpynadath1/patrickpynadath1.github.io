@@ -154,6 +154,7 @@ function SliderRail({ entropy, onChange }) {
   useEffect(() => {
     const onMove = (e) => {
       if (!dragging.current) return;
+      if (e.cancelable) e.preventDefault();
       const cx = e.touches ? e.touches[0].clientX : e.clientX;
       onChange(getEntropyFromPointer(cx));
     };
@@ -188,7 +189,7 @@ function SliderRail({ entropy, onChange }) {
         paddingTop: 6,
         paddingBottom: 8,
         cursor: "pointer",
-        touchAction: "none",
+        touchAction: "pan-y",
       }}
     >
       {/* Value readout centered above thumb */}
