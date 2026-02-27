@@ -197,10 +197,10 @@ When using 128 NFE, the baselines (Duo, MDLM, CANDI) are able to achieve an entr
 While FLM is significant progress for few-step language generation, the performance level in general is not quite at the level of natural language, at least in terms of entropy and perplexity similarity to real text samples. Closing the gap between few-step generation and natural language entropy remains an open challenge — one where continuous methods appear better positioned due to smoother trajectories, but where current results still fall short.
 
 ## Conclusion
-When working within the scale of GPT-2 models -- which is often a fairly large scale for pretraining from scratch on an academic budget -- generative frontiers based on entropy and generative perplexity are a reasonable way to view the whole scope of model performance. While it is expensive to run, it is still far cheaper than the cost of pretraining itself and it produces conclusions that temperature tuning cannot overcome.
+When working within the scale of GPT-2 models -- which is often a fairly large scale for pretraining from scratch on an academic budget -- generative frontiers based on entropy and generative perplexity are a reasonable way to view the whole scope of model performance. While it does require ablating over a wide range of temperatures for each NFE, it is still far cheaper than the cost of pretraining itself and it produces conclusions that temperature tuning cannot invert.
 <br /> 
 
-In regards to the papers discussed, we show that FLM represents substantial progress for continuous diffusion models. They currently have an advantage in terms of distillation and few-step performance. However, the base model comparison demonstrates that discrete and hybrid methods still outperform continuous diffusion models with less NFE. Closing the gap between few-step generation and natural language entropy remains a key challenge.
+We show that FLM represents substantial progress for continuous diffusion models. They currently have an advantage in terms of distillation and few-step performance. However, the base model comparison demonstrates that discrete and hybrid methods still outperform continuous diffusion models with less NFE. Closing the gap between few-step generation and natural language entropy remains a key challenge.
 
 <ExpandableSection title="Related Papers" client:load>
 ### Continuous Diffusion for Text
