@@ -147,7 +147,7 @@ It is also worth noting that this may indicate a limitation of either generative
 
 ## Base Continuous Denoising Models Under Frontier Analysis
 
-Using frontier analysis, we can examine some recent progress with continuous denoising models -- specifically, the flow-matching based framework introduced by [@roos2026categoricalflowmaps] and [@lee2026onesteplanguagemodelingcontinuous]. We focus on FLM [@lee2026onesteplanguagemodelingcontinuous] as they provide results for pretraining on OWT. 
+Using frontier analysis, we can examine some recent progress with continuous denoising models -- specifically, the flow-matching based framework introduced by [@roos2026categoricalflowmaps] and [@lee2026onesteplanguagemodelingcontinuous]. We focus on FLM [@lee2026onesteplanguagemodelingcontinuous] as they provide results for pretraining on OWT. CFM [@roos2026categoricalflowmaps] reports text results only on LM1B, which as discussed earlier is less suitable for evaluating generation quality. 
 <ExpandableSection title="Experimental Setup" client:load>
 We use a ~160 million parameter model trained for 50k steps on OWT for preliminary frontier comparisons when comparing against the continuous baseline from CANDI. When comparing against frontiers for Duo, CANDI, and MDLM, we use the official reported metrics from the FLM paper. These are fair comparisons, as all models use a diffusion transformer architecture, are trained on OpenWebText for up to 1 million steps, and have around the same model size.and use the official numbers from their paper for comparisons against fully trained frontiers. 
 </ExpandableSection>
