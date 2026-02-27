@@ -14,7 +14,7 @@ import FlowMatchingViz from "../../components/TokenEmergence.jsx"
 import ExpandableSection from "../../components/ExpandableSection.jsx"
 import TableOfContents from "../../components/TableOfContents.jsx"
 
-# Generative Frontiers: Why Evaluation Matters for Continuous Language Models
+# Generative Frontiers: Evaluating Recent Progress in Continuous Language Models
 
 *Patrick Pynadath, Ruqi Zhang* 
 *Disclaimer: We are authors of CANDI, which is discussed throughout this blog.*
@@ -201,12 +201,11 @@ When working within the scale of GPT-2 models -- which is often a fairly large s
 <br /> 
 
 In regards to the papers discussed, we show that FLM represents substantial progress for continuous diffusion models. They currently have an advantage in terms of distillation and few-step performance. However, the base model comparison demonstrates that discrete and hybrid methods still outperform continuous diffusion models with less NFE. Closing the gap between few-step generation and natural language entropy remains a key challenge.
-<br />
-
-It is important to note that the field of continuous diffusion for language is much bigger than just discrete, hybrid, or continuous: there are hybrid diffusion-AR models, latent-diffusion models, hybrid latent-diffusion and AR models -- covering all of them would be an entirely different post. Furthermore, there are many diffusion language model papers that study pretraining and beyond with significantly scaled up models. The goal of this blog was to provide a more accurate view of a tiny slice of where the field stands within the scope of pretraining at the GPT-2 scale. Below is a drop down of some interesting papers we think are worth reading related to continuous diffusion / flow matching for text.
 
 <ExpandableSection title="Related Papers" client:load>
 ### Continuous Diffusion for Text
+It is important to note that the field of continuous diffusion for language is much bigger than just discrete, hybrid, or continuous: there are hybrid diffusion-AR models, latent-diffusion models, hybrid latent-diffusion and AR models -- covering all of them would be an entirely different post. Furthermore, there are many diffusion language model papers that study pretraining and beyond with significantly scaled up models. The goal of this blog was to provide a more accurate view of a tiny slice of where the field stands within the scope of pretraining at the GPT-2 scale. Below is a drop down of some interesting papers we think are worth reading related to continuous diffusion / flow matching for text.
+
 - [**CADD**](https://arxiv.org/abs/2510.01329): Proposes hybrid noising kernel on embedding space, shows impressive scaling results on coding tasks. 
 - [**CCDD**](https://arxiv.org/abs/2510.03206): Examines theoretical expressivity of different spaces, relates to looped transforms, and motivates hybrid schedules.
 - [**LaDir**](https://arxiv.org/pdf/2510.04573): Denoises in latent space to enable reasoning at semantic level instead of token level, then autoregressively decode to text. 
