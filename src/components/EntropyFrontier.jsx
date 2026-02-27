@@ -51,8 +51,8 @@ const FONT     = "'JetBrains Mono', 'Fira Code', 'SF Mono', monospace";
 
 const METHODS = [
   { key: "candi", label: "CANDI", color: "#57c27c", data: candiData },
-  { key: "mdlm",  label: "MDLM",  color: "#5b9bd5", data: mdlmData },
-  { key: "duo",   label: "DUO",   color: "#e05c5c", data: duoData  },
+  { key: "mdlm",  label: "MDLM",  color: "#e05c5c", data: mdlmData },
+  { key: "duo",   label: "DUO",   color: "#5b9bd5", data: duoData  },
 ];
 
 const MAX_NFE = 128;
