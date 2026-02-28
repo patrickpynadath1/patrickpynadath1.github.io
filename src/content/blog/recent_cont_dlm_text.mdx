@@ -19,7 +19,9 @@ import TableOfContents from "../../components/TableOfContents.jsx"
 *Patrick Pynadath, Ruqi Zhang* 
 
 *Disclaimer: We are authors of CANDI, one of the baselines discussed in this post. Frontier data for Duo, MDLM, and CANDI are from the CANDI paper.* [@pynadath2025candihybriddiscretecontinuousdiffusion]
-
+![Entropy ranking demo](/images/recent_cont_dlm_content/entropy_ranking_demo.gif)
+*Depending on inference-time settings, it is possible to obtain entirely different relative performances between the same models if differences in entropy are unaccounted for*
+<br />
 ## Introduction 
 While autoregressive language modeling is currently the dominant paradigm, alternative paradigms have seen significant progress in recent years. This motivates foundational research into pretraining such models to better understand the optimal design choices within these paradigms. 
 Openwebtext and GPT-2 scale is the de-facto norm for studying pretraining, as it is large and varied enough to reflect the nature of pretraining data while being practical to train on an academic budget. 
@@ -72,6 +74,23 @@ It is worth mentioning that it is possible to measure model capability in terms 
 
 </ExpandableSection>
 
+<ExpandableSection title="Why Log-likelihood Comparisons are Questionable " client:load>
+Log likelihoods are a common metric used to compare different diffusion language models, making it worth discussing why they may not be a suitable metric for models with different ELBO formulations, and why they are not directly related to generative quality
+
+### On Comparing Different ELBOs 
+It is possible to express the log likelihood as follows, for any variational distribution $q(\mathbf{z}|\mathbf{x})$:
+$$\log p(\mathbf{x}) = \mathcal{L}(q) + D_{\mathrm{KL}}\big(q(\mathbf{z}|\mathbf{x}) \,\|\, p(\mathbf{z}|\mathbf{x})\big)$$
+where $\mathcal{L}(q) = \mathbb{E}_{q(\mathbf{z}|\mathbf{x})}\left[\log \frac{p(\mathbf{x}, \mathbf{z})}{q(\mathbf{z}|\mathbf{x})}\right]$ is the evidence lower bound (ELBO). Since $D_{\mathrm{KL}} \geq 0$, we have $\log p(\mathbf{x}) \geq \mathcal{L}(q)$, with equality if and only if $q(\mathbf{z}|\mathbf{x}) = p(\mathbf{z}|\mathbf{x})$. Crucially, the KL divergence term depends on both the true posterior --- which differs across models with different latent variable structures --- and the choice of variational family. As this gap is generally intractable to compute, direct comparison of ELBOs across models with different latent structures is unreliable for model selection [@bishop2006pattern].
+
+### On Likelihoods Themselves
+Even if likelihood comparisons between different ELBO formulations were valid, it still may not be relevant to modern language modeling, where the princple concern tends to be generative quality. [@theis2016noteevaluationgenerativemodels] provides an argument for why likelihoods and generative fidelity tend to be independent of each other in high dimensions, and we provide a brief summary here. 
+<br />
+
+First, they discuss how to construct a model with excellent generative quality but poor likelihood evaluation through a look-up table with memorized examples from the training set. By definition, this model would place no mass on any other samples besides those that are memorized, which would result in a poor likelihood value for any reasonable validation set. However, by construction, the generative quality would be exactly the same as we would want from the target distribution -- since this model has just memorized exact samples from the training set. 
+<br />
+
+Second, they discuss how to construct a model with poor generative quality, but excellent likelihood values. To do this, they start with some model that attains a good likelihood value. They then show that by constructing a mixture between this model and some very poor model that outputs bad quality samples, they obtain a model that has close likelihood values to the original model but will almost always output poor generations. This follows from how likelihoods behave in high dimensions. For a more thorough argument, we highly recommend reading [@theis2016noteevaluationgenerativemodels] -- while it was originally written in the context of image generative models, the core arguments are still relevant to language model evaluation. 
+</ExpandableSection>
 <ExpandableSection title="Why Generative Perplexity has become standard" client:load>
 For this reason, generative perplexity or generative negative log likelihood has gradually become a core tool for comparing different models [@zheng2024masked] [@dieleman2022continuous] [@sahoo2025diffusion] [@sahoo2025esoteric]. All that is required for generative perplexity is the ability to sample from a trained model -- afterwards, we simply run a pre-trained autoregressive model such as GPT-2 Large on the generations and report the likelihoods. We do this for the following reasons:
 <br />
@@ -108,8 +127,7 @@ By definition, perplexity is a measure of how predictable tokens are in a given 
 This has already been observed in [@zheng2024masked], where they demonstrate that even differing logit precisions can result in misleading perplexity values that are revealed via entropy. However, the sensitivity of perplexity of to entropy goes beyond just severe mode collapse -- **even slight changes in entropy can result in more competitive perplexity metrics.** 
 
 <br />
-To demonstrate this, we plot generative frontiers -- which show entropy and perplexity values attainable for each model via temperature tuning. We observe that while the points are on the same frontiers -- the model ability remains the same -- the single-point comparisons can change, depending on where we pick points on the frontier. 
-![Entropy ranking demo](/images/recent_cont_dlm_content/entropy_ranking_demo.gif)
+To emphasize that single point comparisons are mutable, depending on where we pick the points we pick from the frontier, we created an interactive app. The user can slide along the frontier for each method and generate their own rankings for the given models. **The differing rankings are not contradictory -- they are merely different slices of the same generative frontier.** 
 <br />
 <ExpandableSection title="Role of Temperature Tuning in Language modeling" client:load>
 Temperature and other inference-time adjustments to logits is already standard practice in autoregressive models, and even larger scale diffusion language models. However, when looking at the literature that studies diffusion LMs at the scale of GPT-2, it is common practice to report a single performance point at either a universal inference setting for all models, or the temperature of 1.0. 
@@ -117,14 +135,15 @@ Temperature and other inference-time adjustments to logits is already standard p
 Even if Model A outperforms Model B at temperature 1.0, if Model B can be tuned to beat Model A by lowering the temperature -- which does not require any retraining -- is it really fair to claim Model A is better than Model B? 
 
 </ExpandableSection>
-To further emphasize that single point comparisons are mutable, depending on where we pick the points we pick from the frontier, we created an interactive app. The user can slide along the frontier for each method and generate their own rankings for the given models. 
-The differing rankings are not contradictory -- they are merely different slices of the same generative frontier. 
 
 <div className="wide-block">
   <EntropyRankingWidget client:load />
 </div>
 ### Interpeting Generative Frontiers Generative Frontiers
-For this reason, frontiers of entropy v.s perplexity, as introduced in [@zheng2024masked] and expanded on later in [@pynadath2025candihybriddiscretecontinuousdiffusion], are a very useful tool. These frontiers address the sensitivity of perplexity to entropy by revealing the full frontier, which allows for stronger conclusions. If a model outperforms another at a fixed temperature, this only reflects performance at that temperature and is mutable depending on tuning. If a model dominates another in terms of entropy-perplexity frontiers, this means that no amount of tuning (at least for temperatures) can result in better perplexity without sacrificing diversity
+For this reason, frontiers of entropy v.s perplexity, as introduced in [@zheng2024masked] and expanded on later in [@pynadath2025candihybriddiscretecontinuousdiffusion], are a very useful tool. These frontiers address the sensitivity of perplexity to entropy by revealing the full frontier, which allows for stronger conclusions. 
+
+<br />
+If a model outperforms another at a fixed temperature, this only reflects performance at that temperature and can be reversed via tuning. If a model dominates another in terms of entropy-perplexity frontiers, this means that no amount of tuning (at least for temperatures) can result in better perplexity without sacrificing diversity. **Single-point comparisons without entropy matching compare inference settings; generative frontiers compare model capability.**
 
 <ExpandableSection title="Why Frontiers are not standard practice" client:load>
 
@@ -140,7 +159,7 @@ It is natural to wonder what a reasonable entropy is -- if a model outperforms a
 </div>
 
 ## Interesting Side Note: 50k steps is sometimes good enough 
-We can use frontier analysis to observe something that may be of interest to those working on pretraining -- often, the generative performance of models very early on in training (50k) steps is quite close to the model's ability after 1,000,000 steps. We visualize this below by pretraining Duo, MDLM, and CANDI for 50k steps and comparing against the frontiers generated by fully trained checkpoints. as one can observe, they are remarkably close. Thus when iterating on an algorithm / training framework, it is most likely more than sufficient to use 50k steps -- if a model does not work by this point, it will probably not work by 1,000,000 steps. 
+We can use frontier analysis to observe something that may be of interest to those working on pretraining -- often, the generative performance of models very early on in training (50k) steps is quite close to the model's ability after 1,000,000 steps. We visualize this below by pretraining Duo, MDLM, and CANDI for 50k steps and comparing against the frontiers generated by fully trained checkpoints. as one can observe, they are remarkably close. **The generative frontiers of models after 50k steps closely matches the performance at 1 million steps.** Thus when iterating on an algorithm / training framework, it is most likely more than sufficient to use 50k steps -- if a model does not work by this point, it will probably not work by 1,000,000 steps. 
 <br />
 It is also worth noting that this may indicate a limitation of either generative perplexity or this scale of models in terms of measuring model performance -- it is a commonly known fact that training for longer improves performance on downstream tasks. It is not known whether the above saturation is a result of model capacity or perplexity being unable to capture fine-grained differences in model capability.
 ![Early Training Behavior](/images/recent_cont_dlm_content/training_behavior.png)
@@ -161,13 +180,13 @@ The time reparameterization does substantially improve performance of the model 
 ![FLM v Cont](/images/recent_cont_dlm_content/flm_v_cont.png)
 
 <br />
-As observed, FLM is order of magnitude better than the continuous baseline -- the y axis is on a log scale, so the outperformance is quite dramatic. The original conclusion after the experiment in CANDI was that continuous diffusion is fundementally broken at high vocabularies. This is clearly not the case -- the reparameterization results in a reasonable base language model. This is clear evidence that the time reparameterization proposed in FLM is unlocking something crucial for continuous language models. 
+As observed, **FLM is order of magnitude better than the continuous baseline** -- the y axis is on a log scale, so the outperformance is quite dramatic. The original conclusion after the experiment in CANDI was that continuous diffusion is fundementally broken at high vocabularies. This is clearly not the case -- the reparameterization results in a reasonable base language model. This is clear evidence that the time reparameterization proposed in FLM is unlocking something crucial for continuous language models. 
 
 ### Why Frontier Analysis Changes the Picture
 The FLM paper reports that the base model achieves a generative perplexity of 62 and entropy of 5.33 at 1024 NFE, outperforming baselines. However, the baselines are measured at operating points with higher entropy. If we take mark the target entropy achieved by FLM at 1024 NFE and compare the perplexities of MDLM, Duo, and CANDI using released results from CANDI, we observe they achieve lower perplexities than 60 by 32 NFE. We annotate the results from CANDI with a vertical red line at entropy 5.33 and show the resulting perplexity for Duo, MDLM, and CANDI. 
 ![FLM v Baselines](/images/recent_cont_dlm_content/frontiers_static.png)
 <br /> 
-Thus frontier analysis indicates that properly tuned discrete and hybrid methods can surpass the performance of continuous diffusion models, even when correcting the noise schedule to align with discrete corruption.  We include a visualization demonstrating this below. 
+Thus frontier analysis indicates that **properly tuned discrete and hybrid methods can surpass the performance of continuous diffusion models with 32x less steps**, even when aligning the noise schedule with discrete corruption.  We include a visualization demonstrating this below. 
 ![FLM v Baselines](/images/recent_cont_dlm_content/flm_comparison.gif)
 
 ## Performance of Distillation Methods under Frontier Analysis
@@ -176,7 +195,7 @@ The main contribution of FLM is not only the base model, but the novel distillat
 ![FLM Few Step](/images/recent_cont_dlm_content/flm_distill_fewstep.png)
 <br />
 
-It is notable that for few step generation, it appears that the distilled FLM achieves better entropy and perplexity than the distilled duo models. While the distilled versions of MDLM do achieve higher entropy, this does come at the cost of worse perplexity. While we do not have access to the checkpoints for distilled MDLM models, the outperformance in terms of perplexity seem significant enough for the single step regime (~1000) that temperature tuning would not change the relative rankings. However, it is not possible to make definitive statements without actual frontiers due to the entropy differences. 
+It is notable that for few step generation, it appears that the distilled FLM achieves better entropy and perplexity than the distilled duo models. While the distilled versions of MDLM do achieve higher entropy, this does come at the cost of worse perplexity. While we do not have access to the checkpoints for distilled MDLM models, the outperformance in terms of perplexity seem significant enough for the single step regime (~1000) that temperature tuning would not change the relative rankings. **Thus the distilled FLM achieves fairly strong few-step performance relative to discrete baselines.** However, it is not possible to make definitive statements without actual frontiers due to the entropy differences. 
 <br /> 
 
 We illustrate the progression in the few step regime of all methods. Notably, discrete methods require more steps to achieve similar few-step performance -- this supports the factorization error argument made in FLM regarding why continuous methods are better suited for distillation. 
