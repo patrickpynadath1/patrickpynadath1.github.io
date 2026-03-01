@@ -27,7 +27,7 @@ While autoregressive language modeling is currently the dominant paradigm, alter
 Openwebtext and GPT-2 scale is the de-facto norm for studying pretraining, as it is large and varied enough to reflect the nature of pretraining data while being practical to train on an academic budget. 
 <br />
 
-However, this still leaves the question of evaluation: the existing evaluation framework for this scale of models is based on likelihood evaluations, but this becomes questionable when different paradigms present fundementally different ELBOs. 
+However, this still leaves the question of evaluation: the existing evaluation framework for this scale of models is based on likelihood evaluations, but this becomes questionable when different paradigms present fundamentally different ELBOs. 
 In this respect, generation based metrics are very useful, as all that is required is to be able to use the pretrained model to generate samples, and measure how language-like the samples are via some external model. 
 <br />
 Generative perplexity still has its own issues. In this blog, we focus on its sensitivity to sample entropy, which is a measure of token diversity. 
@@ -65,17 +65,17 @@ While there are smaller datasets such as LM1B that can be used for training lang
 
 </ExpandableSection>
 ## Generative Perplexity
-While the question of what scale to train models at and what data to use is a fairly closed topic, there still remains the evaluation problem. While the original GPT-2 paper demonstrates that pretraining on web-text enabled zero-shot task performance on a wide range of tasks, it is crucial to note that the performance usually required scaling up the number of parameters -- which is difficult when ~150 million is already quite expensive. Furthermore, some of the primary results are zero-shot likelihood across different unseen datasets across different models to demonstrate scaling behavior [@radford2021learning]. This was useful as all models were autoregressive, and thus measured likelihood in the exact same. More intuitively, all the likelihoods measured the same ability -- how well the model could predict the next token, given the context. With different ELBO formulations, comparing the likelihoods directly seems questionable [@theis2016noteevaluationgenerativemodels]. 
+While the question of what scale to train models at and what data to use is a fairly closed topic, there still remains the evaluation problem. While the original GPT-2 paper demonstrates that pretraining on web-text enabled zero-shot task performance on a wide range of tasks, it is crucial to note that the performance usually required scaling up the number of parameters -- which is difficult when ~150 million is already quite expensive. Furthermore, some of the primary results are zero-shot likelihood across different unseen datasets across different models to demonstrate scaling behavior [@radford2021learning]. This was useful as all models were autoregressive, and thus measured likelihood in the exact same. With different ELBO formulations, comparing the likelihoods directly seems questionable [@theis2016noteevaluationgenerativemodels]. 
 <br />
 
 <ExpandableSection title="Why Language Understanding Tasks Aren't Sufficient for Generative Models" client:load>
 
-It is worth mentioning that it is possible to measure model capability in terms of language understanding tasks, similar to those used in the foundational GPT-2 paper. However, it is crucial to note that good performance on these tasks do not necessarily translate into good language generative ability, which is ultimately what we want from generative language models. To see this, we can look at the example of BERT: while the original BERT model had strong performance across natural language understanding and inference [@devlin2019bertpretrainingdeepbidirectional], it was not suitable on its own for language generation, despite attempts to enable it to serve as a generative model [@wang2019bertmouthspeakbert]. It wasn't until advances in masked diffusion that these models became viable for generative tasks [@Sahoo_Arriola_Schiff_Gokaslan_Marroquin_Chiu_Rush_Kuleshov_2024] [@Shi_Han_Wang_Doucet_Titsias_2024] [@ou2025absorbingdiscretediffusionsecretly]. Thus strong performance on language understanding tasks is not sufficient evidence of generative quality — which is ultimately what we want to measure for generative language models.
+It is worth mentioning that it is possible to measure model capability in terms of language understanding tasks, similar to those used in the foundational GPT-2 paper. However, it is crucial to note that good performance on these tasks do not necessarily translate into good language generative ability, which is ultimately what we want from generative language models. To see this, we can look at the example of BERT: while the original BERT model had strong performance across natural language understanding and inference [@devlin2019bertpretrainingdeepbidirectional], it was not suitable on its own for language generation, despite attempts to enable it to serve as a generative model [@wang2019bertmouthspeakbert]. It wasn't until advances in masked diffusion that these models became viable for generative tasks [@Sahoo_Arriola_Schiff_Gokaslan_Marroquin_Chiu_Rush_Kuleshov_2024] [@Shi_Han_Wang_Doucet_Titsias_2024] [@ou2025absorbingdiscretediffusionsecretly]. Strong performance on language understanding tasks is not sufficient evidence of generative quality — which is ultimately what we want to measure for generative language models.
 
 </ExpandableSection>
 
 <ExpandableSection title="Why Log-likelihood Comparisons are Questionable " client:load>
-Log likelihoods are a common metric used to compare different diffusion language models, making it worth discussing why they may not be a suitable metric for models with different ELBO formulations, and why they are not directly related to generative quality
+Here we discuss why log-likelihoods may not be a suitable metric when comparing models with different ELBO formulations, and why they do not necessarily reflect generative quality.
 
 ### On Comparing Different ELBOs 
 It is possible to express the log likelihood as follows, for any variational distribution $q(\mathbf{z}|\mathbf{x})$:
@@ -83,7 +83,7 @@ $$\log p(\mathbf{x}) = \mathcal{L}(q) + D_{\mathrm{KL}}\big(q(\mathbf{z}|\mathbf
 where $\mathcal{L}(q) = \mathbb{E}_{q(\mathbf{z}|\mathbf{x})}\left[\log \frac{p(\mathbf{x}, \mathbf{z})}{q(\mathbf{z}|\mathbf{x})}\right]$ is the evidence lower bound (ELBO). Since $D_{\mathrm{KL}} \geq 0$, we have $\log p(\mathbf{x}) \geq \mathcal{L}(q)$, with equality if and only if $q(\mathbf{z}|\mathbf{x}) = p(\mathbf{z}|\mathbf{x})$. Crucially, the KL divergence term depends on both the true posterior --- which differs across models with different latent variable structures --- and the choice of variational family. As this gap is generally intractable to compute, direct comparison of ELBOs across models with different latent structures is unreliable for model selection [@bishop2006pattern].
 
 ### On Likelihoods Themselves
-Even if likelihood comparisons between different ELBO formulations were valid, it still may not be relevant to modern language modeling, where the princple concern tends to be generative quality. [@theis2016noteevaluationgenerativemodels] provides an argument for why likelihoods and generative fidelity tend to be independent of each other in high dimensions, and we provide a brief summary here. 
+Even if likelihood comparisons between different ELBO formulations were valid, it still may not be relevant to modern language modeling, where the principal concern tends to be generative quality. [@theis2016noteevaluationgenerativemodels] provides an argument for why likelihoods and generative fidelity tend to be independent of each other in high dimensions, and we provide a brief summary here. 
 <br />
 
 First, they discuss how to construct a model with excellent generative quality but poor likelihood evaluation through a look-up table with memorized examples from the training set. By definition, this model would place no mass on any other samples besides those that are memorized, which would result in a poor likelihood value for any reasonable validation set. However, by construction, the generative quality would be exactly the same as we would want from the target distribution -- since this model has just memorized exact samples from the training set. 
@@ -127,7 +127,7 @@ By definition, perplexity is a measure of how predictable tokens are in a given 
 This has already been observed in [@zheng2024masked], where they demonstrate that even differing logit precisions can result in misleading perplexity values that are revealed via entropy. However, the sensitivity of perplexity of to entropy goes beyond just severe mode collapse -- **even slight changes in entropy can result in more competitive perplexity metrics.** 
 
 <br />
-To emphasize that single point comparisons are mutable, depending on where we pick the points we pick from the frontier, we created an interactive app. The user can slide along the frontier for each method and generate their own rankings for the given models. **The differing rankings are not contradictory -- they are merely different slices of the same generative frontier.** 
+To emphasize that single point comparisons are mutable, we created an interactive app using the frontier data from CANDI that allows the user to alter NFE v.s perplexity comparisons by sliding along the frontiers of different methods. **The differing rankings are not contradictory -- they are merely different slices of the same generative frontier.** 
 <br />
 <ExpandableSection title="Role of Temperature Tuning in Language modeling" client:load>
 Temperature and other inference-time adjustments to logits is already standard practice in autoregressive models, and even larger scale diffusion language models. However, when looking at the literature that studies diffusion LMs at the scale of GPT-2, it is common practice to report a single performance point at either a universal inference setting for all models, or the temperature of 1.0. 
@@ -168,7 +168,7 @@ It is also worth noting that this may indicate a limitation of either generative
 
 Using frontier analysis, we can examine some recent progress with continuous denoising models -- specifically, the flow-matching based framework introduced by [@roos2026categoricalflowmaps] and [@lee2026onesteplanguagemodelingcontinuous]. We focus on FLM [@lee2026onesteplanguagemodelingcontinuous] as they provide results for pretraining on OWT. CFM [@roos2026categoricalflowmaps] reports text results only on LM1B, which as discussed earlier is less suitable for evaluating generation quality. 
 <ExpandableSection title="Experimental Setup" client:load>
-We use a ~160 million parameter model trained for 50k steps on OWT for preliminary frontier comparisons when comparing against the continuous baseline from CANDI. When comparing against frontiers for Duo, CANDI, and MDLM, we use the official reported metrics from the FLM paper. These are fair comparisons, as all models use a diffusion transformer architecture, are trained on OpenWebText for up to 1 million steps, and have around the same model size.and use the official numbers from their paper for comparisons against fully trained frontiers. 
+We use a ~160 million parameter model trained for 50k steps on OWT for preliminary frontier comparisons when comparing against the continuous baseline from CANDI. When comparing against frontiers for Duo, CANDI, and MDLM, we use the official reported metrics from the FLM paper. These are fair comparisons, as all models use a diffusion transformer architecture, are trained on OpenWebText for up to 1 million steps, and have around the same model size. 
 </ExpandableSection>
 
 <ExpandableSection title="Background on FLM" client:load>
@@ -180,7 +180,7 @@ The time reparameterization does substantially improve performance of the model 
 ![FLM v Cont](/images/recent_cont_dlm_content/flm_v_cont.png)
 
 <br />
-As observed, **FLM is order of magnitude better than the continuous baseline** -- the y axis is on a log scale, so the outperformance is quite dramatic. The original conclusion after the experiment in CANDI was that continuous diffusion is fundementally broken at high vocabularies. This is clearly not the case -- the reparameterization results in a reasonable base language model. This is clear evidence that the time reparameterization proposed in FLM is unlocking something crucial for continuous language models. 
+As observed, **FLM is order of magnitude better than the continuous baseline** -- the y axis is on a log scale, so the outperformance is quite dramatic. The original conclusion after the experiment in CANDI was that continuous diffusion is fundamentally broken at high vocabularies. This is clearly not the case -- the reparameterization results in a reasonable base language model. This is clear evidence that the time reparameterization proposed in FLM is unlocking something crucial for continuous language models. 
 
 ### Why Frontier Analysis Changes the Picture
 The FLM paper reports that the base model achieves a generative perplexity of 62 and entropy of 5.33 at 1024 NFE, outperforming baselines. However, the baselines are measured at operating points with higher entropy. If we take mark the target entropy achieved by FLM at 1024 NFE and compare the perplexities of MDLM, Duo, and CANDI using released results from CANDI, we observe they achieve lower perplexities than 60 by 32 NFE. We annotate the results from CANDI with a vertical red line at entropy 5.33 and show the resulting perplexity for Duo, MDLM, and CANDI. 
@@ -206,7 +206,7 @@ First, we show a visualization of a KDE estimate of the sample entropy distribut
 ![Empirical KDE](/images/recent_cont_dlm_content/owt_empirical_entropy.png)
 <br />
 
-We shade along the x-axis to correspend to density of the empirical distribution to provide contextualize single-step results in terms of natural language diversity. 
+We shade along the x-axis to correspond to density of the empirical distribution to provide contextualize single-step results in terms of natural language diversity. 
 ![FLM With Empirical Entropy](/images/recent_cont_dlm_content/owt_fewstep_with_density.png)
 
 While FLM does achieve better distillation results than discrete or hybrid methods, distillation methods in general are still not at the level of natural language, in terms of the extreme edge of the few-step regime (1, 2, and 4 NFE).
