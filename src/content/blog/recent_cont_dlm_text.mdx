@@ -18,25 +18,19 @@ import TableOfContents from "../../components/TableOfContents.jsx"
 
 *Patrick Pynadath, Ruqi Zhang* 
 
-*Disclaimer: We are authors of CANDI, one of the baselines discussed in this post. Frontier data for Duo, MDLM, and CANDI are from the CANDI paper.* [@pynadath2025candihybriddiscretecontinuousdiffusion]
+*Disclaimer: We are authors of CANDI, one of the baselines discussed in this post. Frontier data for Duo, MDLM, and CANDI are from the CANDI paper* [@pynadath2025candihybriddiscretecontinuousdiffusion]. 
 ![Entropy ranking demo](/images/recent_cont_dlm_content/entropy_ranking_demo.gif)
 *Depending on inference-time settings, it is possible to obtain entirely different relative performances between the same models if differences in entropy are unaccounted for*
 <br />
 ## Introduction 
-While autoregressive language modeling is currently the dominant paradigm, alternative paradigms have seen significant progress in recent years. This motivates foundational research into pretraining such models to better understand the optimal design choices within these paradigms. 
-Openwebtext and GPT-2 scale is the de-facto norm for studying pretraining, as it is large and varied enough to reflect the nature of pretraining data while being practical to train on an academic budget. 
+A recent line of work on continuous denoising language models, notably FLM, has reported strong generative performance relative to discrete and hybrid baselines. These results are exciting, as they suggest continuous methods may be closing the gap. However, the comparisons rely on single-point perplexity measurements, which we have previously shown are sensitive to sample entropy — small changes in temperature can invert model rankings entirely.
 <br />
 
-However, this still leaves the question of evaluation: the existing evaluation framework for this scale of models is based on likelihood evaluations, but this becomes questionable when different paradigms present fundamentally different ELBOs. 
-In this respect, generation based metrics are very useful, as all that is required is to be able to use the pretrained model to generate samples, and measure how language-like the samples are via some external model. 
-<br />
-Generative perplexity still has its own issues. In this blog, we focus on its sensitivity to sample entropy, which is a measure of token diversity. 
-Generative frontiers are a useful tool to address this issue: instead of displaying the results for one temperature, we perform a sweep across a range of temperatures and display the pareto frontier for each method in terms of entropy and perplexity. 
-<br />
+In this blog, we apply generative frontier analysis to examine these claims more carefully. We first discuss why OpenWebText is a more meaningful pretraining benchmark than alternatives like LM1B, and why generative perplexity is currently the most practical evaluation metric for comparing models across different paradigms. We then show why single-point perplexity comparisons are unreliable due to entropy sensitivity, and introduce generative frontiers as a tool that addresses this. Using this framework, we make the following observations:
+1. Model performance is often surprisingly strong early in training — frontiers at 50k steps closely match those at 1 million steps.
+2. Frontier analysis substantially changes the picture for base model comparisons — properly tuned discrete and hybrid methods remain competitive with or outperform continuous denoising at matched entropy, even with far fewer generation steps.
+3. Continuous denoising does show genuine advantages for few-step generation via distillation, though current methods still fall short of natural language entropy.
 
-We can use this to observe that model performance is often quite good early on in training. We compare the frontiers for MDLM, Duo, CANDI, and FLM and observe that the frontiers at 50k training steps are close to the final generative frontiers after 1,000,000 steps. 
-Finally, we also use these frontiers to discuss recent progress in continuous denoising models, as reflected through the recent FLM paper, which proposes a time reparameterization to be linear in terms of discrete corruption instead of flow time. 
-We end on how pure continuous denoising models offer a compelling direction for few step generation that may not be attainable under a pure discrete framework.
 
 <TableOfContents 
   client:load
