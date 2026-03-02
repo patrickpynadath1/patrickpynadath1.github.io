@@ -23,7 +23,7 @@ import TableOfContents from "../../components/TableOfContents.jsx"
 *Depending on inference-time settings, it is possible to obtain entirely different relative performances between the same models if differences in entropy are unaccounted for*
 <br />
 ## Introduction 
-A recent line of work on continuous denoising language models, notably FLM, has reported strong generative performance relative to discrete and hybrid baselines. These results are exciting, as they suggest continuous methods may be closing the gap. However, the comparisons rely on single-point perplexity measurements, which we have previously shown are sensitive to sample entropy — small changes in temperature can invert model rankings entirely.
+A recent line of work on continuous denoising language models, notably FLM, has reported strong generative performance relative to discrete and hybrid baselines. These results are exciting, as they suggest continuous methods may be closing the gap. However, the comparisons rely on single-point perplexity measurements, which are sensitive to sample entropy as small changes can invert model rankings entirely [@pynadath2025candihybriddiscretecontinuousdiffusion] [@zheng2024masked].
 <br />
 
 In this blog, we apply generative frontier analysis to examine these claims more carefully. We first discuss why OpenWebText is a more meaningful pretraining benchmark than alternatives like LM1B, and why generative perplexity is currently the most practical evaluation metric for comparing models across different paradigms. We then show why single-point perplexity comparisons are unreliable due to entropy sensitivity, and introduce generative frontiers as a tool that addresses this. Using this framework, we make the following observations:
