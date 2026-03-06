@@ -151,7 +151,10 @@ It is understandable why frontier analysis is not often used — it requires ext
 </ExpandableSection>
 ### What defines a reasonable entropy
 
-It is natural to wonder what a reasonable entropy is -- if a model outperforms another at a very low entropy, this outperformance may not translate directly into better generations if the entropy is too far from actual language entropy. Thus a reasonable approach is to empirically measure the entropy across the validation set of openwebtext and use it to define intervals across the entropy scale. **We find that most of the mass falls within 5.2-5.7, indicating entropies in this range are close to natural language**. Below we visualize the distribution of entropies, and show how the nfe v.s perplexity changes when we fix an entropy value. This gives a clear picture of how models perform when within a reasonable range of entropy, since this distribution is directly based off of natural language. 
+It is natural to wonder what a reasonable entropy is -- if a model outperforms another at a very low entropy, this outperformance may not translate directly into better generations if the entropy is too far from actual language entropy. Thus a reasonable approach is to empirically measure the entropy across the validation set of openwebtext and use it to define intervals across the entropy scale. We visualize the empirical distribution on the validation set below. 
+![Entropy Empirical](/images/recent_cont_dlm_content/owt_empirical_entropy.png)
+
+**We find that most of the mass falls within 5.2-5.7, indicating entropies in this range are close to natural language**. This can be used to determine which entropies are important when making comparisons. We include a widget below where the entropy can be selected by moving a slider across the empirical PDF of the entropy distribution. This is used to find generative perplexity values for each method across a range of NFE. This gives a clear picture of how models perform when tuned to operate at the same entropy level. 
 <br /> 
 <div className="wide-block">
   <EntropyFrontier client:load />
