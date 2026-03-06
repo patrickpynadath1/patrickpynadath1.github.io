@@ -1,0 +1,176 @@
+
+---
+title: "Generative Frontiers: Why Evaluation Matters for Continuous Language Models"
+description: "Discussion on Evaluation Methodology and Recent Progress in Continuous Language Modeling"
+pubDate: 2026-02-21T00:00:00.000Z
+author: "Patrick Pynadath, Ruqi Zhang"
+tags: ["interactive", "demo"]
+---
+
+import SliderVisualizer from "../../components/SliderVisualizer.jsx"
+import EntropyFrontier from "../../components/EntropyFrontier.jsx"
+import EntropyRankingWidget from "../../components/FrontierToNFE.jsx"
+import FlowMatchingViz from "../../components/TokenEmergence.jsx"
+import ExpandableSection from "../../components/ExpandableSection.jsx"
+import TableOfContents from "../../components/TableOfContents.jsx"
+
+# Generative Frontiers: Why Evaluation Matters for Continuous Language Models
+
+*Patrick Pynadath, Ruqi Zhang* 
+
+*Disclaimer: We are authors of CANDI, one of the baselines discussed in this post. Frontier data for Duo, MDLM, and CANDI are from the CANDI paper* [@pynadath2025candihybriddiscretecontinuousdiffusion]. 
+![Entropy ranking demo](/images/recent_cont_dlm_content/entropy_ranking_demo.gif)
+*Depending on inference-time settings, it is possible to obtain entirely different relative performances between the same models if differences in entropy are unaccounted for*
+<br />
+## Introduction
+
+
+Diffusion language models have seen exciting recent progress, offering far more flexibility in generative trajectories than autoregressive models. Unlike autoregressive generation, which is constrained to a single left-to-right factorization, diffusion models admit a wide variety of training objectives, noising processes, and inference algorithms — enabling parallel generation, flexible decoding orders, and controllable generation in ways that are difficult or impossible for autoregressive models. This flexibility has motivated a growing body of research into new approaches to diffusion language modeling, which typically begins at the scale of GPT-2 small (~150 million parameters). This scale serves as a natural proving ground: it is tractable on an academic budget, yet meaningful enough to demonstrate whether a new approach has promise before committing to the cost of scaling further.
+<br />
+
+In this blog, we discuss pretraining at this scale of models. 
+
+1. We first discuss why **OpenWebText has become the standard** within this regime, and why alternatives such as LM1B are inherently less meaningful. 
+2. We explain why **likelihood based evaluations become questionable** when comparing models with different ELBOs and thus different slack to the likelihood value. 
+3. **Generative perplexity is a reasonable evaluation metric**, since it only requires the ability to generate samples and is agnostic to differences in latent structure.
+4. Diffusion models can trade token diversity (entropy) for better perplexity by concentrating their output distributio, causing **single-point comparisons to reflect inference settings rather than model capability**. 
+5. Generative frontiers address this by revealing the full entropy-perplexity tradeoff curve for each method, enabling **robust comparisons that capture differences in generative quality**.
+ 
+<TableOfContents 
+  client:load
+  sections={[
+    "Dataset Choice: Why OpenWebText is the Standard",
+    "On LM1B",
+    "Limitations of Likelihood Evals with dLLMs",
+    "Generative Perplexity",
+    "Why Generative Frontiers are Necessary",
+    "Interesting Side Note: 50k steps is sometimes good enough",
+    "Performance of Distillation Methods under Frontier Analysis"
+  ]}
+/>
+
+
+## Dataset Choice: Why OpenWebText is the Standard
+It is common to pretrain a ~150 million parameter model with a diffusion transformer architecture on OpenWebText [@Lou_Meng_Ermon_2024] [@Sahoo_Arriola_Schiff_Gokaslan_Marroquin_Chiu_Rush_Kuleshov_2024] [@Shi_Han_Wang_Doucet_Titsias_2024] [@arriola2025block]. Like the original WebText, the data is obtained by scraping all outbound sites on reddit with at least 3 karma, which serves as a data curation mechanism [@radford2021learning]. This results in a large (~9 billion tokens), diverse, yet relatively high quality set of text. For this reason, it has become the de-facto pretraining set for studying language models at this scale: it is usually close to the edge of what is attainable on an academic budget, but is still similar enough to pretraining data to obtain meaningful performance metrics. 
+<br />
+Additionally, since it is meant as a replication for WebText which GPT-2 was trained on, it is a very well-studied dataset [@radford2021learning] [@Gokaslan2019OpenWeb]. This also enables us to use metrics such as generative perplexity under GPT-2 large as a proxy for data likelihood, which we discuss more in the following section. 
+
+### On LM1B
+While there are smaller datasets such as LM1B that can be used for training language models, it is important to note that these datasets often differ from pretraining data in substantial ways. **In particular, LM1B is 1 billion of tokens from news sources shuffled at a sentence level** [@chelba2014billionwordbenchmarkmeasuring].  As a result, there is no notion of coherence across different sentences, since the ordering is fundamentally random. This was intentional -- this benchmark was introduced in 2013, when neural networks were still being compared against n-gram models. This dataset was introduced as a benchmark for measuring whether neural networks could properly model language at the sentence level better than n-gram models. Even at the time of introduction, it was primarily intended for likelihood based evaluation. For demonstrating language ability beyond generating random sentences, LM1B is not an ideal dataset for pretraining. This is why most diffusion language model papers use LM1B for only likelihood or zero shot likelihood evaluation [@Sahoo_Arriola_Schiff_Gokaslan_Marroquin_Chiu_Rush_Kuleshov_2024] [@arriola2025block] [@sahoo2025diffusion]. 
+
+## Limitations of Likelihood Evals with dLLMs
+While the question of what scale to train models at and what data to use is a fairly closed topic, there still remains the evaluation problem. While the original GPT-2 paper demonstrates that pretraining on web-text enabled zero-shot task performance on a wide range of tasks, it is crucial to note that the performance usually required scaling up the number of parameters -- which is difficult when ~150 million is already quite expensive. Furthermore, some of the primary results are zero-shot likelihood across different unseen datasets across different models to demonstrate scaling behavior [@radford2021learning]. This was useful as all models were autoregressive, and thus measured likelihood in the exact same. With different ELBO formulations, comparing the likelihoods directly seems questionable [@theis2016noteevaluationgenerativemodels]. 
+
+### Different ELBOs, Different Slack to Likelihood
+It is possible to express the log likelihood as follows, for any variational distribution $q(\mathbf{z}|\mathbf{x})$:
+$$\log p(\mathbf{x}) = \mathcal{L}(q) + D_{\mathrm{KL}}\big(q(\mathbf{z}|\mathbf{x}) \,\|\, p(\mathbf{z}|\mathbf{x})\big)$$
+where $\mathcal{L}(q) = \mathbb{E}_{q(\mathbf{z}|\mathbf{x})}\left[\log \frac{p(\mathbf{x}, \mathbf{z})}{q(\mathbf{z}|\mathbf{x})}\right]$ is the evidence lower bound (ELBO). Since $D_{\mathrm{KL}} \geq 0$, we have $\log p(\mathbf{x}) \geq \mathcal{L}(q)$, with equality if and only if $q(\mathbf{z}|\mathbf{x}) = p(\mathbf{z}|\mathbf{x})$. Crucially, the KL divergence term depends on both the true posterior --- which differs across models with different latent variable structures --- and the choice of variational family. As this gap is generally intractable to compute, direct comparison of ELBOs across models with different latent structures is unreliable for model selection [@bishop2006pattern].
+
+<ExpandableSection title="Likelihood Evals and Generative Quality" client:load>
+Even if likelihood comparisons between different ELBO formulations were valid, it still may not be relevant to modern language modeling, where the principal concern tends to be generative quality. [@theis2016noteevaluationgenerativemodels] provides an argument for why likelihoods and generative fidelity tend to be independent of each other in high dimensions, and we provide a brief summary here. 
+<br />
+
+**Good Generations; Poor Likelihoods**
+
+First, they discuss how to construct a model with excellent generative quality but poor likelihood evaluation through a look-up table with memorized examples from the training set. By definition, this model would place no mass on any other samples besides those that are memorized, which would result in a poor likelihood value for any reasonable validation set. However, by construction, the generative quality would be exactly the same as we would want from the target distribution -- since this model has just memorized exact samples from the training set. 
+<br />
+
+**Poor Generations; Good Likelihoods**
+
+Second, they discuss how to construct a model with poor generative quality, but excellent likelihood values. To do this, they start with some model that attains a good likelihood value. They then show that by constructing a mixture between this model and some very poor model that outputs bad quality samples, they obtain a model that has close likelihood values to the original model but will almost always output poor generations. This follows from how likelihoods behave in high dimensions. For a more thorough argument, we highly recommend reading [@theis2016noteevaluationgenerativemodels] -- while it was originally written in the context of image generative models, the core arguments are still relevant to language model evaluation. 
+<br />
+
+It is worth noting that the goal of likelihoods is somewhat orthogonal to directly ensuring good generative quality — likelihood measures how well a model compresses its training data, which for large scale models serves as a proxy for downstream potential after finetuning and alignment. At the GPT-2 small scale, however, there is no further finetuning — generative quality is the final goal, and so it makes sense to measure it directly.
+</ExpandableSection>
+
+## Generative Perplexity
+For this reason, generative perplexity or generative negative log likelihood has gradually become a core tool for comparing different models [@zheng2024masked] [@dieleman2022continuous] [@sahoo2025diffusion] [@sahoo2025esoteric]. All that is required for generative perplexity is the ability to sample from a trained model -- afterwards, we simply run a pre-trained autoregressive model such as GPT-2 Large on the generations and report the likelihoods. We do this for the following reasons:
+<br />
+
+1) AR models compute the likelihoods in a single forward pass, and 
+2) GPT-2 was trained on web-text, which is the original inspiration for the OpenWebText used widely for pre-training language models. 
+
+### Generative Perplexity as Likelihood Oracle 
+We can view GPT-2 large as an oracle for likelihoods from the target distribution, to the extent that GPT-2 has successfully learned the target distribution. 
+
+While there are other metrics for evaluating generations, generative perplexity seems to be used more frequently because it is easier to interpret. For example, MAUVE is another metric that is used to measure generation quality [@meshchaninov2025compressed]. However, this metric is not as interpretable (it represents a KL divergence based on extracted hidden representations from both reference and generated text), still dependent on having some oracle model, and was originally designed for comparisons for conditional generation [@pillutla2021mauvemeasuringgapneural]. It also requires a fairly large sample size to get meaningful results. Since temperature and NFE can affect sample quality, this can be quite costly. 
+
+### Caveats to Generative Perplexity 
+It is important to note that this interpretation depends on the following: 
+<br />
+1) How well GPT-2 models its training data, WebText
+2) How close the training data for the target language model aligns with WebText. 
+
+More concretely, if the target model is trained on a dataset different than WebText or uses a different tokenizer, then perplexity can no longer be reasonably interpreted as a proxy for data likelihood. 
+
+In this case, perplexity would reflect some combination of how close the target model can capture its training data, and how close its training data is to WebText. These two factors may have some interdependent effect on the resulting likelihood from the oracle model, and thus it is more difficult to interpret the resulting perplexity values. In the scenario where the training data differs substantially from WebText, it is probably more suitable to use MAUVE, since it is designed to compare against a reference set of text. 
+
+
+## Why Generative Frontiers are Necessary 
+By definition, perplexity is a measure of how predictable tokens are in a given sequence. Thus if the unigram distribution of a sentence is more degenerate / has mass more concentrated on specific words, it will have a better perplexity value, as the oracle model can simply increase the mass placed on high frequency words throughout its predictions. This does not reflect better language quality necessarily -- it just reflects a more predictable unigram distribution. 
+<br />
+
+This has already been observed in [@zheng2024masked], where they demonstrate that even differing logit precisions can result in misleading perplexity values that are revealed via entropy. However, the sensitivity of perplexity of to entropy goes beyond just severe mode collapse -- **even slight changes in entropy can result in more competitive perplexity metrics.** 
+<br />
+
+
+
+### Same Frontiers, Different Rankings
+To emphasize that single point comparisons are mutable, we created an interactive app using the frontier data from CANDI that allows the user to alter NFE v.s perplexity comparisons by sliding along the frontiers of different methods. **The differing rankings are not contradictory -- they are merely different slices of the same generative frontier.** 
+<br />
+<ExpandableSection title="Role of Temperature Tuning in Language modeling" client:load>
+Temperature and other inference-time adjustments to logits is already standard practice in autoregressive models, and even larger scale diffusion language models. However, when looking at the literature that studies diffusion LMs at the scale of GPT-2, it is common practice to report a single performance point at either a universal inference setting for all models, or the temperature of 1.0. 
+
+Even if Model A outperforms Model B at temperature 1.0, if Model B can be tuned to beat Model A by lowering the temperature -- which does not require any retraining -- is it really fair to claim Model A is better than Model B? 
+
+</ExpandableSection>
+
+<div className="wide-block">
+  <EntropyRankingWidget client:load />
+</div>
+
+### Analytical Perspective on Perplexity-Entropy Tradeoff
+It is possible to demonstrate this tradeoff between perplexity and entropy analytically. Formally, generative perplexity measures $\mathbb{E}_{q}[\log p]$, where $q$ is the diffusion model and $p$ is the AR oracle. However, the more principled metric for comparing two distributions is the KL divergence, $KL(q \| p) = \mathbb{E}_{q}[\log p] + H(q)$. KL divergence asks how different are these two distributions, while cross-entropy asks how well can $p$ predict samples from $q$. 
+<br />
+The core difference lies within the entropy term $H$ -- the KL divergence captures the entropy of the dLLM distribution, whereas likelihood does not. As a result, it is possible for two different distributions to have the same divergence from some reference distribution $p$ but have very different likelihoods as a result of differing entropies.
+<br />
+
+Generative frontiers partially address this by tracking the entropy-perplexity tradeoff explicitly. However, the entropy tracked by frontiers is the marginal per-token entropy estimated from token frequencies, whereas the KL decomposition involves the joint entropy of the full sequence. This means frontiers are a practical approximation rather than a complete solution — the best available tool given computational constraints, but not a perfect one.
+
+
+### Interpeting Generative Frontiers Generative Frontiers
+For this reason, frontiers of entropy v.s perplexity, as introduced in [@zheng2024masked] and expanded on later in [@pynadath2025candihybriddiscretecontinuousdiffusion], are a very useful tool. These frontiers address the sensitivity of perplexity to entropy by revealing the full frontier, which allows for stronger conclusions. 
+
+<br />
+If a model outperforms another at a fixed temperature, this only reflects performance at that temperature and can be reversed via tuning. If a model dominates another in terms of entropy-perplexity frontiers, this means that no amount of tuning (at least for temperatures) can result in better perplexity without sacrificing diversity. **Single-point comparisons without entropy matching compare inference settings; generative frontiers compare model capability.**
+
+<ExpandableSection title="Why Frontiers are not standard practice" client:load>
+
+It is understandable why frontier analysis is not often used — it requires extensive temperature sweeps, and must be repeated for each NFE. Additionally, it results in more nuanced results that may not reveal a clear winner — there may be regions of entropy where one model outperforms  and another where it underperforms. But such complexity isn’t a result of the metric, but rather the task itself — we are trying to evaluate how language-like generations are, and what constitutes good language can vary based on context, reader, etc. The field has shifted towards using perplexity to capture a quality that is very multi-faceted, so it makes sense that resulting comparisons are also multi-faceted.
+
+</ExpandableSection>
+### What defines a reasonable entropy
+
+It is natural to wonder what a reasonable entropy is -- if a model outperforms another at a very low entropy, this outperformance may not translate directly into better generations if the entropy is too far from actual language entropy. Thus a reasonable approach is to empirically measure the entropy across the validation set of openwebtext and use it to define intervals across the entropy scale. **We find that most of the mass falls within 5.2-5.7, indicating entropies in this range are close to natural language**. Below we visualize the distribution of entropies, and show how the nfe v.s perplexity changes when we fix an entropy value. This gives a clear picture of how models perform when within a reasonable range of entropy, since this distribution is directly based off of natural language. 
+<br /> 
+<div className="wide-block">
+  <EntropyFrontier client:load />
+</div>
+
+
+
+
+## Interesting Side Note: 50k steps is sometimes good enough 
+We can use frontier analysis to observe something that may be of interest to those working on pretraining -- often, the generative performance of models very early on in training (50k) steps is quite close to the model's ability after 1,000,000 steps. We visualize this below by pretraining Duo, MDLM, and CANDI for 50k steps and comparing against the frontiers generated by fully trained checkpoints. as one can observe, they are remarkably close. **The generative frontiers of models after 50k steps closely matches the performance at 1 million steps.** Thus when iterating on an algorithm / training framework, it is most likely more than sufficient to use 50k steps -- if a model does not work by this point, it will probably not work by 1,000,000 steps. While this may have already been implicitly known by those that have pretrained models at this scale, it is probably surprising how close the frontiers of these models are, when comparing 50k steps to 1 million steps. 
+
+<br />
+This may indicate a limitation of either generative perplexity or this scale of models in terms of measuring model performance -- it is a commonly known fact that training for longer improves performance on downstream tasks. It is not known whether the above saturation is a result of model capacity or perplexity being unable to capture fine-grained differences in model capability.
+![Early Training Behavior](/images/recent_cont_dlm_content/training_behavior.png)
+
+This observation itself is a product of frontier analysis — it would be difficult to draw this conclusion reliably from single-point comparisons alone, where logit calibration could easily obscure the similarity.
+
+## Conclusion 
+We hope this blog serves as a useful reference for researchers working on diffusion language models at this scale. As the field continues to develop new objectives, noising processes, and inference algorithms, having a principled evaluation methodology will only become more important — and we believe generative frontiers are a step in the right direction.
+
+---
+## References
