@@ -278,8 +278,38 @@ To illustrate this point, we have a small game below that illustrates how single
 Generative frontiers offer a practical solution to both problems simultaneously. We can address the first problem by performing a sweep across a range of different temperatures used when computing the posterior distribution for each method. **This naturally allows us to vary the entropy of the generative distribution, which lets us make conclusions on an entire range of generative performance as opposed to a single operating point.**
 <br />
 
-Second, we can plot each temperature as an entropy-generative perplexity pair, and construct a frontier curve for each method. To compare methods at a fixed entropy, we can just fix the x value and measure where each frontier intersects this vertical line. We can do likewise for generative perplexity. Furthermore, dominating frontiers allow for much stronger claims: if a model has a strictly superior frontier than another, it implies it that it is always closer to the target distribution at every operating point of interest. This much more powerful than demonstrating outperformance at a single operating point. **Single point comparisons measure inference settings; generative frontiers compare model performance.**
+Second, we can plot each temperature as an entropy-generative perplexity pair, and construct a frontier curve for each method. To compare methods at a fixed entropy, we can just fix the x value and measure where each frontier intersects this vertical line. We can do likewise for generative perplexity. Assuming that unigram entropy comparisons accurately reflect relative rankings in joint entropy, we can make principled claims about performance in terms of divergence to the target distribution: **if we match the generative perplexities and one method has a higher entropy, then it must have a lower KL divergence at that operating point.**
 <br />
+
+First, if the generative perplexities for $q_1$ and $q_2$ are equal, we have the following by definition of generative perplexity: 
+<br />
+<div style={{textAlign: 'center'}}>
+$$
+\begin{align*}
+\text{GenPPL}(q_1) = \text{GenPPL}(q_2) &\implies H(q_1, p_{ref}) = H(q_2, p_{ref}) \\
+\end{align*}
+$$
+</div>
+<br />
+
+Next, if we assume that $H(q_1) > H(q_2)$, we have the following: 
+<br />
+<div style={{textAlign: 'center'}}>
+$$
+\begin{align*}
+KL(q p_{ref}) &= H(q_1, p_{ref}) - H(q_1) \\
+&= H(q_2, p_{ref}) - H(q_1) \\
+&< H(q_2, p_{ref}) - H(q_2) \\
+&= KL(q_2 || p_{ref})
+\end{align*}
+$$
+</div>
+<br />
+Similarly, if we match the entropy and a method has a lower generative perplexity, it must also have a lower divergence at that operating point. **Thus by using generative frontiers, we can make supported claims about divergence to the reference distribution.**
+<br />
+Furthermore, dominating frontiers allow for much stronger claims: if a model has a strictly superior frontier than another, it implies it that it is always closer to the target distribution at every operating point of interest. This much more powerful than demonstrating outperformance at a single operating point. **Single point comparisons measure inference settings; generative frontiers compare model performance.**
+<br />
+
 
 We include an interactive widget below which allows for sliding along the generative frontiers for each method, and visualizing how NFE and generative perplexity comparisons change. We hope to illustrate that the different rankings that arise when changing the temperature of methods are really just different views of the same, static frontiers. 
 <br />
