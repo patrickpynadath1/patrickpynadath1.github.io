@@ -338,7 +338,7 @@ It is worth discussing under what scenarios frontiers can be used to make inform
 The first two assumptions are relatively straight easy to accept -- as GPT-2 Large is the standard for evaluating generative perplexity on OpenWebText and the entire GPT-2 was trained on the closed-source version of this dataset, it seems reasonable to accept it as a proxy distribution. Similarly, generative perplexity is an exponential of the AR NLL on generated sequences, which can be seen as a Monte-Carlo estimate of the true cross entropy $H(q_{gen}, p_{ref})$. 
 <br />
 
-The final assumption is worth discussing -- $\tilde{H}$ is the unigram entropy, whereas we require the joint entropy $H(q)$. It may not be immediately clear why the former is a good approximation of the latter. Here we provide a brief explanation on why we believe it is a sufficient approximation within the context of frontier analysis, and what scenarios would result in this approximation being misleading. 
+The final assumption is worth discussing -- $\tilde{H}$ is the unigram entropy, whereas we require the joint entropy $H(q)$. It may not be immediately clear why the former is a good approximation of the latter. Here we provide a brief explanation on why we think it is a reasonable enough approximation within the context of frontier analysis, and why the general methodology is compatible with potentially better approximations.
 
 
 <br />
