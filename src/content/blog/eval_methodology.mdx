@@ -385,7 +385,7 @@ $$H(q) < n \cdot H_{avg}(q) \approx n \cdot \tilde{H}(q)$$
 This demonstrates that the unigram entropy roughly tracks the bound of the joint entropy. Informally, if we accept the unigram entropy as a reasonable approximation to the average marginal entropy, a smaller unigram entropy necessitates a smaller joint entropy. A larger unigram entropy allows for a larger joint entropy. 
 <br />
 
-While this may not be the optimal or perfect approximation, the general approach of frontier analysis is entirely compatible with better approximations: we choose unigram entropy as it is already a commonly used metric within the field. Furthermore, we do not need unigram entropy to be a precise approximation -- **we only need it to faithfully capture the relative rankings between different distributions.**
+While this may not be the optimal or perfect approximation, **the general approach of frontier analysis is entirely compatible with better approximations of $H(q)$**: we choose unigram entropy as it is already a commonly used metric within the field. Furthermore, we do not need unigram entropy to be a precise approximation -- **we only need it to faithfully capture the relative rankings between different distributions.**
 <br />
 
 ## Interesting Side Note: 50k Steps is Sometimes Good Enough 
