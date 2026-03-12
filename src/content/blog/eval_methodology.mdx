@@ -22,7 +22,7 @@ Patrick Pynadath<sup>1</sup>, Jiaxin Shi<sup>2</sup>, Ruqi Zhang<sup>1</sup>
 
 <sup>1</sup> Purdue Department of Computer Science 
 
-<sup>2</sup> <a href="!href[jiaxins.io]"> jiaxns.io </a>
+<sup>2</sup> jiaxns.io 
 <br />
 ![Entropy ranking demo](/images/recent_cont_dlm_content/entropy_ranking_demo.gif)
 *Depending on inference-time settings, it is possible to obtain entirely different relative performances between the same models if differences in entropy are unaccounted for. However, generative frontiers reveal that these are really just different views of the same underlying model performance.*
@@ -45,10 +45,10 @@ In this blog, we discuss pretraining at this model scale.
   client:load
   sections={[
     "Dataset Choice: Why OpenWebText is the Standard",
-    "On LM1B",
+    "LM1B is Shuffled",
     "Limitations of Likelihood Evals with dLLMs",
-    "Generative Perplexity",
-    "Why Generative Frontiers are Necessary",
+    "The Problem with Generative Perplexity",
+    "Generative Frontiers: A Principled and Practical Solution",
     "Interesting Side Note: 50k steps is sometimes good enough",
   ]}
 />
@@ -59,7 +59,7 @@ It is common to pretrain a ~150 million parameter model with a diffusion transfo
 <br />
 Additionally, since it is meant as a replication for WebText which GPT-2 was trained on, it is a very well-studied dataset [@radford2021learning] [@Gokaslan2019OpenWeb]. This also enables us to use metrics such as generative perplexity under GPT-2 large as a proxy for data likelihood, which we discuss more in the following section. 
 
-### On LM1B
+### LM1B is Shuffled
 While there are smaller datasets such as LM1B that can be used for training language models, it is important to note that these datasets often differ from pretraining data in substantial ways. **In particular, LM1B is 1 billion of tokens from news sources shuffled at a sentence level** [@chelba2014billionwordbenchmarkmeasuring].  As a result, there is no notion of coherence across different sentences, since the ordering is fundamentally random. This was intentional -- this benchmark was introduced in 2013, when neural networks were still being compared against n-gram models. This dataset was introduced as a benchmark for measuring whether neural networks could properly model language at the sentence level better than n-gram models. Even at the time of introduction, it was primarily intended for likelihood-based evaluation. For demonstrating language ability beyond generating random sentences, LM1B is not an ideal dataset for pretraining. This is why most diffusion language model papers use LM1B for only likelihood or zero-shot likelihood evaluation [@Sahoo_Arriola_Schiff_Gokaslan_Marroquin_Chiu_Rush_Kuleshov_2024] [@arriola2025block] [@sahoo2025diffusion]. 
 
 ## Limitations of Likelihood Evals with dLLMs
@@ -90,7 +90,7 @@ It is worth noting that the goal of likelihoods is somewhat orthogonal to direct
 ## Comparing Generative Quality
 Given the difficulties with comparing ELBOs across models with different formulations, the field has moved towards generative metrics. These metrics — exemplified by generative perplexity for coherence and unigram entropy for diversity — are conceptually straightforward: they only require the ability to sample from the model. **However, used in isolation or at a single operating point, they can still lead to uninformative or misleading comparisons.**
 <br />
-In this section, we build up a principled framework for generative evaluation. We start from the ideal metric — KL divergence from the target distribution — and show how it decomposes naturally into generative perplexity and unigram entropy. This decomposition reveals why single point comparisons are fundamentally ambiguous: the same KL divergence can manifest as many different perplexity, entropy pairs, and **minor changes in entropy can produce large changes in perplexity** due to the exponential relationship between the two. We then introduce generative frontiers as a natural solution, and show why **frontier dominance is a sufficient condition for lower KL divergence** — making it a principled basis for model comparison. We conclude by discussing what constitutes a reasonable entropy range and under what conditions the approximations underlying frontier analysis hold.
+In this section, we build up a principled framework for generative evaluation. We start from the ideal metric — KL divergence from the target distribution — and show how it decomposes naturally into generative perplexity and unigram entropy. This decomposition reveals why single-point comparisons are fundamentally ambiguous: the same KL divergence can manifest as many different perplexity-entropy pairs, and **minor changes in entropy can produce large changes in perplexity** due to the exponential relationship between the two. We then introduce generative frontiers as a natural solution, and show why **frontier dominance is a sufficient condition for lower KL divergence** — making it a principled basis for model comparison. We conclude by discussing what constitutes a reasonable entropy range and under what conditions the approximations underlying frontier analysis hold.
 
 ### The Problem with Generative Perplexity
 Generative perplexity is a popular metric used for evaluating the generative quality of models at this scale. Intuitively, it reflects how confused some reference auto-regressive model is by the evaluated samples. More formally, generative perplexity is defined as follows, for a generative distribution $q_{gen}$ and a reference distribution $p_{ref}$: 
@@ -115,12 +115,13 @@ $$
 $$
 </div>
 
-While this does meaningfully avoid extreme failure cases, we observe in [@pynadath2025candihybriddiscretecontinuousdiffusion] that **even minor entropy changes are sufficient to completely change relative performance between different models.** We include an animation below to visualize this, using Duo, MDLM, and CANDI [@sahoo2025diffusion] [@Sahoo_Arriola_Schiff_Gokaslan_Marroquin_Chiu_Rush_Kuleshov_2024] [@pynadath2025candihybriddiscretecontinuousdiffusion]. 
+While this does meaningfully avoid extreme failure cases, we observe in [@pynadath2025candihybriddiscretecontinuousdiffusion] that **even minor entropy changes are sufficient to completely change relative performance between different models.** We include a visual comparison below using Duo, MDLM, and CANDI [@sahoo2025diffusion] [@Sahoo_Arriola_Schiff_Gokaslan_Marroquin_Chiu_Rush_Kuleshov_2024] [@pynadath2025candihybriddiscretecontinuousdiffusion]. 
 <br />
 ![Entropy Empirical](/images/recent_cont_dlm_content/gen_ppl_temp_changes.png)
 <br />
 
-As visible, all of the entropies are relatively similar and seem reasonable -- there is no obvious "hacking" in terms of being overly repetitive. However, these minor changes in unigram entropy seem to correspend to completely different rankings between methods. And crucially, **none of these results are misleading or contradictory -- these are all performance metrics that can be obtained by tuning the temperature**, so all of these are valid. We include the temperatures used to achieve these results below. 
+As shown, all of the entropies are relatively similar and seem reasonable -- there is no obvious "hacking" in terms of being overly repetitive. However, these minor changes in unigram entropy lead to completely different rankings between methods. And crucially, **none of these results are misleading or contradictory -- these are all performance metrics that can be obtained by tuning the temperature**, so all of these are valid. We include the temperatures used to achieve these results below. 
+
 <style>{`
   .temp-table-wrapper {
     display: flex;
@@ -218,8 +219,8 @@ As visible, all of the entropies are relatively similar and seem reasonable -- t
     </tbody>
   </table>
 </div>
-### Why this happens: A Principled View
-Here we take a first principles approach to understand why generative perplexity is sensitive to unigram entropy empirically. We can interpret the relation between generative perplexity and unigram entropy by looking at how the KL divergence between two distribution decomposes into a cross entropy and entropy term. More formally, we have the following: 
+### Why This Happens: A Principled View
+Here we take a first-principles approach to understand why generative perplexity is sensitive to unigram entropy empirically. We can interpret the relation between generative perplexity and unigram entropy by looking at how the KL divergence between two distribution decomposes into a cross-entropy and entropy term. More formally, we have the following: 
 <div style={{textAlign: 'center'}}>
 $$
 \begin{align*}
@@ -228,16 +229,15 @@ KL(q_{gen} || p_{ref}) = H(q_{gen}, p_{ref}) - H(q_{gen})
 $$
 </div>
 
-The first term is the cross entropy between the generative distribution and the reference distribution, which is precisely what is used to calculate generative perplexity. The second term is the entropy for the generative distribution, which we can view as being approximated by the empirical unigram entropy.
+The first term is the cross-entropy between the generative distribution and the reference distribution, which is precisely what is used to calculate generative perplexity. The second term is the entropy of the generative distribution, which we can view as being approximated by the empirical unigram entropy.
 <br />
 
-**The KL divergence is ultimately what we would want to measure -- this metric would quantify the distance between the generative distribution and the reference distribution.** If we assume the reference distribution is a good stand-in for the data distribution, then this measures how close the samples from our model are to the data distribution, which is ultimately what we want to model. 
+
+**This reveals that the metrics the community already tracks together are not independent — they correspond to the two components of KL divergence from the reference distribution, providing a natural theoretical grounding for why both are necessary.**
 <br />
 
-However, this term is intractible to compute, which is why we rely on $H(q, p)$, which only requires us to be able to sample from $q_{gen}$. This is not sufficient to completely capture closeness between the distributions: if we simultaneously decrease $H(q_{gen}, p_{ref})$ and $H(q)$, **it is possible to achieve better generative perplexity without actually changing the distance to the reference distribution.** This results in the following:
-<br />
-1. For a given distance from the reference distribution, there is an entire range of entropies and generative perplexities that result in that specific divergence. 
-2. Because generative perplexity is exponential in terms of $H(q_{gen}, p_{ref})$, small changes in entropy can result in seemingly large changes to generative perplexity without changing the divergence between the two distributions.  
+However, the exact joint entropy $H(q)$ is intractable to compute, meaning we cannot measure the full KL divergence directly. This is why the field relies primarily on measuring cross entropy $H(q_{gen}, p_{ref})$, using unigram entropy to rule out degenerate cases. However, viewing both metrics through the lens of KL divergence reveals a subtler issue: simultaneously decreasing $H(q_{gen}, p_{ref})$ and $H(q_{gen})$ leaves the actual distance to the reference distribution unchanged, yet produces better generative perplexity. Critically, because generative perplexity is exponential in $H(q_{gen}, p_{ref})$, **even minor entropy shifts that leave the unigram entropy well within the reasonable range can produce large changes in generative perplexity without any corresponding change in the actual distance to the target distribution.** Thus even when entropy is reported as a sanity check, small differences between methods can flip rankings without reflecting meaningful differences in generative quality. 
+<br /> 
 
 We include a small interactive widget below, where it is possible to fix the KL divergence and observe how small changes in entropy can manifest as large generative perplexity shifts. 
 <br />
@@ -245,30 +245,26 @@ We include a small interactive widget below, where it is possible to fix the KL 
   <KLSensitivity client:load />
 </div>
 
-### Single Point metrics are Insufficient
-Given the relation between entropy, generative perplexity, and KL divergence, it may seem that including both generative perplexity and unigram entropy is sufficient. However, we argue that single point comparisons are insufficient as **LLMs parameterize many distributions** via inference time settings, thus requiring a wholistic metric; and **single point entropy-perplexity pairs are ambiguous** in terms of divergence to the target distribution.
+### Single Point Metrics are Insufficient
+Given the relation between entropy, generative perplexity, and KL divergence, it may seem that including both generative perplexity and unigram entropy is sufficient. However, we argue that single-point comparisons are insufficient as **LLMs parameterize many distributions** via inference-time settings, thus requiring a holistic metric; and **single-point entropy-perplexity pairs are ambiguous** in terms of divergence to the target distribution.
 <br />
 
 **LLMs Parameterize Many Distributions**
 
 One reason for why single point comparisons are insufficient is that the models we want to compare do not operate at single points -- they really parameterize an entire range of generative distributions, depending on the specific inference-time strategies used.
 <br />
-For example, it is possible to adjust the entropy of the generative distribution by altering the temperature used inside the softmax. Reducing the entropy of the distribution allows better likelihoods because of the foundational relation between entropy and cross entropy: 
+For example, it is possible to adjust the entropy of the generative distribution by altering the temperature used inside the softmax. While reducing the entropy of the distribution allows for potentially better likelihoods due to the fundamental relation $H(q) < H(q, p)$, it does not determine by how much $H(q, p)$ will change as it is a lower bound. **Therefore there is no way of knowing how temperature affects KL divergence without directly measuring both metrics at that operating point.**
 <br />
-<div style={{textAlign: 'center'}}>
-$$H(q) < H(q, p).$$
-</div>
-<br />
-Thus the entropy of $q$ is a strict limit as to how small the cross entropy between $q$ and $p$ can be. However, it does not tell us the exact amount the cross entropy $H(q, p)$ will decrease by -- it just allows for the possibility of $H(q, p)$ decreasing. If $H(q)$ and $H(q, p)$ change, the KL divergence will also change -- which means that evaluation results for a different operating point may not necessarily hold, since  $H(q, p)$ can change in ways specific to each generative model. **Thus there is no way of knowing how much decreasing the temperature affects $H(q, p)$ and thus the KL divergence unless unless we directly measure the performance at that temperature in terms of both metrics.**
-<br />
+
 **Single Point Comparisons are Ambiguous**
+
 Ignoring the fact that it is possible to tune each model to achieve potentially different KL divergences, single point comparisons are only informative about KL divergences in the scenario where one point achieves a strictly lower generative perplexity and higher entropy. In this case, it is possible to conclude that one point has a lower KL divergence than the other. 
 <br />
 
-However, strict dominance is unusual -- it is more often the case that a method achieves a superior perplexity and worse entropy or vice versa. **In these cases, it is not directly possible to determine which one is closer to the target distribution** without making assumptions on how differences in the generative perplexity / unigram entropy space correspend to KL differences, which depends on how accurate unigram entropy is in terms of capturing the precise values of $H(q)$. 
+However, strict dominance is unusual -- it is more often the case that a method achieves a superior perplexity and worse entropy or vice versa. **In these cases, it is not directly possible to determine which one is closer to the target distribution** without making assumptions on how differences in the generative perplexity / unigram entropy space correspond to KL differences, which depends on how accurate unigram entropy is in terms of capturing the precise values of $H(q)$. 
 <br />
 
-To illustrate this point, we have a small game below that illustrates how single point comparisons can be difficult to interpret. We construct use the simple relation of $\text{GenPPL}(q) = \exp(KL(q || p) + H(q))$ to construct various contours, that represent different KL distances. We then apply a warping function to the entropy / perplexity space to represent that even if our unigram entropy preserves rankings, it is not necessarily true that unit changes in the approximation space correspend to unit changes in the target metric.  
+To illustrate this point, we have a small game below that illustrates how single point comparisons can be difficult to interpret. We construct use the simple relation of $\text{GenPPL}(q) = \exp(KL(q || p) + H(q))$ to construct various contours that represent different KL distances. We then apply a warping function to the entropy / perplexity space to represent that even if our unigram entropy preserves rankings, it is not necessarily true that unit changes in the approximation space correspond to unit changes in the target metric.  
 <br />
 <div className="wide-block">
   <KLMinigame client:load />
@@ -307,9 +303,9 @@ $$
 <br />
 Similarly, if we match the entropy and a method has a lower generative perplexity, it must also have a lower divergence at that operating point. **Thus by using generative frontiers, we can make supported claims about divergence to the reference distribution.**
 <br />
-Furthermore, dominating frontiers allow for much stronger claims: if a model has a strictly superior frontier than another, it implies it that it is always closer to the target distribution at every operating point of interest. This much more powerful than demonstrating outperformance at a single operating point. **Single point comparisons measure inference settings; generative frontiers compare model performance.**
-<br />
 
+Furthermore, dominating frontiers allow for much stronger claims: if a model has a strictly superior frontier than another, it implies that it is always closer to the target distribution at every operating point of interest. This is much more powerful than demonstrating outperformance at a single operating point. **Single point comparisons measure inference settings; generative frontiers compare model performance.**
+<br />
 
 We include an interactive widget below which allows for sliding along the generative frontiers for each method, and visualizing how NFE and generative perplexity comparisons change. We hope to illustrate that the different rankings that arise when changing the temperature of methods are really just different views of the same, static frontiers. 
 <br />
@@ -335,27 +331,27 @@ It is natural to wonder what a reasonable entropy is -- if a model outperforms a
 It is worth discussing under what scenarios frontiers can be used to make informative comparisons. Our goal is to use frontier analysis to determine rank generative distributions in terms of closeness to the data distribution $p_{data}$. For this to be possible, we need the following to hold: 
 <br />
 1. Our reference model $p_{ref}$ is a good proxy for the data distribution. 
-2. Generative perplexity accurately captures the ranking of cross entropies -- $H(q, p_{ref}) < H(q', p_{ref})$ if and only if $\text{GenPPL}(q) < \text{GenPPL}(q')$.
-3. Unigram entropy accurately captures the ranking of joint entropies -- $H(q) < H(q')$ if and only if $\tilde{H}(q) < \tilde{H}(q')$. 
+2. Generative perplexity accurately captures the ranking of cross entropies: $H(q, p_{ref}) < H(q', p_{ref})$ if and only if $\text{GenPPL}(q) < \text{GenPPL}(q')$.
+3. Unigram entropy accurately captures the ranking of joint entropies: $H(q) < H(q')$ if and only if $\tilde{H}(q) < \tilde{H}(q')$. 
 <br />
 
-The first two assumptions are relatively straight easy to accept -- as GPT-2 Large is the standard for evaluating generative perplexity on OpenWebText and the entire GPT-2 was trained on the closed-source version of this dataset, it seems reasonable to accept it as a proxy distribution. Similarly, generative perplexity is an exponential of the AR NLL on generated sequences, which can be seen as a monte-carlo estimate of the true cross entropy $H(q_{gen}, p_{ref})$. 
+The first two assumptions are relatively straight easy to accept -- as GPT-2 Large is the standard for evaluating generative perplexity on OpenWebText and the entire GPT-2 was trained on the closed-source version of this dataset, it seems reasonable to accept it as a proxy distribution. Similarly, generative perplexity is an exponential of the AR NLL on generated sequences, which can be seen as a Monte-Carlo estimate of the true cross entropy $H(q_{gen}, p_{ref})$. 
 <br />
 
-The final assumption is worth discussing -- $\tilde{H}$ is the unigram entropy, whereas we require the joint entropy $H(q)$. It may not be immediately be clear why the former is a good approximation of the latter. Here we provide a brief explanation on why we believe it is a sufficient approximation within the context of frontier analysis, and what scenarios would result in this approximation being misleading. 
+The final assumption is worth discussing -- $\tilde{H}$ is the unigram entropy, whereas we require the joint entropy $H(q)$. It may not be immediately clear why the former is a good approximation of the latter. Here we provide a brief explanation on why we believe it is a sufficient approximation within the context of frontier analysis, and what scenarios would result in this approximation being misleading. 
 
 
 <br />
 **Unigram Entropies Approximate Average Marginal Entropies**
 
-First, unigram entropies should be viewed as a reasonable approximation to the average marginal entropies for each positions. More formally, using $q_1, q_2, \dots q_n$ to represent the marginal distributions for each position, we have the following: 
+First, unigram entropies should be viewed as a reasonable approximation to the average marginal entropies for each position. More formally, using $q_1, q_2, \dots q_n$ to represent the marginal distributions for each position, we have the following: 
 <br />
 <div style={{textAlign: 'center'}}>
 $$\tilde{H}(q) \approx \frac{1}{n} \sum_{i=1}^{n} H(q_i)$$
 </div>
 <br />
 
-The right hand side represents the entropy over the vocabulary averaged over all positions. The left hand side uses the empirical frequency of tokens to compute the entropy. The two coincide in expectation: averaging over all positions washes out position-specific idiosyncrasies, leaving only the aggregate token probabilities — which is exactly what the empirical unigram distribution captures. 
+The right-hand side represents the entropy over the vocabulary averaged over all positions. The left-hand side uses the empirical frequency of tokens to compute the entropy. The two coincide in expectation: averaging over all positions washes out position-specific idiosyncrasies, leaving only the aggregate token probabilities — which is exactly what the empirical unigram distribution captures. 
 <br />
 
 **Average Marginal Entropies Bound Joint Entropy**
@@ -409,7 +405,7 @@ This may indicate a limitation of either generative perplexity or this scale of 
 This observation itself is a product of frontier analysis — it would be difficult to draw this conclusion reliably from single-point comparisons alone, where logit calibration could easily obscure the similarity.
 
 ## Conclusion 
-We hope this blog serves as a useful reference for researchers working on diffusion language models at this scale. As the field continues to develop new objectives, noising processes, and inference algorithms, having a principled evaluation methodology will only become more important — and we believe generative frontiers are a step in the right direction. **Until direct measurement of divergence between a model's generative distribution and the target data distribution becomes tractable, frontiers are arguably the most principled available tool — explicitly tracking both components of the KL decomposition rather than either one in isolation.**
+We hope this blog serves as a useful reference for researchers working on diffusion language models at this scale. As the field continues to develop new objectives, noising processes, and inference algorithms, having a principled evaluation methodology will only become more important. We believe that generative frontiers are a step in this direction — the metrics the community already relies on can be naturally interpreted jointly through the lens of KL divergence, and frontier analysis provides the framework to do so. Until there is a means of directly measuring divergence between a model's generative distribution and the target data distribution, frontiers are arguably the most principled available tool for comparing generative quality at the academic scale. 
 
 ## Citation
 
