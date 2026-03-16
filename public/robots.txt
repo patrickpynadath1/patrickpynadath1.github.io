@@ -1,5 +1,2 @@
 User-agent: *
-Disallow: /blog/
-
-# Allow everything else
 Allow: /
