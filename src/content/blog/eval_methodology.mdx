@@ -40,7 +40,9 @@ In this blog, we discuss pretraining at this model scale.
 3. **Generative perplexity is misleading on its own**, as repetitition can easily result in good perplexity values at the expense of repetitiveness.
 4. Due to the fundemental relation between entropy and cross entropy, diffusion models can trade token diversity (entropy) for better perplexity (cross entropy), causing **single-point comparisons to reflect inference settings rather than model capability**. 
 5. Generative frontiers address this by revealing the full entropy-perplexity tradeoff curve for each method, which enables **comparisons based on divergence to target distribution** under reasonable assumptions.
- 
+
+The arXiv version of this blog is available at [this link](https://arxiv.org/abs/2604.02718).
+
 <TableOfContents 
   client:load
   sections={[
@@ -59,7 +61,7 @@ It is common to pretrain a ~150 million parameter model with a diffusion transfo
 <br />
 Additionally, since it is meant as a replication for WebText which GPT-2 was trained on, it is a very well-studied dataset [@radford2021learning] [@Gokaslan2019OpenWeb]. This also enables us to use metrics such as generative perplexity under GPT-2 large as a proxy for data likelihood, which we discuss more in the following section. 
 
-### LM1B is Shuffled
+### LM1B is Shuffled at Sentence Level
 While there are smaller datasets such as LM1B that can be used for training language models, it is important to note that these datasets often differ from pretraining data in substantial ways. **In particular, LM1B is 1 billion of tokens from news sources shuffled at a sentence level** [@chelba2014billionwordbenchmarkmeasuring].  As a result, there is no notion of coherence across different sentences, since the ordering is fundamentally random. This was intentional -- this benchmark was introduced in 2013, when neural networks were still being compared against n-gram models. This dataset was introduced as a benchmark for measuring whether neural networks could properly model language at the sentence level better than n-gram models. Even at the time of introduction, it was primarily intended for likelihood-based evaluation. For demonstrating language ability beyond generating random sentences, LM1B is not an ideal dataset for pretraining. This is why most diffusion language model papers use LM1B for only likelihood or zero-shot likelihood evaluation [@Sahoo_Arriola_Schiff_Gokaslan_Marroquin_Chiu_Rush_Kuleshov_2024] [@arriola2025block] [@sahoo2025diffusion]. 
 
 ## Limitations of Likelihood Evals with dLLMs
@@ -406,11 +408,14 @@ We hope this blog serves as a useful reference for researchers working on diffus
 The citation for this work is available below in BibTex. 
 <br />
 ```bibtex
-@misc{pynadath2026GenFrontiers,
-  author = {Pynadath, Patrick and Shi, Jiaxin and Zhang, Ruqi},
-  title  = {Generative Frontiers: Why Evaluation Matters for Diffusion Language Models},
-  year   = {2026},
-  url    = {https://patrickpynadath1.github.io/blog/eval_methodology},
+@misc{pynadath2026generativefrontiersevaluationmatters,
+      title={Generative Frontiers: Why Evaluation Matters for Diffusion Language Models}, 
+      author={Patrick Pynadath and Jiaxin Shi and Ruqi Zhang},
+      year={2026},
+      eprint={2604.02718},
+      archivePrefix={arXiv},
+      primaryClass={cs.LG},
+      url={https://arxiv.org/abs/2604.02718}, 
 }
 ```
 
