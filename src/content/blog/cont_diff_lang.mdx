@@ -1,0 +1,283 @@
+---
+title: "Some Recipes for Continuous Diffusion Language Models"
+description: "A Cookbook with some recipes compiled from many people"
+pubDate: 2026-05-29T00:00:00.000Z
+author: "Patrick Pynadath, Ruqi Zhang"
+tags: ["interactive", "demo"]
+draft: true
+---
+
+import ExpandableSection from "../../components/ExpandableSection.jsx"
+import ContDiffMethodFinder from "../../components/ContDiffMethodFinder.jsx"
+import TableOfContents from "../../components/TableOfContents.jsx"
+import TabbedText, { TabGroup, TabPanel } from "../../components/TabbedText.jsx"
+
+
+# Some Recipes for Continuous Diffusion Language Models
+
+Patrick Pynadath<sup>1</sup>, Ruqi Zhang<sup>1</sup>
+
+<sup>1</sup> Purdue Department of Computer Science 
+
+
+## Introduction
+
+The goal of this blog is not to advocate over any particular approach or way of designing cdLLMs. Furthermore, our goal isn't to write a comprehensive summary of every cdLLM paper ever published. Instead, we want to provide a framework we have found useful for organizing the recent work within this field, and hopefully provide a nice starting point for those getting started in this field. 
+
+## The Template
+
+Here we provide an abstraction that hopefully organizes the different design choices that all cdLLMs must make. We can think of cdLLMs being a general "recipe" for producing a continuous denoising generative model. Within this recipe, there are general steps that must be followed if we want to arrive at a cdLLM. However, within each step, there are different "ingredients", or approaches that can be used. Furthermore, while different steps require different ingredients, there must be some underlying cohesion to the ingredients across all steps -- as with actual cooking, we want the ingredients to enhance each other.  
+<br/>
+We can define the general recipe by starting with a sequence of discrete tokens and tracing how we would build up a cdLLLM. We first start with some discrete sequence $X = \{X_1, X_2, \dots X_n\}$. If our goal is to learn a continuous generative path, we must have some way of mapping $X$ to a continuous representation $Z_0$ -- this correspends to the **representation** choice. Once we have defined our representation map $E(X) = Z_0$, we must define a prior distribution over the representation space. 
+<br/>
+Once we define this prior, we must also define a **trajectory** that starts from the prior $Z_1 \sim p_1$ and ends at clean representations $Z_0$, which can be accomplished by defining $p_t(Z_t | Z_0)$, as this implicitly defines the transitions via Bayes rule. 
+<br/> 
+Given this trajectory, we must decide how we want to move through the path -- do we spend longer on specific time intervals? Or do we move through the trajectory with uniform steps? We can control this by reparameterizing the generative path to work in terms of $\tau$ as opposed to $t$ and define a map from $t \to \tau$. This is the **time parameterization** choice. 
+<br/>
+Once we have decided on a representation, a trajectory, and how to move through this trajectory, we must start making choices about the architecture of the continuous denoiser. The choice of input is relatively fixed: we must give the denoiser $Z_t$, and also the time variable $t$ that indicates what point it is at wihtin the trajectory (there are some works that omit conditioning on time). However, the choice of output is not fixed -- diffusion models have various different parameterizations that are in theory equivalent but lead to different training results. This is the parameterization choice. This is the **conditioning choice**. 
+<br/>
+Once we decide the parameterization, we have a trajectory that starts at some prior that is easy to sample from and ends at a clean representation $Z_0$. Now we must decide how to map this continuous representation back to a discrete sequence of tokens -- this is the **decoder** choice. 
+<br/>
+Finally, given all these ingredients, we must design a training objective that ensures that all the components work together cohesively -- this is the **training objective** choice.
+<br/>
+
+We include a brief summary of each design choice below. 
+
+<br/>
+1. (**Encoding**) How do we translate discrete tokens into a continuous representation? Given a discrete sequence $X = \{X_1, X_2, \cdots X_n\}$, how do we define the continuous representation $Z_0$ and the function $E(X) = Z_0$?
+2. (**Trajectory**) Given the clean continuous representation, what do we set as the prior distribution and how do we interpolate between the clean sample and this prior? How do we define the distribution $p_1$, and how do we define $p_t(\cdot | z_0)$? 
+3. (**Time Parameterization**) Given this trajectory, how do we distribute the trajectory across time steps? How do we define the reparameterized time $\tau: [0, 1] \to [0, 1]$? 
+4. (**Parameterization**) Given the noisy sample and the other conditioning information, what do we make the denoiser predict? How do we interpret the output of $f$? 
+5. (**Decoding**) Given a denoised continuous representation, how do we obtain the discrete sequence of tokens? Given a denoised $Z_0$, how do define the map $D(Z_0) \to X$? 
+6. (**Training Objective**) How do we train all the components of this pipeline? How do we define the loss function $\mathcal{L} \left(\{\theta_E, \theta_f, \theta_D\}\right)$
+
+
+## The Ingredients 
+In this section, we will go over each of the steps and study the specific choices that have been explored within each axis. Our goal is to provide a general characterization of the types of ingredients that have been explored within each step, rather than summarizing all of them or arguing for any specific method. 
+
+### Encoding
+One crucial difference between ddLLMs and cdLLMs is that the space which the bulk of the generative trajectory occurs is necessarily a design choice. For ddLLMs, most works just directly work in the token space, since the discrete trajectories are well defined. This is not the case for cdLLMs, and thus it is worth discussing the general approaches that have been used to address this design choice. 
+<br/>
+One useful way of categorizing different representation choices is through the notion of ***factorized*** v.s ***contextual*** representations. We can call a representation factorized if the following holds:
+
+
+<div style={{textAlign: 'center'}}>
+$$
+\begin{align*}
+E(\{X_1, X_2, \dots X_n\}) = \{E(X_1), E(X_2), \dots E(X_n) \}
+\end{align*}
+$$
+</div>
+In words, each token can be mapped to a continuous representation independetly of the other discrete tokens. A ***contextual*** representation is one where we can no longer express the continuous representation as an application of the function $E$ to individual tokens. We list a few examples for each below.  
+
+<br/>
+In a way, the representation choice can be thought of as the defining ingredient for the recipe, as all the other design choices must be compatible with the selected representation choice.
+<br/>     
+
+<TabbedText client:load title="Representation Families">
+<TabPanel title="Factorized">
+<ul>
+  <li> (Embeddings) Continuous diffusion for categorical data. Dieleman <em>et al</em>. November 2022. [@dieleman2022continuous]</li>
+  <li> (One-hot) Flow Map Language Models: One-step Language Modeling via Continuous Denoising. Lee <em>et al</em>. February 2026. [@lee2026onesteplanguagemodelingcontinuous]</li>
+  <li> (Simplex) SSD-LM: Semi-autoregressive Simplex-based Diffusion Language Model for Text Generation and Modular Control. Han <em>et al</em>. October 2022. [@Han_Kumar_Tsvetkov_2023]</li>
+  <li> (Binary) Towards Closing the Autoregressive Gap in Language Modeling via Entropy-Gated Continuous Bitstream. Batzolis <em>et al</em>. [@batzolis2026towards]</li>
+</ul>
+</TabPanel>
+<TabPanel title="Contextual">
+<ul>
+  <li>Latent Diffusion for Language Generation. Lovelace *et al*. December 2022. [@lovelace2023latent]</li>
+  <li>LaDiR: Latent Diffusion Enhances LLMs for Text Reasoning. Kang *et al*. October 2025. [@kang2025ladir]</li>
+  <li> Cosmos: Compressed and Smooth Latent Space for Text Diffusion Modeling. Meshchaninov *et al*. June 2025. [@meshchaninov2025compressed]</li>
+  <li> Stop-Think-AutoRegress: Language Modeling with Latent Diffusion Planning. Lovelace *et al*. February 2026. [@lovelace2026stop]</li>
+</ul>
+
+</TabPanel>
+</TabbedText>
+
+
+### Trajectory
+We can think of the trajectory as the shape that the denoiser will trace along when moving from the initial noise to the final denoised sample. Methods generally follow trajectories in the Euclidean space or some Riemannian space. Examples of Riemannian methods include diffusion based on the statistical manifodl per [@jo2026continuous] or spherical flow based methods [@deschenaux2026language], [@chemseddine2026spherical]. 
+
+<TabbedText client:load title="Trajectory Families">
+<TabPanel title="Euclidean">
+<ul>
+  <li>Continuous diffusion for categorical data. Dieleman <em>et al</em>. November 2022. [@dieleman2022continuous]</li>
+  <li>Flow Map Language Models: One-step Language Modeling via Continuous Denoising. Lee <em>et al</em>. February 2026. [@lee2026onesteplanguagemodelingcontinuous]</li>
+  <li> Cosmos: Compressed and Smooth Latent Space for Text Diffusion Modeling. Meshchaninov *et al*. June 2025. [@meshchaninov2025compressed]</li>
+</ul>
+</TabPanel>
+<TabPanel title="Riemannian">
+<ul>
+  <li>Continuous Diffusion Model for Language Modeling. Jo, Hwang. February 2025. [@jo2026continuous]</li>
+  <li>Spherical Flows for Sampling Categorical Data. Chemseddine <em>et al</em>. May 2026. [@chemseddine2026spherical]</li>
+  <li>Language Modeling with Hyperspherical Flows. Deschenaux, Gulcehre. May 2026. [@deschenaux2026language]</li>
+</ul>
+</TabPanel>
+</TabbedText>
+
+### Time Parameterization
+Given an intermediate state, we can describe it by its **noise level** — loosely, where the state falls geometrically between the initial and final states of the trajectory. We can also describe it by its **process time** — where in the running of the procedure the state occurs, near the start, near the end, or in between. These are two distinct coordinates, and the **time parameterization is the map between them**: for the trajectory as a whole, it specifies which noise level is realized at each process time. The same sequence of noise levels can be traversed on different time parameterizations — lingering at high noise, or rushing through it — just as the same path can be walked at different paces.
+<br/>
+
+This is already common within continuous diffusion literature, with schedules such as cosine, logit-normal, etc. However, within the continuous diffusion literature, the noise level is often defined as a function of time. Within cdLLMs, time parameterization is sometimes defined from the noise level -- more specifically, how the noise level impacts either the informativeness of the input to the denoiser $z_t$ or the informativeness of the denoiser's output $f(z_t)$. 
+<br/>
+Most design choices fall into one of three categories: either the time parameterization is **externally defined**, or it is defined based on some function of the input to the denoiser at some noise level (**input referenced**);  or it is defined based on some function of the output of the denoiser at some noise level (**output referenced**). 
+<TabbedText client:load title="Time Parameterizations">
+<TabPanel title="External">
+<ul>
+  <li>Continuously Augmented Discrete Diffusion model for Categorical Generative Modeling. Zheng <em>et al</em>. October 2025. [@zheng2025continuously]</li>
+  <li> Cosmos: Compressed and Smooth Latent Space for Text Diffusion Modeling. Meshchaninov *et al*. June 2025. [@meshchaninov2025compressed]</li>
+</ul>
+</TabPanel>
+<TabPanel title="Input-referenced">
+<ul>
+  <li>Flow Map Language Models: One-step Language Modeling via Continuous Denoising. Lee <em>et al</em>. February 2026. [@lee2026onesteplanguagemodelingcontinuous]</li>
+  <li>Discrete Flow Maps. Potaptchik <em>et al</em>. April 2026. [@potaptchik2026discrete]</li>
+  <li>CANDI: Hybrid Discrete-Continuous Diffusion Model. Pynadath <em>et al</em>. October 2025. [@pynadath2025candihybriddiscretecontinuousdiffusion]</li>
+</ul>
+</TabPanel>
+<TabPanel title="Output-referenced">
+<ul>
+  <li>Continuous diffusion for categorical data. Dieleman <em>et al</em>. November 2022. [@dieleman2022continuous]</li>
+  <li>Language Modeling with Hyperspherical Flows. Deschenaux, Gulcehre. May 2026. [@deschenaux2026language]</li>
+  <li>LangFlow: Continuous Diffusion Rivals Discrete in Language Modeling. Chen <em>et al</em>. April 2026. [@chen2026langflow]</li>
+  <li>Towards Closing the Autoregressive Gap in Language Modeling via Entropy-Gated Continuous Bitstream. Batzolis <em>et al</em>. [@batzolis2026towards]</li>
+</ul>
+</TabPanel>
+</TabbedText>
+
+
+### Conditional Structure
+Conditional structure refers to what resolved information the denoiser conditions on beyond the noisy state. In other words, this refers to information that the denoiser conditions on that can be considered external to the Gaussian trajectory. Examples include block autoregressive methods, as leveraged in [@Han_Kumar_Tsvetkov_2023] and recently discussed in [@potaptchik2026discrete]; discrete anchor tokens such as in hybrid methods [@pynadath2025candihybriddiscretecontinuousdiffusion] [@zhou2025coevolutionary] [@zheng2025continuously]; or self condition methods that allow the denoiser to see its own prior outputs as in [@gulrajani2023likelihood] [@yang2026continuousdiffusionscalescompetitively] [@chen2026langflow]. 
+<br/>
+In general, conditional structure addresses the factorization problem of cdLLMs where positions are predicted independently of each other. In all the cases listed, the conditional structure generally allows for conditioning on "resolved" information while refining "uncertain" information.  
+
+<TabbedText client:load title="Conditional Structure">
+<TabPanel title="Hybrid">
+<ul>
+  <li> Coevolutionary Continuous Discrete Diffusion: Make Your Diffusion Language Model a Latent Reasoner. Zhou *et al*. October 2025. [@zhou2025coevolutionary] </li>
+  <li>CANDI: Hybrid Discrete-Continuous Diffusion Model. Pynadath <em>et al</em>. October 2025. [@pynadath2025candihybriddiscretecontinuousdiffusion]</li>
+  <li>Continuously Augmented Discrete Diffusion model for Categorical Generative Modeling. Zheng <em>et al</em>. October 2025. [@zheng2025continuously]</li>
+</ul>
+</TabPanel>
+<TabPanel title="Self-conditioning">
+<ul>
+  <li> Cosmos: Compressed and Smooth Latent Space for Text Diffusion Modeling. Meshchaninov *et al*. June 2025. [@meshchaninov2025compressed]</li>
+  <li>Continuous diffusion for categorical data. Dieleman <em>et al</em>. November 2022. [@dieleman2022continuous]</li>
+  <li>LangFlow: Continuous Diffusion Rivals Discrete in Language Modeling. Chen <em>et al</em>. April 2026. [@chen2026langflow]</li>
+  <li>ELF: Embedded Language Flows. Hu *et al*. May 2026.[@hu2026elf]. </li>
+</ul>
+</TabPanel>
+<TabPanel title="Block-Causal">
+  <li> (Simplex) SSD-LM: Semi-autoregressive Simplex-based Diffusion Language Model for Text Generation and Modular Control. Han <em>et al</em>. October 2022. [@Han_Kumar_Tsvetkov_2023]</li>
+  <li>Discrete Flow Maps. Potaptchik <em>et al</em>. April 2026. [@potaptchik2026discrete]</li>
+<ul>
+</ul>
+</TabPanel>
+</TabbedText>
+
+
+### Decoding
+At the end of a continuous diffusion trajectory, we have a denoized latent $z_0$. But given the goal is generating languages, we must have some means of converting these continuous latents to discrete tokens. This is generally referred to as the decoding stage. Methods generally can be categorized into 3 different groups: implicit decoder; explicit weight-shared decoder; or external decoder. 
+<br/>
+An **implicit decoder** means that the decoding is not thought of as a different task than the continuous denoising. This is common in cdLLMs trained with cross entropy, as the denoiser is already doing token prediction conditioned continuous latents, removing the need to specifically train the denoiser in this task. 
+<br/>
+An **external decoder** is one where the function that maps from continuous latents to tokens is a separate module from the continuous denoiser. This is common in latent diffusion set-ups, where the decoder is often a separate stack of transformers or an autoregressive model. 
+<br/>
+In between the two extremes we have methods that use the same denoiser to decode tokens, but also explicitly train it via some additional loss term, or **explicit weight-shared** decoders. This is common with VDMs such as [@li2022diffusion], [@gulrajani2023likelihood], where the decoding loss appears as the reconstruction term in the ELBO. 
+
+<TabbedText client:load title="Decoding">
+<TabPanel title="Implicit Decoder">
+<ul>
+  <li>Continuous diffusion for categorical data. Dieleman <em>et al</em>. November 2022. [@dieleman2022continuous]</li>
+  <li>CANDI: Hybrid Discrete-Continuous Diffusion Model. Pynadath <em>et al</em>. October 2025. [@pynadath2025candihybriddiscretecontinuousdiffusion]</li>
+  <li>LangFlow: Continuous Diffusion Rivals Discrete in Language Modeling. Chen <em>et al</em>. April 2026. [@chen2026langflow]</li>
+</ul>
+</TabPanel>
+<TabPanel title="Explicit Weight-shared">
+<ul>
+  <li>ELF: Embedded Language Flows. Hu *et al*. May 2026.[@hu2026elf]. </li>
+  <li>Continuous Diffusion Scales Competitively with Discrete Diffusion for Language. Yang *et al*. May 2026. [@yang2026continuousdiffusionscalescompetitively] </li>
+  <li> Diffusion-LM Improves Controllable Text Generation. Li *et al*. May 2022. [@li2022diffusion] </li>
+</ul>
+</TabPanel>
+<TabPanel title="External Module">
+<ul>
+  <li> Cosmos: Compressed and Smooth Latent Space for Text Diffusion Modeling. Meshchaninov *et al*. June 2025. [@meshchaninov2025compressed]</li>
+  <li>Language Modeling with Hyperspherical Flows. Deschenaux, Gulcehre. May 2026. [@deschenaux2026language]</li>
+  <li>LangFlow: Continuous Diffusion Rivals Discrete in Language Modeling. Chen <em>et al</em>. April 2026. [@chen2026langflow]</li>
+  <li>Towards Closing the Autoregressive Gap in Language Modeling via Entropy-Gated Continuous Bitstream. Batzolis <em>et al</em>. [@batzolis2026towards]</li>
+</ul>
+</TabPanel>
+</TabbedText>
+
+### Training Framework
+Finally, we tie all the steps together with the training framework. Within this axis, there are several subchoices, such as the choice of training objective; and whether the training is done end-to-end or in stages. 
+<br/>
+For training objectives, we can categorize methods as based on what object they directly learn.  We label these categories as **vector-based**; **posterior-based**; or **likelihood based**. Vector-based methods correpsend to MSE-style objectives that directly regress against a target velocity / clean representation. Such methods are the most direct instance of continuous diffusion. Posterior based methods refer to cdLLMs that exclusively learn the posterior distribution $P(X | Z_t)$ and use this to back out any directional information needed. Likelihood based methods directly optimize an ELBO bound, which captures the likelihood of the entire generative process.
+<br/>
+These categories do not always follow clear boundaries -- for example, while the objective in [@hu2026elf] is a MSE based loss for predicting the clean representation, the inclusion of the decoding cross entropy objective makes it look very similar to the objective used in [@li2022diffusion], [@gulrajani2023likelihood] except for the prior term. Similarly, latent diffusion methods often incorporate both a cross entropy loss to train the decoder, even if the denoiser is trained via score matching or flow matching objective. Thus when categorizing / discussing methods, we focus primarily on the primary goal of the objective -- is it to train a vector field, the posterior, or optimize the likelihood of the trajectory? While this doesn't encapsulate all methods strictly, we find it helpful for interpreting frameworks. 
+
+
+<TabbedText client:load title="Objective">
+<TabPanel title="Direction-based">
+<ul>
+  <li> Cosmos: Compressed and Smooth Latent Space for Text Diffusion Modeling. Meshchaninov *et al*. June 2025. [@meshchaninov2025compressed]</li>
+  <li>Towards Closing the Autoregressive Gap in Language Modeling via Entropy-Gated Continuous Bitstream. Batzolis <em>et al</em>. [@batzolis2026towards]</li>
+</ul>
+</TabPanel>
+<TabPanel title="Posterior-based">
+<ul>
+  <li>Continuous diffusion for categorical data. Dieleman <em>et al</em>. November 2022. [@dieleman2022continuous]</li>
+  <li>CANDI: Hybrid Discrete-Continuous Diffusion Model. Pynadath <em>et al</em>. October 2025. [@pynadath2025candihybriddiscretecontinuousdiffusion]</li>
+  <li>LangFlow: Continuous Diffusion Rivals Discrete in Language Modeling. Chen <em>et al</em>. April 2026. [@chen2026langflow]</li>
+  <li>Language Modeling with Hyperspherical Flows. Deschenaux, Gulcehre. May 2026. [@deschenaux2026language]</li>
+</ul>
+</TabPanel>
+<TabPanel title="Likelihood Based">
+<ul>
+
+  <li>ELF: Embedded Language Flows. Hu *et al*. May 2026.[@hu2026elf]. </li>
+  <li>Continuous Diffusion Scales Competitively with Discrete Diffusion for Language. Yang *et al*. May 2026. [@yang2026continuousdiffusionscalescompetitively] </li>
+  <li> Diffusion-LM Improves Controllable Text Generation. Li *et al*. May 2022. [@li2022diffusion] </li>
+</ul>
+</TabPanel>
+</TabbedText>
+
+## The Recipes
+
+Here we describe common "recipes" that seem to be emerging throughout the literature. We classify "recipes" in terms of the underlying princple being realized rather than a specific design choice. 
+
+### Uniform Information Gain
+In general, most cdLLMs appear to be converging towards some notion of uniform information gain -- that throughout the generative process, the amount of information the denoiser has access for conditioning should increase linearly. This is achievable via different combinations of ingredients -- for factorized representations, this manifests as specific design choices towards the trajectory, the time parameterization, and conditioning. 
+<br/>
+Hybrid methods redefine the trajectory such that there is a correspending discrete process, in which tokens are discretely snap to clean identities [@zhou2025coevolutionary] [@zheng2025continuously] [@pynadath2025candihybriddiscretecontinuousdiffusion]. The trajectory can be thought of discretizing some position by sampling from $p_{\theta}(X_0 | z_t) = \text{softmax}(f_{\theta}(Z_t, t))$ and updating the remaining positions via the score function. In works such as [@lee2026onesteplanguagemodelingcontinuous] and [@potaptchik2026discrete], the process time / flow time is reparameterized such that the discrete corruption rate -- or the probability that $z_t \sim q_t(\cdot | \text{Onehot}(X_0))$ is such that $\text{argmax}(z_t) \neq X_0$ -- increases linearly from 0 to 1 ([@potaptchik2026discrete] introduces modifications at the end points of the schedule, but the general idea remains the same). Within such as schedule, we have that some fraction of the inputs will retain the same argmax for the rest of the process, while the others continue to be refined. The crucial point is that in both methods, each step introduces the same number of new "finalized" positions across the schedule. Thus if we take the number of finalized positions as the total information gain, both hybrid methods and methods that reparameterize time according to discrete corruption can be viewed as achieving the same interpretation of the general principal. 
+<br/>
+We can connect discrete corruption schedules with entropic schedules through the fact that discrete corruption controls the difficulty of the per-token denoising task. While it will not always be the case, access to more "finalized" tokens decreases the difficulty of the per-token denoising task by providing more conditional information. Thus both discrete corruption schedules and entropic schedules can be viewed as linearly distributing the difficulty of the denoising task for each timestep of the process: discrete corruption schedules do so by defining some measure of difficulty for the input, and entropic schedules use the loss of the denoiser to quantify the difficulty of each timestep. It is important to note that the two notions of difficulty are not the same: linearizing along discrete corruption ensures that a constant number of words are "finalized", but the actual gain in terms of information content may vary. However, they do appear to track fairly closely in some circumstances: [@yang2026continuousdiffusionscalescompetitively] demonstrates that the learned schedule for RePLAID achieves near linear loss and discrete argmax corruption through time, showing that both happen to coincide within their learned model. 
+<br/>
+Finally, we can relate self conditioning and entropic schedules as used in [@dieleman2022continuous] [@yang2026continuousdiffusionscalescompetitively] [@chen2026langflow] to hybrid methods by noting that self conditioning provides a signal on which positions the model is confident in, which allows it to then condition on those positions when resolving the more uncertain positions. In a very loose sense, hybrid corruption can be thought of as a stochastic version of self conditioning, where the positions to "reveal" are randomly sampled and the tokens are sampled from the models predicted distribution. Both function similarly in terms of providing some form of conditioning information to the model. However, they are different in that self conditioning allows for a more granular perspective on which positions are uncertain / certain, whereas the hybrid model discretizes them completely and collapses that information. 
+
+
+### Learning the Posterior
+
+Another emerging recipe is the use of posterior-based learning as opposed to likelihood or direction based objectives. Posterior-based methods rely on the per-position target being representable as the following: 
+<div style={{textAlign: 'center'}}>
+$$
+\begin{align*}
+\mathbf{E}[z_0 | z_t] = \sum_{x \in V} P(X | Z_t) E(x)
+\end{align*}
+$$
+</div>
+As long as this holds, we can use the posterior to compute the velocity or score function easily.
+<br/>
+
+Most posterior-based methods use cross entropy, as this loss is naturally suited towards learning posterior distributions. Recent flow-map language models leverage this to port flow map machinery from the continuous domain to the discrete domain [@lee2026onesteplanguagemodelingcontinuous] [@roos2026categoricalflowmaps] [@potaptchik2026discrete]. Similarly, hybrid methods leverage the posterior to simulate both a continuous Gaussian process along with a discrete corruption process, similar in principle to masked diffusion [@pynadath2025candihybriddiscretecontinuousdiffusion] [@zhou2025coevolutionary] [@zheng2025continuously]. 
+<br/>
+However, it is possible to use MSE to optimize something similar to a posterior. In particular, [@gulrajani2023likelihood] and [@yang2026continuousdiffusionscalescompetitively] parameterize the output embedding as a convex combination of the embedding table, but use MSE between the predicted embedding and clean embedding. Similarly, [@batzolis2026towards] uses MSE to learn a denoiser in the binary space. Such approaches appear to perform quite well empirically. 
+<br/>
+Here we see that while many methods have generally converged to some form of learning the posterior, there is yet to be a concensus on what objective is best suited towards this: while cross entropy is typical for categorical data, mean squared error is also canonical for diffusion based methods. 
+
+
+### Recipe Finder 
+Here we include an interactive widget that shows papers based on how they fit within the general taxonomy we propose. 
+<ContDiffMethodFinder client:load />

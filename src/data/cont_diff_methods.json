@@ -1,0 +1,380 @@
+[
+  {
+    "authors": "Roos et al.",
+    "name": "Categorical Flow Maps",
+    "year": 2026,
+    "link": "https://arxiv.org/pdf/2602.12233",
+    "fields": {
+      "encoding": "Factorized (Onehot)",
+      "trajectory": "Euclidean",
+      "time": "External",
+      "conditioning": "None",
+      "decoding": "Implicit",
+      "objective": "Posterior"
+    }
+  },
+  {
+    "authors": "Potaptchik et al.",
+    "name": "Discrete Flow Maps",
+    "year": 2026,
+    "link": "https://arxiv.org/pdf/2604.09784",
+    "fields": {
+      "encoding": "Factorized (Onehot)",
+      "trajectory": "Euclidean",
+      "time": "Input-referenced",
+      "conditioning": "None",
+      "decoding": "Implicit",
+      "objective": "Posterior"
+    }
+  },
+  {
+    "authors": "Lee et al.",
+    "name": "Flow Map Language Models: One-step Language Modeling via Continuous Denoising",
+    "year": 2026,
+    "link": "https://arxiv.org/pdf/2602.16813",
+    "fields": {
+      "encoding": "Factorized (Onehot)",
+      "trajectory": "Euclidean",
+      "time": "Input-referenced",
+      "conditioning": "None",
+      "decoding": "Implicit",
+      "objective": "Posterior"
+    }
+  },
+  {
+    "authors": "Chen et al.",
+    "name": "LangFlow: Continuous Diffusion Rivals Discrete in Language Modeling",
+    "year": 2026,
+    "link": "https://arxiv.org/pdf/2604.11748",
+    "fields": {
+      "encoding": "Factorized (Embedding)",
+      "trajectory": "Euclidean",
+      "time": "Output-referenced",
+      "conditioning": "Self-conditioning",
+      "decoding": "Implicit",
+      "objective": "Posterior"
+    }
+  },
+  {
+    "authors": "Hu et al.",
+    "name": "ELF: Embedded Language Flows",
+    "year": 2026,
+    "link": "https://arxiv.org/pdf/2605.10938",
+    "fields": {
+      "encoding": "Contextual",
+      "trajectory": "Euclidean",
+      "time": "External",
+      "conditioning": "Self-conditioning",
+      "decoding": "Explicit weight-shared",
+      "objective": "Direction-based"
+    }
+  },
+  {
+    "authors": "Pynadath et al.",
+    "name": "CANDI: Hybrid Discrete-Continuous Diffusion Models",
+    "year": 2025,
+    "link": "https://arxiv.org/pdf/2510.22510",
+    "fields": {
+      "encoding": "Factorized (Onehot)",
+      "trajectory": "Euclidean",
+      "time": "Input-referenced",
+      "conditioning": "Discrete Anchors",
+      "decoding": "Implicit",
+      "objective": "Posterior"
+    }
+  },
+  {
+    "authors": "Zheng et al.",
+    "name": "Continuously Augmented Discrete Diffusion model for Categorical Generative Modeling",
+    "year": 2025,
+    "link": "https://arxiv.org/pdf/2510.01329",
+    "fields": {
+      "encoding": "Factorized (Embedding)",
+      "trajectory": "Euclidean",
+      "time": "External",
+      "conditioning": "Discrete Anchors",
+      "decoding": "Implicit",
+      "objective": "Posterior"
+    }
+  },
+  {
+    "authors": "Zhou et al.",
+    "name": "Coevolutionary Continuous Discrete Diffusion: Make Your Diffusion Language Model a Latent Reasoner",
+    "year": 2025,
+    "link": "https://arxiv.org/pdf/2510.03206",
+    "fields": {
+      "encoding": "Contextual",
+      "trajectory": "Euclidean",
+      "time": "External",
+      "conditioning": "Discrete Anchors",
+      "decoding": "Implicit",
+      "objective": "Posterior"
+    }
+  },
+  {
+    "authors": "Batzolis et al.",
+    "name": "Towards Closing the Autoregressive Gap in Language Modeling via Entropy-Gated Continuous Bitstream Diffusion",
+    "year": 2026,
+    "link": "https://arxiv.org/pdf/2605.07013",
+    "fields": {
+      "encoding": "Factorized (Binary)",
+      "trajectory": "Euclidean",
+      "time": "Output-referenced",
+      "conditioning": "Self-conditioning",
+      "decoding": "Implicit",
+      "objective": "Posterior"
+    }
+  },
+  {
+    "authors": "Chemseddine et al.",
+    "name": "Spherical Flows for Sampling Categorical Data",
+    "year": 2026,
+    "link": "https://arxiv.org/pdf/2605.05629",
+    "fields": {
+      "encoding": "Factorized (Embedding)",
+      "trajectory": "Riemannian",
+      "time": "Output-referenced",
+      "conditioning": "None",
+      "decoding": "Implicit",
+      "objective": "Posterior"
+    }
+  },
+  {
+    "authors": "Deschenaux and Gulcehre",
+    "name": "Language Modeling with Hyperspherical Flows",
+    "year": 2026,
+    "link": "https://arxiv.org/pdf/2605.11125",
+    "fields": {
+      "encoding": "Factorized (Embedding)",
+      "trajectory": "Riemannian",
+      "time": "Output-referenced",
+      "conditioning": "None",
+      "decoding": "Implicit",
+      "objective": "Posterior"
+    }
+  },
+  {
+    "authors": "Kang et al.",
+    "name": "LaDiR: Latent Diffusion Enhances LLMs for Text Reasoning",
+    "year": 2025,
+    "link": "https://arxiv.org/pdf/2510.04573",
+    "fields": {
+      "encoding": "Contextual",
+      "trajectory": "Euclidean",
+      "time": "External",
+      "conditioning": "None",
+      "decoding": "External",
+      "objective": "Direction-based"
+    }
+  },
+  {
+    "authors": "Lovelace et al.",
+    "name": "Stop-Think-AutoRegress: Language Modeling with Latent Diffusion Planning",
+    "year": 2026,
+    "link": "https://arxiv.org/pdf/2602.20528",
+    "fields": {
+      "encoding": "Contextual",
+      "trajectory": "Euclidean",
+      "time": "External",
+      "conditioning": "None",
+      "decoding": "External",
+      "objective": "Direction-based"
+    }
+  },
+  {
+    "authors": "Guo et al.",
+    "name": "Continuous Latent Diffusion Language Model",
+    "year": 2026,
+    "link": "https://arxiv.org/pdf/2605.06548",
+    "fields": {
+      "encoding": "Contextual",
+      "trajectory": "Euclidean",
+      "time": "External",
+      "conditioning": "None",
+      "decoding": "External",
+      "objective": "Direction-based"
+    }
+  },
+  {
+    "authors": "Shen et al.",
+    "name": "CoDAR: Continuous Diffusion Language Models are More Powerful Than You Think",
+    "year": 2026,
+    "link": "https://arxiv.org/pdf/2603.02547",
+    "fields": {
+      "encoding": "Factorized (Embedding)",
+      "trajectory": "Euclidean",
+      "time": "External",
+      "conditioning": "None",
+      "decoding": "External",
+      "objective": "Direction-based"
+    }
+  },
+  {
+    "authors": "Shabalin et al.",
+    "name": "TEncDM: Understanding the Properties of the Diffusion Model in the Space of Language Model Encodings",
+    "year": 2025,
+    "link": "https://arxiv.org/pdf/2402.19097",
+    "fields": {
+      "encoding": "Contextual",
+      "trajectory": "Euclidean",
+      "time": "External",
+      "conditioning": "Self-conditioning",
+      "decoding": "External",
+      "objective": "Direction-based"
+    }
+  },
+  {
+    "authors": "Meshchaninov et al.",
+    "name": "COSMOS: Compressed and Smooth Latent Space for Text Diffusion Modeling",
+    "year": 2026,
+    "link": "https://arxiv.org/pdf/2506.21170",
+    "fields": {
+      "encoding": "Contextual",
+      "trajectory": "Euclidean",
+      "time": "External",
+      "conditioning": "Self-conditioning",
+      "decoding": "External",
+      "objective": "Direction-based"
+    }
+  },
+  {
+    "authors": "Meshchaninov et al.",
+    "name": "How to Train Your Latent Diffusion Language Model Jointly With the Latent Space",
+    "year": 2026,
+    "link": "https://arxiv.org/pdf/2605.07933v1",
+    "fields": {
+      "encoding": "Contextual",
+      "trajectory": "Euclidean",
+      "time": "External",
+      "conditioning": "Self-conditioning",
+      "decoding": "External",
+      "objective": "Direction-based"
+    }
+  },
+  {
+    "authors": "Shariatian et al.",
+    "name": "Latent Discrete Diffusion Models",
+    "year": 2025,
+    "link": "https://arxiv.org/pdf/2510.18114v1",
+    "fields": {
+      "encoding": "Contextual",
+      "trajectory": "Euclidean",
+      "time": "External",
+      "conditioning": "Discrete Anchors",
+      "decoding": "External",
+      "objective": "Likelihood"
+    }
+  },
+  {
+    "authors": "Dieleman et al.",
+    "name": "Continuous diffusion for categorical data",
+    "year": 2022,
+    "link": "https://arxiv.org/pdf/2211.15089",
+    "fields": {
+      "encoding": "Factorized (Embedding)",
+      "trajectory": "Euclidean",
+      "time": "Output-referenced",
+      "conditioning": "Self-conditioning",
+      "decoding": "Implicit",
+      "objective": "Posterior"
+    }
+  },
+  {
+    "authors": "Lovelace et al.",
+    "name": "Latent Diffusion for Language Modeling",
+    "year": 2023,
+    "link": "https://arxiv.org/pdf/2212.09462",
+    "fields": {
+      "encoding": "Contextual",
+      "trajectory": "Euclidean",
+      "time": "External",
+      "conditioning": "Self-conditioning",
+      "decoding": "External",
+      "objective": "Direction-based"
+    }
+  },
+  {
+    "authors": "Zhang et al.",
+    "name": "PLANNER: Generating Diversified Paragraph via Latent Language Diffusion Model",
+    "year": 2023,
+    "link": "https://arxiv.org/pdf/2306.02531",
+    "fields": {
+      "encoding": "Contextual",
+      "trajectory": "Euclidean",
+      "time": "External",
+      "conditioning": "None",
+      "decoding": "External",
+      "objective": "Direction-based"
+    }
+  },
+  {
+    "authors": "Gao et al.",
+    "name": "Self-conditioned Embedding Diffusion for Text Generation",
+    "year": 2022,
+    "link": "https://arxiv.org/pdf/2211.04236",
+    "fields": {
+      "encoding": "Factorized (Embedding)",
+      "trajectory": "Euclidean",
+      "time": "External",
+      "conditioning": "Self-conditioning",
+      "decoding": "Explicit weight-shared",
+      "objective": "Direction-based"
+    }
+  },
+  {
+    "authors": "Gulrajani and Hashimoto",
+    "name": "Likelihood-Based Diffusion Language Models",
+    "year": 2023,
+    "link": "https://arxiv.org/pdf/2305.18619",
+    "fields": {
+      "encoding": "Factorized (Embedding)",
+      "trajectory": "Euclidean",
+      "time": "Output-referenced",
+      "conditioning": "Self-conditioning",
+      "decoding": "Explicit weight-shared",
+      "objective": "Likelihood"
+    }
+  },
+  {
+    "authors": "Han et al.",
+    "name": "SSD-LM: Semi-autoregressive Simplex-based Diffusion Language Model for Text Generation and Modular Control",
+    "year": 2023,
+    "link": "https://arxiv.org/pdf/2210.17432",
+    "fields": {
+      "encoding": "Factorized (Simplex)",
+      "trajectory": "Euclidean",
+      "time": "External",
+      "conditioning": "Block-causal",
+      "decoding": "Implicit",
+      "objective": "Posterior"
+    }
+  },
+  {
+    "authors": "Li et al.",
+    "name": "Diffusion-LM Improves Controllable Text Generation",
+    "year": 2022,
+    "link": "https://arxiv.org/pdf/2205.14217",
+    "fields": {
+      "encoding": "Factorized (Embedding)",
+      "trajectory": "Euclidean",
+      "time": "External",
+      "conditioning": "None",
+      "decoding": "Explicit weight-shared",
+      "objective": "Direction-based"
+    }
+  },
+  {
+    "authors": "Chen et al.",
+    "name": "Analog Bits: Generating Discrete Data using Diffusion Models with Self-Conditioning",
+    "year": 2022,
+    "link": "https://arxiv.org/pdf/2208.04202",
+    "fields": {
+      "encoding": "Factorized (Binary)",
+      "trajectory": "Euclidean",
+      "time": "External",
+      "conditioning": "Self-conditioning",
+      "decoding": "Implicit",
+      "objective": "Direction-based"
+    }
+  }
+]
