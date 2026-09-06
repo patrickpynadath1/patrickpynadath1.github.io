@@ -29,7 +29,7 @@ const { info } = Astro.props as Props;
         <div class="column has-text-centered">
           <div class="hero-profile">
             <div class="profile-picture-main">
-              <img src={info.heroImage} alt="Profile Picture" class="profile-img-main" />
+              <img src={info.heroImage} alt={info.name} width="190" height="190" class="profile-img-main" />
             </div>
             <div class="hero-text">
               <h1 class="title is-1 publication-title">{info.name}</h1>
@@ -46,48 +46,48 @@ const { info } = Astro.props as Props;
             {info.resume && (
               <span class="link-block">
                 <a href={info.resume} class="external-link button is-normal is-rounded is-dark" target="_blank">
-                  <span class="icon"><i class="fas fa-file-pdf"></i></span>
-                  <span>Resume</span>
+                  <span class="icon" aria-hidden="true"><i class="fas fa-file-pdf"></i></span>
+                  <span class="hero-link-label">Resume</span>
                 </a>
               </span>
             )}
             {info.links.blog && (
               <span class="link-block">
                 <a href={info.links.blog} class="external-link button is-normal is-rounded is-dark">
-                  <span class="icon"><i class="fas fa-book-open"></i></span>
-                  <span>Blog</span>
+                  <span class="icon" aria-hidden="true"><i class="fas fa-book-open"></i></span>
+                  <span class="hero-link-label">Blog</span>
                 </a>
               </span>
             )}
             {info.links.linkedin && (
               <span class="link-block">
                 <a href={info.links.linkedin} class="external-link button is-normal is-rounded is-dark" target="_blank">
-                  <span class="icon"><i class="fab fa-linkedin"></i></span>
-                  <span>LinkedIn</span>
+                  <span class="icon" aria-hidden="true"><i class="fab fa-linkedin"></i></span>
+                  <span class="hero-link-label">LinkedIn</span>
                 </a>
               </span>
             )}
             {info.links.github && (
               <span class="link-block">
                 <a href={info.links.github} class="external-link button is-normal is-rounded is-dark" target="_blank">
-                  <span class="icon"><i class="fab fa-github"></i></span>
-                  <span>GitHub</span>
+                  <span class="icon" aria-hidden="true"><i class="fab fa-github"></i></span>
+                  <span class="hero-link-label">GitHub</span>
                 </a>
               </span>
             )}
             {info.links.twitter && (
               <span class="link-block">
                 <a href={info.links.twitter} class="external-link button is-normal is-rounded is-dark" target="_blank">
-                  <span class="icon"><i class="fab fa-twitter"></i></span>
-                  <span>Twitter</span>
+                  <span class="icon" aria-hidden="true"><i class="fab fa-twitter"></i></span>
+                  <span class="hero-link-label">Twitter</span>
                 </a>
               </span>
             )}
             {info.links.email && (
               <span class="link-block">
                 <a href={`mailto:${info.links.email}`} class="external-link button is-normal is-rounded is-dark" target="_blank">
-                  <span class="icon"><i class="fas fa-envelope"></i></span>
-                  <span>Email</span>
+                  <span class="icon" aria-hidden="true"><i class="fas fa-envelope"></i></span>
+                  <span class="hero-link-label">Email</span>
                 </a>
               </span>
             )}

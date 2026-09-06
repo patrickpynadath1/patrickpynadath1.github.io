@@ -5,7 +5,7 @@ const TableOfContents = ({ sections }) => {
     const element = document.getElementById(sectionId);
     if (element) {
       element.scrollIntoView({ 
-        behavior: 'smooth',
+        behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'instant' : 'smooth',
         block: 'start',
         inline: 'nearest'
       });

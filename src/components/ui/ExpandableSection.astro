@@ -16,12 +16,11 @@ const classes = [
   .replace(/\s+/g, ' ')
   .trim();
 ---
-<div class={classes} data-expandable>
-  <slot name="header" />
-  <div class="section-tldr">
-    <slot name="tldr" />
-  </div>
-  <div class="section-content">
-    <slot />
-  </div>
-</div>
+<details class={classes}>
+  <summary>
+    <slot name="header" />
+    <div class="section-tldr"><slot name="tldr" /></div>
+    <slot name="actions" />
+  </summary>
+  <div class="paper-details-body"><slot /></div>
+</details>

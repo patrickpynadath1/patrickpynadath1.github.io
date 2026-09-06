@@ -476,3 +476,15 @@
     padding: var(--space-md);
   }
 }
+
+/* Long equations and citations scroll locally instead of widening the page. */
+.blog-content .katex-display { max-width:100%;overflow-x:auto;overflow-y:hidden;padding-block:4px; }
+.blog-content pre { max-width:100%;overflow-x:auto; }
+.blog-content p,.blog-content li { overflow-wrap:anywhere; }
+@media(max-width:600px) {
+  .blog-content .temp-table-wrapper { padding:12px 0;align-items:stretch;overflow-x:auto; }
+  .blog-content .temp-table-wrapper :is(th,td) { padding:10px 8px; }
+  .blog-content .katex { max-width:100%; }
+  .blog-content p > .katex { display:inline-block;vertical-align:middle;overflow-x:auto;overflow-y:hidden; }
+}
+.blog-content .csl-right-inline { min-width:0;overflow-wrap:anywhere; }

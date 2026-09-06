@@ -16,7 +16,8 @@ const { items } = Astro.props as Props;
 <section class="section">
   <div class="container is-max-desktop">
     <div class="content-section">
-      <div class="methodology-section expandable-section theme-neutral" data-expandable>
+      <details class="methodology-section expandable-section theme-neutral">
+        <summary>
         <div class="section-header">
           <h2 class="methodology-title"><span class="section-emoji">🎓</span>Education</h2>
           <span class="expand-icon">▼</span>
@@ -24,7 +25,8 @@ const { items } = Astro.props as Props;
         <div class="section-tldr">
           <p>My academic background</p>
         </div>
-        <div class="section-content">
+        </summary>
+        <div class="paper-details-body">
           <div class="experiment-description">
             {items.map((edu) => (
               <div class="education-item">
@@ -34,7 +36,7 @@ const { items } = Astro.props as Props;
             ))}
           </div>
         </div>
-      </div>
+      </details>
     </div>
   </div>
 </section>

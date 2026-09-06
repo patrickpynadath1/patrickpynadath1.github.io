@@ -1,17 +1,16 @@
 ---
 import '../../styles/components/project.css';
 import ProjectBadges from './ProjectBadges.astro';
-import type { ProjectAuthor, ProjectLinks } from '../types';
+import type { ProjectAuthor } from '../types';
 
 interface Props {
   title: string;
   emoji?: string;
   authors: ProjectAuthor[];
   conference: string;
-  links: ProjectLinks;
 }
 
-const { title, emoji, authors, conference, links } = Astro.props as Props;
+const { title, emoji, authors, conference } = Astro.props as Props;
 ---
 <div class="section-header">
   <div class="conference-pin">
@@ -37,8 +36,4 @@ const { title, emoji, authors, conference, links } = Astro.props as Props;
       ))}
     </div>
   </div>
-  <div class="action-badges">
-    <ProjectBadges conference={conference} links={links} showConference={false} />
-  </div>
-  <span class="expand-icon">▼</span>
 </div>

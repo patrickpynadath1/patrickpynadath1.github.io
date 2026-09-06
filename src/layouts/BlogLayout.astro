@@ -18,7 +18,7 @@ const formattedDate = publishDate
 <BaseLayout title={`${title} | Blog`} description={description}>
   
   <div class="blog-theme">
-    <main class="blog-shell">
+    <main class="blog-shell" id="main-content">
       <div class="blog-body">
         <!-- Navigation buttons -->
         <div class="blog-nav-buttons">
@@ -51,6 +51,8 @@ const formattedDate = publishDate
       </div>
     </main>
   </div>
+
+
 
   <style is:global>
     /* Global overrides to ensure headings stand out even when Bulma/content styles are present */
@@ -377,6 +379,7 @@ const formattedDate = publishDate
     }
   </style>
 
+
   <script is:inline>
     const slugify = (text) =>
       text
@@ -408,16 +411,16 @@ const formattedDate = publishDate
     function scrollToSection(index) {
       if (index >= 0 && index < headings.length) {
         currentSectionIndex = index;
-        headings[index].scrollIntoView({ behavior: 'smooth', block: 'start' });
+        headings[index].scrollIntoView({ behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'instant' : 'smooth', block: 'start' });
         updateButtonStates();
       } else if (index < 0) {
         // Go to top if before first section
-        window.scrollTo({ top: 0, behavior: 'smooth' });
+        window.scrollTo({ top: 0, behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'instant' : 'smooth' });
         currentSectionIndex = -1;
         updateButtonStates();
       } else if (index >= headings.length) {
         // Go to bottom if past last section
-        window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
+        window.scrollTo({ top: document.body.scrollHeight, behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'instant' : 'smooth' });
         currentSectionIndex = headings.length;
         updateButtonStates();
       }

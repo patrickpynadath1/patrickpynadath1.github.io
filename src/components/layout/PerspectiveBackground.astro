@@ -1,0 +1,26 @@
+<div class="perspective-background" aria-hidden="true">
+  <svg class="circle-pattern-desktop" xmlns="http://www.w3.org/2000/svg" width="100%" height="100%">
+    <defs>
+      <pattern id="plain-circles-desktop" width="72" height="72" patternUnits="userSpaceOnUse">
+        <circle cx="36" cy="36" r="22" fill="none" stroke="#527cc8" stroke-opacity=".20" stroke-width="1.15" />
+      </pattern>
+    </defs>
+    <rect width="100%" height="100%" fill="url(#plain-circles-desktop)" />
+  </svg>
+  <svg class="circle-pattern-mobile" xmlns="http://www.w3.org/2000/svg" width="100%" height="100%">
+    <defs>
+      <pattern id="plain-circles-mobile" width="49.5" height="49.5" patternUnits="userSpaceOnUse">
+        <circle cx="24.75" cy="24.75" r="15.125" fill="none" stroke="#527cc8" stroke-opacity=".20" stroke-width="1.15" />
+      </pattern>
+    </defs>
+    <rect width="100%" height="100%" fill="url(#plain-circles-mobile)" />
+  </svg>
+</div>
+
+<style>
+  .perspective-background .circle-pattern-mobile { display:none; }
+  @media (max-width:760px) {
+    .perspective-background .circle-pattern-desktop { display:none; }
+    .perspective-background .circle-pattern-mobile { display:block; }
+  }
+</style>

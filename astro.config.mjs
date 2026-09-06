@@ -28,11 +28,4 @@ export default defineConfig({
     react(),
   ],
   site: 'https://patrickpynadath1.github.io',
-  vite: {
-    server: {
-      watch: {
-        include: ['src/**/*.bib']
-      }
-    }
-  },
 });

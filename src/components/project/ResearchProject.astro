@@ -2,6 +2,7 @@
 import ExpandableSection from '../ui/ExpandableSection.astro';
 import ProjectCats from './ProjectCats.astro';
 import ProjectHeader from './ProjectHeader.astro';
+import ProjectBadges from './ProjectBadges.astro';
 import type { Project } from '../types';
 import '../../styles/components/project.css';
 
@@ -21,17 +22,19 @@ const sectionClass = sectionClassMap[project.theme] ?? '';
 <div class="content-section">
   <ExpandableSection theme={project.theme} sectionClass={sectionClass}>
     <div slot="header" class="project-header-wrapper">
-      <ProjectCats cats={project.cats} />
       <ProjectHeader
         title={project.title}
         emoji={project.emoji}
         authors={project.authors}
         conference={project.conference}
-        links={project.links}
       />
     </div>
     <div slot="tldr">
       <p>{project.tldr}</p>
+    </div>
+    <div slot="actions" class="paper-actions">
+      <ProjectBadges conference={project.conference} links={project.links} showConference={false} />
+      <div class="paper-personal"><div class="paper-cats"><ProjectCats cats={project.cats} /></div><span class="expand-icon" aria-hidden="true">▼</span></div>
     </div>
     <div class="project-body">
       {project.sections.map((section) => (

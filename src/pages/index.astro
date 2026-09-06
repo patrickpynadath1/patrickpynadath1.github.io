@@ -1,8 +1,9 @@
 ---
 import BaseLayout from '../layouts/BaseLayout.astro';
+import '../styles/print.css';
+import PerspectiveBackground from '../components/layout/PerspectiveBackground.astro';
 import Hero from '../components/layout/Hero.astro';
 import Footer from '../components/layout/Footer.astro';
-import TLDRSection from '../components/ui/TLDRSection.astro';
 import AboutMe from '../components/sections/AboutMe.astro';
 import CatsSection from '../components/sections/CatsSection.astro';
 import ResearchProjects from '../components/sections/ResearchProjects.astro';
@@ -17,9 +18,10 @@ const pageTitle = 'Patrick Pynadath';
 const description = 'Patrick Pynadath Website';
 ---
 <BaseLayout title={pageTitle} description={description}>
-  <TLDRSection>
-    Welcome to my personal website! Here you'll find information about me, my research, and <strong>my cats</strong>.
-  </TLDRSection>
+  <link slot="head" href="https://fonts.googleapis.com/css2?family=Source+Serif+4:wght@400;500&display=swap" rel="stylesheet" />
+  <PerspectiveBackground />
+  <main class="home-page" id="main-content">
+
 
   <Hero info={personalInfo} />
   <AboutMe bio={personalInfo.bio} />
@@ -27,30 +29,10 @@ const description = 'Patrick Pynadath Website';
   <ResearchProjects projects={projects} />
   <Education items={education} />
   <Contact links={personalInfo.links} />
+  </main>
   <Footer links={personalInfo.links} />
 
-  <script is:inline>
-    (() => {
-      const expandableSections = Array.from(
-        document.querySelectorAll('[data-expandable]')
-      );
-
-      expandableSections.forEach((section) => {
-        section.addEventListener('click', (event) => {
-          const target = event.target;
-          if (target && target.closest('.conference-badge, .website-badge, .arxiv-badge, .github-badge')) {
-            return;
-          }
-          section.classList.toggle('expanded');
-        });
-      });
-
-      const badges = Array.from(
-        document.querySelectorAll('.conference-badge, .website-badge, .arxiv-badge, .github-badge')
-      );
-      badges.forEach((badge) => {
-        badge.addEventListener('click', (event) => event.stopPropagation());
-      });
-    })();
+  <script>
+    import '../scripts/panel-motion';
   </script>
 </BaseLayout>
