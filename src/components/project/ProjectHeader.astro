@@ -31,9 +31,11 @@ const { title, emoji, authors, conference } = Astro.props as Props;
           ) : (
             <strong>{author.name}</strong>
           )}
+          {author.equalContribution && <sup>*</sup>}
           {index < authors.length - 1 ? ',' : ''}
         </>
       ))}
+      {authors.some(author => author.equalContribution) && <span> · * Equal contribution</span>}
     </div>
   </div>
 </div>

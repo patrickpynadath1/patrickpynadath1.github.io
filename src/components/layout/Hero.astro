@@ -7,6 +7,7 @@ interface SocialLinks {
   twitter?: string;
   email?: string;
   blog?: string;
+  scholar?: string;
 }
 
 interface Props {
@@ -43,6 +44,9 @@ const { info } = Astro.props as Props;
           </div>
 
           <div class="publication-links">
+            {info.links.scholar && (
+              <span class="link-block"><a href={info.links.scholar} class="external-link button is-normal is-rounded is-dark" target="_blank" rel="noopener noreferrer"><span class="icon" aria-hidden="true"><i class="fas fa-graduation-cap"></i></span><span class="hero-link-label">Google Scholar</span></a></span>
+            )}
             {info.resume && (
               <span class="link-block">
                 <a href={info.resume} class="external-link button is-normal is-rounded is-dark" target="_blank">

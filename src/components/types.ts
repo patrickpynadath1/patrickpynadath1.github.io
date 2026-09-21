@@ -8,6 +8,7 @@ export interface ProjectAuthor {
   name: string;
   link?: string;
   isMe?: boolean;
+  equalContribution?: boolean;
 }
 
 export interface ProjectLinks {
@@ -24,7 +25,7 @@ export interface Project {
   emoji: string;
   authors: ProjectAuthor[];
   links: ProjectLinks;
-  cats: { left: string; right: string };
+  cats?: { left: string; right: string };
   tldr: string;
   sections: ProjectSection[];
 }

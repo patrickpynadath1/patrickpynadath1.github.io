@@ -1,0 +1,23 @@
+---
+interface Props {
+  items: { role: string; organization: string; timeframe: string; bullets: string[] }[];
+}
+const { items } = Astro.props as Props;
+---
+<section class="section">
+  <div class="container is-max-desktop">
+    <div class="content surface-panel">
+      <h2 class="title is-3">Experience</h2>
+      {items.map(item => (
+        <article class="experience-item">
+          <h3>{item.role} · {item.organization}</h3>
+          <p>{item.timeframe}</p>
+          <ul>{item.bullets.map(bullet => <li>{bullet}</li>)}</ul>
+        </article>
+      ))}
+    </div>
+  </div>
+</section>
+<style>
+  .experience-item + .experience-item { margin-top: 2rem; }
+</style>

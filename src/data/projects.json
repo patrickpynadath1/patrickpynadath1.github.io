@@ -1,14 +1,155 @@
 [
   {
+    "id": "sticky-jump-diffusions",
+    "title": "Sticky Jump Diffusions: A Unifying View of Masked, Continuous, and Hybrid Diffusion",
+    "theme": "purple",
+    "conference": "Preprint · 2026",
+    "emoji": "",
+    "authors": [
+      {
+        "name": "Pascal Jutras-Dubé"
+      },
+      {
+        "name": "Patrick Pynadath",
+        "isMe": true
+      },
+      {
+        "name": "Jeremy Lu"
+      },
+      {
+        "name": "Yuan Gao"
+      },
+      {
+        "name": "Ruqi Zhang"
+      }
+    ],
+    "links": {
+      "arxiv": "https://arxiv.org/abs/2607.10951"
+    },
+    "tldr": "A continuous-time framework connecting masked, continuous, and hybrid diffusion.",
+    "sections": [
+      {
+        "title": "Overview",
+        "content": "Sticky Jump Diffusions let probability mass leave discrete token embeddings and diffuse through continuous space. The reverse process combines continuous denoising with jumps back to discrete anchors. Denoising Hazard Matching learns the required scores and jump rates from one denoising classifier. The framework recovers masked, continuous, and hybrid diffusion as limiting cases."
+      }
+    ]
+  },
+  {
+    "id": "simplex-relaxation",
+    "title": "Simplex Relaxation for Discrete Diffusion",
+    "theme": "purple",
+    "conference": "Preprint · 2026",
+    "emoji": "",
+    "authors": [
+      {
+        "name": "Jinya Sakurai"
+      },
+      {
+        "name": "Patrick Pynadath",
+        "isMe": true
+      },
+      {
+        "name": "Satoshi Hayakawa"
+      },
+      {
+        "name": "Jaehong Yoon"
+      },
+      {
+        "name": "Xulei Yang"
+      },
+      {
+        "name": "Nancy F. Chen"
+      },
+      {
+        "name": "Xun Xu"
+      }
+    ],
+    "links": {
+      "arxiv": "https://arxiv.org/abs/2608.10615"
+    },
+    "tldr": "Simplax enriches uniform discrete diffusion with auxiliary simplex-valued variables.",
+    "sections": [
+      {
+        "title": "Overview",
+        "content": "Simplax augments categorical states with Dirichlet-distributed simplex variables while preserving the original categorical corruption process. This yields a Rao–Blackwellized reverse-bridge objective and a stochastic sampler, retaining categorical inputs to the denoiser. Experiments study text generation on OpenWebText and constrained and unconditional Sudoku generation."
+      }
+    ]
+  },
+  {
+    "id": "generative-frontiers",
+    "title": "Generative Frontiers: Why Evaluation Matters for Diffusion Language Models",
+    "theme": "purple",
+    "conference": "Technical note · 2026",
+    "emoji": "",
+    "authors": [
+      {
+        "name": "Patrick Pynadath",
+        "isMe": true
+      },
+      {
+        "name": "Jiaxin Shi"
+      },
+      {
+        "name": "Ruqi Zhang"
+      }
+    ],
+    "links": {
+      "arxiv": "https://arxiv.org/abs/2604.02718",
+      "website": "https://patrickpynadath1.github.io/blog/eval_methodology/"
+    },
+    "tldr": "Evaluate diffusion language models through their perplexity–entropy frontiers rather than a single operating point.",
+    "sections": [
+      {
+        "title": "Overview",
+        "content": "This note examines dataset choice, likelihood comparisons, and the limitations of generative perplexity. Relating perplexity and entropy to KL divergence motivates generative frontiers: comparing models across their quality–diversity tradeoffs instead of relying on a single decoding configuration."
+      }
+    ]
+  },
+  {
+    "id": "two-stream-attention",
+    "title": "Why Any-Order Autoregressive Models Need Two-Stream Attention: A Structural-Semantic Tradeoff",
+    "theme": "purple",
+    "conference": "Technical note · 2026",
+    "emoji": "",
+    "authors": [
+      {
+        "name": "Patrick Pynadath",
+        "isMe": true
+      },
+      {
+        "name": "Ruqi Zhang"
+      }
+    ],
+    "links": {
+      "arxiv": "https://arxiv.org/abs/2602.16092"
+    },
+    "tldr": "Two-stream attention helps separate competing semantic and structural demands in any-order generation.",
+    "sections": [
+      {
+        "title": "Overview",
+        "content": "Any-order autoregressive models must attend both to semantically useful tokens for prediction and to structurally recent tokens for summarization. Experiments with Decoupled RoPE suggest that separating position from content alone does not resolve this competition, especially at longer sequence lengths."
+      }
+    ]
+  },
+  {
     "id": "candi",
     "title": "CANDI: Hybrid Discrete-Continuous Diffusion Models",
     "theme": "blue",
-    "conference": "Preprint",
+    "conference": "ICML 2026",
     "emoji": "🍭",
     "authors": [
-      { "name": "Patrick Pynadath", "isMe": true },
-      { "name": "Jiaxin Shi", "link": "https://jiaxins.io/" },
-      { "name": "Ruqi Zhang", "link": "https://ruqizhang.github.io/" }
+      {
+        "name": "Patrick Pynadath",
+        "isMe": true
+      },
+      {
+        "name": "Jiaxin Shi",
+        "link": "https://jiaxins.io/"
+      },
+      {
+        "name": "Ruqi Zhang",
+        "link": "https://ruqizhang.github.io/"
+      }
     ],
     "links": {
       "website": "https://patrickpynadath1.github.io/candi-lander/",
@@ -42,11 +183,29 @@
     "conference": "NeurIPS 2025",
     "emoji": "🔓",
     "authors": [
-      { "name": "Anamika Lochab", "link": "https://anamikalochab.github.io/AL/" },
-      { "name": "Lu Yan", "link": "https://lunaryan.github.io/" },
-      { "name": "Patrick Pynadath", "isMe": true },
-      { "name": "Xiangyu Zhang", "link": "https://www.cs.purdue.edu/homes/xyzhang/" },
-      { "name": "Ruqi Zhang", "link": "https://ruqizhang.github.io/" }
+      {
+        "name": "Anamika Lochab",
+        "link": "https://anamikalochab.github.io/AL/",
+        "equalContribution": true
+      },
+      {
+        "name": "Lu Yan",
+        "link": "https://lunaryan.github.io/",
+        "equalContribution": true
+      },
+      {
+        "name": "Patrick Pynadath",
+        "isMe": true,
+        "equalContribution": true
+      },
+      {
+        "name": "Xiangyu Zhang",
+        "link": "https://www.cs.purdue.edu/homes/xyzhang/"
+      },
+      {
+        "name": "Ruqi Zhang",
+        "link": "https://ruqizhang.github.io/"
+      }
     ],
     "links": {
       "website": "https://patrickpynadath1.github.io/vera-lander/",
@@ -79,8 +238,14 @@
     "conference": "ICLR 2025",
     "emoji": "🎛️",
     "authors": [
-      { "name": "Patrick Pynadath", "isMe": true },
-      { "name": "Ruqi Zhang", "link": "https://ruqizhang.github.io/" }
+      {
+        "name": "Patrick Pynadath",
+        "isMe": true
+      },
+      {
+        "name": "Ruqi Zhang",
+        "link": "https://ruqizhang.github.io/"
+      }
     ],
     "links": {
       "website": "https://patrickpynadath1.github.io/dab/",
@@ -114,10 +279,21 @@
     "conference": "NeurIPS 2024",
     "emoji": "🚲",
     "authors": [
-      { "name": "Patrick Pynadath", "isMe": true },
-      { "name": "Riddhiman Bhattacharya", "link": "https://scholar.google.com/citations?user=fdyRnbgAAAAJ&hl=en" },
-      { "name": "Arun Hariharan" },
-      { "name": "Ruqi Zhang", "link": "https://ruqizhang.github.io/" }
+      {
+        "name": "Patrick Pynadath",
+        "isMe": true
+      },
+      {
+        "name": "Riddhiman Bhattacharya",
+        "link": "https://scholar.google.com/citations?user=fdyRnbgAAAAJ&hl=en"
+      },
+      {
+        "name": "Arun Hariharan"
+      },
+      {
+        "name": "Ruqi Zhang",
+        "link": "https://ruqizhang.github.io/"
+      }
     ],
     "links": {
       "arxiv": "https://arxiv.org/abs/2402.17699",

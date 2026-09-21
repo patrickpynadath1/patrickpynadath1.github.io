@@ -34,7 +34,7 @@ const sectionClass = sectionClassMap[project.theme] ?? '';
     </div>
     <div slot="actions" class="paper-actions">
       <ProjectBadges conference={project.conference} links={project.links} showConference={false} />
-      <div class="paper-personal"><div class="paper-cats"><ProjectCats cats={project.cats} /></div><span class="expand-icon" aria-hidden="true">▼</span></div>
+      <div class="paper-personal">{project.cats && <div class="paper-cats"><ProjectCats cats={project.cats} /></div>}<span class="expand-icon" aria-hidden="true">▼</span></div>
     </div>
     <div class="project-body">
       {project.sections.map((section) => (

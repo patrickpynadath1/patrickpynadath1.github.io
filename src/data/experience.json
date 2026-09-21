@@ -1,0 +1,21 @@
+[
+  {
+    "role": "Student Researcher",
+    "organization": "Google DeepMind",
+    "timeframe": "June 2026 – September 2026",
+    "bullets": [
+      "Researched faster sampling algorithms for diffusion language models with the DiffusionGemma team, improving inference efficiency over state-of-the-art baselines.",
+      "Designed and built an end-to-end evaluation harness covering generation, scoring, sandboxed code evaluation, LLM autoraters, sampling trace analysis, and results visualization.",
+      "Developed a new sampling method with substantial efficiency gains; publication pending and details under embargo."
+    ]
+  },
+  {
+    "role": "Research Assistant",
+    "organization": "Purdue University",
+    "timeframe": "January 2024 – June 2026",
+    "bullets": [
+      "Conducted research in probabilistic machine learning spanning diffusion models, discrete MCMC methods, and variational inference for large language models.",
+      "Built large-scale experimental pipelines using PyTorch, PyTorch Lightning, Hydra, and Slurm for training and evaluating language and generative models."
+    ]
+  }
+]

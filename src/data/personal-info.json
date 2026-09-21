@@ -5,15 +5,16 @@
   "heroImage": "/images/pic.jpg",
   "resume": "/cv.pdf",
   "bio": [
-    "Hello! I'm Patrick Pynadath, a passionate PhD student with a strong interest in probabilistic machine learning and discrete generative modeling. I am currently pursuing my PhD at Purdue University under the guidance of Prof. Ruqi Zhang.",
-    "In the past, I have worked on fundamental statistical methods, applications of sampling techniques to LLMs, and LLM safety. Currently, I am very excited about discrete diffusion.",
-    "Feel free to reach out if you'd like to connect or discuss potential collaborations!"
+    "I am a PhD student at Purdue University, studying machine learning under the guidance of Professor Ruqi Zhang. I am broadly interested in probabilistic machine learning methodologies, with a current focus on diffusion language models (DLMs).",
+    "My research interests include diffusion language models, Markov chain Monte Carlo (MCMC), large language models, generative modeling, and controlled generation.",
+    "I work with PyTorch, PyTorch Lightning, Hydra, Slurm, TensorFlow, NumPy, Matplotlib, BeautifulSoup, and Hugging Face Transformers."
   ],
   "links": {
     "blog": "/blog/",
     "linkedin": "https://www.linkedin.com/in/patrick-pynadath-a17434123/",
     "github": "https://github.com/patrickpynadath1",
     "twitter": "https://twitter.com/PatrickPyn35903",
-    "email": "ppynadat@purdue.edu"
+    "email": "ppynadat@purdue.edu",
+    "scholar": "https://scholar.google.com/citations?user=UzthxMoAAAAJ&hl=en"
   }
 }
