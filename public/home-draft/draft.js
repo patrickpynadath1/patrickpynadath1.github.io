@@ -57,7 +57,14 @@ function setPalette(id) {
   root.dataset.hue = hue;
   root.style.setProperty('--hue', hue);
   root.style.setProperty('--accent', `hsl(${hue} ${root.dataset.theme === 'light' ? '43% 34%' : '72% 78%'})`);
-  document.dispatchEvent(new Event('sectionchange'));
+  // Apply the paint property directly on the same tap that selects the pane.
+  // Static mobile SVGs must not rely on the animation engine for a repaint.
+  const paths = [...document.querySelectorAll('#art path')];
+  const light = root.dataset.theme === 'light';
+  paths.forEach((path, index) => {
+    const row = index / Math.max(1, paths.length - 1);
+    path.style.stroke = `hsl(${hue + row * 22 - 11} ${light ? 40 : 78}% ${light ? 37 + row * 9 : 70 + row * 12}%)`;
+  });
 }
 function cancelMotion() {
   motion?.cancel();

@@ -14,16 +14,6 @@ try {
       return [(p1[0]+(p2[0]-p0[0])/6).toFixed(2),(p2[0]-(p3[0]-p1[0])/6).toFixed(2),p2[0].toFixed(2)];
     })};
   });
-  function colorSection() {
-    const hue = Number(document.documentElement.dataset.hue || 160);
-    paths.forEach((path,index)=>{
-      const row=index/(paths.length-1);
-      path.style.setProperty('--wave-dark',`hsl(${hue+row*22-11} 78% ${70+row*12}%)`);
-      path.style.setProperty('--wave-light',`hsl(${hue+row*22-11} 40% ${37+row*9}%)`);
-    });
-  }
-  document.addEventListener('sectionchange',colorSection);
-  colorSection();
   let frames, count, frameId=0, lastFrame=null, lastPaint=null, elapsed=0;
   const fps=Number(svg.dataset.loopFps);
   const staticPaths = paths.map(path => path.getAttribute('d'));
