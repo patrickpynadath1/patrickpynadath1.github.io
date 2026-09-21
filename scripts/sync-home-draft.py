@@ -24,7 +24,10 @@ def replace_panel(name, content):
     if count != 1:
         raise ValueError(f'Expected one {name} panel, got {count}')
 
-replace_panel('about', '<h2>About me</h2>' + ''.join(f'<p class="text-block">{h(p)}</p>' for p in info['bio']))
+replace_panel('about', f'<div class="section-intro"><h2>About me</h2><p class="section-lead">{h(info["bio"][0])}</p></div><div class="about-columns"><div><h3>Research interests</h3><p>{h(info["bio"][1])}</p></div></div>')
+replace_panel('cats', """<div class="section-intro"><h2>My cats</h2><p class="section-lead">Meet my two research assistants.</p></div><div class="cats cat-profiles"><figure><img src="/images/missy.jpg" alt="Missy" width="350" height="350"><figcaption><h3>Missy</h3></figcaption></figure><figure><img src="/images/boba.jpg" alt="Boba" width="350" height="350"><figcaption><h3>Boba</h3></figcaption></figure></div><div class="cat-description"><p>Missy specializes in Supervised Keyboard Tuning (SKT) (demonstrated when I am coding); while Boba is our resident expert in discrete nap optimization. They are a crucial component of every research project.</p></div>""")
+contact_links = ''.join(f'<a href="{h(info["links"][key], quote=True)}"><span>{label}</span><span aria-hidden="true">↗</span></a>' for key, label in [('linkedin','LinkedIn'),('github','GitHub'),('twitter','Twitter')])
+replace_panel('contact', f'<div class="section-intro"><h2>Get in touch</h2><p class="section-lead">Whether you’re looking to collaborate on a project, have a question about my work, or just want to say hello, I’d love to hear from you!</p></div><a class="email-feature" href="mailto:{h(info["links"]["email"])}"><span><span class="eyebrow">Email</span><strong>{h(info["links"]["email"])}</strong></span><span aria-hidden="true">↗</span></a><div class="contact-directory">{contact_links}</div>')
 replace_panel('education', '<h2>Education</h2>' + ''.join(f'<article class="education-item"><h3>{h(e["degree"])}</h3><p>{h(e["institution"])}</p><p>{h(e["timeframe"])}</p></article>' for e in education))
 research = '<h2>Research projects</h2>'
 for p in projects:
@@ -40,10 +43,11 @@ for p in projects:
             details += '<ul>' + ''.join('<li>' + h(b) + '</li>' for b in section['bullets']) + '</ul>'
     research += f'<article class="project" id="project-{h(p["id"])}"><span class="venue">{h(p["conference"])}</span><h3>{h(p["title"])}</h3><p class="authors">{authors}</p>{note}<p>{h(p["tldr"])}</p><div class="links">{links}</div><details><summary>Read more</summary>{details}</details></article>'
 replace_panel('research', research)
-experience_html = '<h2>Experience</h2>'
+experience_html = '<div class="section-intro"><h2>Experience</h2></div><div class="career-list">'
 for item in experience:
     bullets = ''.join('<li>' + h(b) + '</li>' for b in item['bullets'])
-    experience_html += f'<article class="experience-item"><span class="venue">{h(item["timeframe"])}</span><h3>{h(item["role"])}</h3><p class="organization">{h(item["organization"])}</p><ul>{bullets}</ul></article>'
+    experience_html += f'<article class="career-entry"><div class="career-date">{h(item["timeframe"])}</div><div class="career-body"><span class="eyebrow">{h(item["role"])}</span><h3>{h(item["organization"])}</h3><ul>{bullets}</ul></div></article>'
+experience_html += '</div>'
 if 'id="panel-experience"' not in page:
     page = page.replace('<section class="panel" role="tabpanel" id="panel-contact"', '<section class="panel" role="tabpanel" id="panel-experience" aria-labelledby="tab-experience" tabindex="0" hidden></section><section class="panel" role="tabpanel" id="panel-contact"')
 replace_panel('experience', experience_html)

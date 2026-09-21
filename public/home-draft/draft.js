@@ -8,6 +8,13 @@ const reduced = matchMedia('(prefers-reduced-motion: reduce)');
 // Keep native disclosure semantics while animating the actual content height.
 document.querySelectorAll('.project details').forEach(details => {
   const summary = details.querySelector('summary');
+  const card = details.closest('.project');
+  card.addEventListener('click', event => {
+    // Links and the native keyboard-accessible summary keep their own actions.
+    if (event.target.closest('a, button, input, select, textarea, summary')) return;
+    if (window.getSelection()?.toString()) return;
+    summary.click();
+  });
   let expansion;
   let expanded = details.open;
   summary.addEventListener('click', event => {
