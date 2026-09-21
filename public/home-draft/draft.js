@@ -38,6 +38,7 @@ let selected = null;
 let motion;
 let outgoingMotion;
 function sizeViewport() {
+  document.documentElement.style.setProperty('--viewport-height', `${window.innerHeight}px`);
   document.documentElement.style.setProperty('--viewport-width', `${document.documentElement.clientWidth}px`);
   document.documentElement.style.setProperty('--masthead-height', `${document.querySelector('.masthead').getBoundingClientRect().height}px`);
 }
@@ -161,9 +162,17 @@ theme.addEventListener('click', () => {
 window.addEventListener('hashchange', () => {
   const id = location.hash.slice(1); if(id in modes) openSection(id); else closeSection();
 });
+let viewportWidth = document.documentElement.clientWidth;
 window.addEventListener('resize', () => {
+  const widthChanged = viewportWidth !== document.documentElement.clientWidth;
+  viewportWidth = document.documentElement.clientWidth;
   sizeViewport();
-  if(motion) { cancelMotion(); if(selected) openSection(selected,false); else {setReveal(0);overlay.hidden=true;updateTabs(null);} }
+  // Toolbar height changes must not cancel the shared vertical reveal.
+  // Only a horizontal slide depends on a width captured at animation start.
+  if (widthChanged && scrollArea.classList.contains('sliding')) {
+    cancelMotion();
+    if (selected) openSection(selected, false);
+  }
 });
 reduced.addEventListener('change', () => { if(selected) openSection(selected,false); });
 updateTheme(); updateTabs(null);

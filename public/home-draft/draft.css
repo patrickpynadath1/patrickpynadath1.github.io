@@ -29,7 +29,7 @@
 .panel-scroll.sliding{overflow:hidden}.panel-scroll.sliding .panel{will-change:transform,opacity}
 @media(max-width:760px){.panel-scroll{padding:25px 6vw}.content-overlay{border-radius:0}}
 /* The sheet fills every pixel between the navigation and the viewport bottom. */
-.stage{min-height:0;height:max(0px,calc(100dvh - var(--masthead-height,232px)))}
+.stage{min-height:0;height:max(0px,calc(var(--viewport-height,100dvh) - var(--masthead-height,232px)))}
 body.pane-open{overflow:hidden}
 /* Keep About me in one centered, consistently sized reading column. */
 #panel-about{width:min(100%,78ch);justify-self:center;display:flex;flex-direction:column;gap:16px}
@@ -62,12 +62,12 @@ body.pane-open{overflow:hidden}
 .content-overlay{border:0;box-shadow:none}
 @media(max-width:760px){.shape-credit{top:21px;font-size:10px;max-width:calc(100% - 180px)}}
 /* A shared wave field continues behind the sticky glass header and content. */
-.wave-column{position:fixed;inset:0;width:100%;height:100dvh}
+.wave-column{position:fixed;inset:0;width:100%;height:var(--viewport-height,100dvh)}
 .art{width:min(1000px,100%);height:100%;max-width:none}
 .masthead{background:transparent;isolation:isolate}
 .masthead::before{content:"";position:absolute;inset-block:0;left:calc((100% - var(--viewport-width,100vw))/2);width:var(--viewport-width,100vw);z-index:-1;pointer-events:none;background:color-mix(in srgb,var(--bg) 28%,transparent);backdrop-filter:blur(3px) saturate(.95);-webkit-backdrop-filter:blur(3px) saturate(.95)}
 .masthead::before,.content-overlay{background:color-mix(in srgb,var(--bg) 28%,transparent);backdrop-filter:blur(3px) saturate(.95);-webkit-backdrop-filter:blur(3px) saturate(.95)}
-@supports not (backdrop-filter:blur(1px)){.masthead::before,.content-overlay{background:color-mix(in srgb,var(--bg) 85%,transparent)}}
+@supports not ((backdrop-filter:blur(1px)) or (-webkit-backdrop-filter:blur(1px))){.masthead::before,.content-overlay{background:color-mix(in srgb,var(--bg) 85%,transparent)}}
 /* Phone layout: visible section choices, comfortable controls, uncropped photos. */
 @media(max-width:760px){
   .identity{padding:58px 0 16px;gap:14px}
@@ -116,10 +116,40 @@ body,.content-overlay,.text-block,.project,.education-item,.experience-item,.con
 /* Blur the wave field once; separate clipped backdrop layers create a seam. */
 .wave-column::after{content:"";position:absolute;inset:0;pointer-events:none;background:color-mix(in srgb,var(--bg) 28%,transparent);backdrop-filter:blur(3px) saturate(.95);-webkit-backdrop-filter:blur(3px) saturate(.95);transition:background-color .4s ease}
 .masthead::before,.content-overlay{background:transparent;backdrop-filter:none;-webkit-backdrop-filter:none}
-@supports not (backdrop-filter:blur(1px)){.wave-column::after{background:color-mix(in srgb,var(--bg) 85%,transparent)}}
+@supports not ((backdrop-filter:blur(1px)) or (-webkit-backdrop-filter:blur(1px))){.wave-column::after{background:color-mix(in srgb,var(--bg) 85%,transparent)}}
 @media(prefers-reduced-motion:reduce){.wave-column::after{transition:none}}
 /* Both layers share one reveal edge, including interrupted/reversed motion. */
-:root{--pane-progress:0;--pane-hidden:calc((100dvh - var(--masthead-height,232px)) * (1 - var(--pane-progress)))}
+:root{--pane-progress:0;--pane-hidden:calc((var(--viewport-height,100dvh) - var(--masthead-height,232px)) * (1 - var(--pane-progress)))}
 .wave-column::after,.pane-open .wave-column::after,.content-overlay{clip-path:inset(0 0 max(0px,var(--pane-hidden)) 0)}
 .wave-column::after{transition:background-color .4s ease}
 @media(prefers-reduced-motion:reduce){.wave-column::after{transition:none}}
+/* Phone browsers: stable text sizing, safe areas, and a full-height wave field. */
+html{-webkit-text-size-adjust:100%;text-size-adjust:100%}
+@media(max-width:760px){
+  .shell{padding-left:max(20px,env(safe-area-inset-left));padding-right:max(20px,env(safe-area-inset-right))}
+  .masthead{padding-top:env(safe-area-inset-top)}
+  .identity{display:grid;grid-template-columns:64px minmax(0,1fr);gap:10px 14px;padding:56px 0 12px;align-items:center}
+  .portrait{width:64px;height:64px;grid-column:1;grid-row:1}
+  .identity-text{display:contents}
+  h1{grid-column:2;grid-row:1;align-self:start;font-size:clamp(25px,7.2vw,30px);letter-spacing:-1px;margin:5px 0 0;line-height:1.15}
+  .subtitle{grid-column:2;grid-row:1;align-self:end;margin:0 0 6px;font-size:11px}
+  .socials{grid-column:1/-1;display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:0;margin:0}
+  .socials a{width:100%;height:44px}
+  .shape-credit{top:calc(16px + env(safe-area-inset-top))}
+  .top-tools{top:calc(8px + env(safe-area-inset-top))}
+  .wave-column{overflow:hidden}
+  .art{width:max(100%,calc(var(--viewport-height,100dvh) * .97));flex-shrink:0}
+  .panel-scroll{padding:20px max(20px,env(safe-area-inset-right)) calc(28px + env(safe-area-inset-bottom)) max(20px,env(safe-area-inset-left));-webkit-overflow-scrolling:touch}
+  .project h3,.experience-item h3,.education-item h3{font-size:21px;line-height:1.3;overflow-wrap:anywhere}
+  .project summary{min-height:44px;padding-block:10px}
+  .links a{display:inline-flex;align-items:center;min-height:44px}
+  .panel,.panel-scroll{min-height:0;min-width:0}
+}
+@media(max-height:500px) and (orientation:landscape){
+  .shell{padding-left:max(5vw,env(safe-area-inset-left));padding-right:max(5vw,env(safe-area-inset-right))}
+  .panel-scroll{padding-bottom:calc(24px + env(safe-area-inset-bottom))}
+  .identity{padding:10px 54px 8px;gap:12px;display:flex;flex-wrap:nowrap}
+  .identity-text{display:block}.portrait{width:48px;height:48px}h1{font-size:24px;margin:0}.subtitle{margin:0}
+  .socials{display:flex;gap:2px;margin:0}.socials a{width:32px;height:32px}
+  .shape-credit{display:none}.tabs{display:flex;gap:8px;padding-bottom:6px}.tabs button{min-height:40px}
+}
