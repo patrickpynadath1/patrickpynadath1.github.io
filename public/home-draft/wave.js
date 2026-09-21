@@ -26,6 +26,7 @@ try {
   colorSection();
   let frames, count, frameId=0, lastFrame=null, lastPaint=null, elapsed=0;
   const fps=Number(svg.dataset.loopFps);
+  const staticPaths = paths.map(path => path.getAttribute('d'));
   function draw() {
     const position=(elapsed*fps)%count;
     const index=Math.floor(position), mix=position-index;
@@ -53,13 +54,18 @@ try {
   function updatePlayback(){
     cancelAnimationFrame(frameId);
     lastFrame=lastPaint=null;
-    if(frames && !reducedMotion.matches && !document.hidden) frameId=requestAnimationFrame(tick);
+    if (mobile.matches || reducedMotion.matches) {
+      elapsed = 0;
+      paths.forEach((path, index) => path.setAttribute('d', staticPaths[index]));
+      return;
+    }
+    if(frames && !document.hidden) frameId=requestAnimationFrame(tick);
   }
   // Keep the matching inline first frame visible until the cache is ready.
-  // Reduced-motion visitors need no animation download.
+  // Phones and reduced-motion visitors need no animation download.
   let loading;
   async function load(){
-    if(frames || loading || reducedMotion.matches)return;
+    if(frames || loading || reducedMotion.matches || mobile.matches)return;
     loading=(async()=>{
       const response=await fetch(new URL(svg.dataset.loopSrc,import.meta.url));
       if(!response.ok)throw new Error('Wave loop could not be loaded');
@@ -74,6 +80,7 @@ try {
     try{await loading;}catch(error){console.error(error);}finally{loading=null;}
   }
   reducedMotion.addEventListener('change',()=>{updatePlayback();load();});
+  mobile.addEventListener('change',()=>{updatePlayback();load();});
   document.addEventListener('visibilitychange',updatePlayback);
   await load();
 }catch(error){console.error(error);}

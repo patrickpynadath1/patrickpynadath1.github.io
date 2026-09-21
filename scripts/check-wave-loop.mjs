@@ -2,7 +2,7 @@ import fs from 'node:fs';import vm from 'node:vm';import assert from 'node:asser
 const html=fs.readFileSync('public/home-draft/index.html','utf8');
 const svg=html.match(/<div class="art"[\s\S]*?<\/svg>/)[0];
 const attrs=[...svg.matchAll(/<path\s([^>]+)>/g)].map(m=>m[1]);
-let callback;const paths=attrs.map(a=>{const get=n=>a.match(new RegExp('(?:^|\\s)'+n+'="([^"]*)"'))?.[1];return {d:get('d'),dataset:{points:get('data-points')},style:{setProperty(){}},setAttribute(_,v){this.d=v}}});
+let callback;const paths=attrs.map(a=>{const get=n=>a.match(new RegExp('(?:^|\\s)'+n+'="([^"]*)"'))?.[1];return {d:get('d'),dataset:{points:get('data-points')},style:{setProperty(){}},getAttribute(){return this.d},setAttribute(_,v){this.d=v}}});
 const file=fs.readFileSync('public/home-draft/wave-loop.bin');
 const buffer=file.buffer.slice(file.byteOffset,file.byteOffset+file.byteLength);
 const context={console,Math,Number,JSON,Float64Array,Int16Array,DataView,URL,document:{hidden:false,documentElement:{dataset:{}},querySelector:()=>({querySelector:()=>({dataset:{loopFps:'15',loopSrc:'./wave-loop.bin'},querySelectorAll:()=>paths})}),addEventListener(){}},matchMedia:()=>({matches:false,addEventListener(){}}),fetch:async()=>({ok:true,arrayBuffer:async()=>buffer}),cancelAnimationFrame(){},requestAnimationFrame(fn){callback=fn;return 1}};
