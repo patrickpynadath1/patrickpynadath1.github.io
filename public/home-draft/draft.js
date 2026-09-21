@@ -51,12 +51,15 @@ function sizeViewport() {
 }
 sizeViewport();
 new ResizeObserver(sizeViewport).observe(document.querySelector('.masthead'));
+const mobilePalette = matchMedia('(max-width: 760px), (pointer: coarse)');
+mobilePalette.addEventListener('change', () => setPalette(selected));
 function setPalette(id) {
   const hue = modes[id] ?? 160;
   const root = document.documentElement;
   root.dataset.hue = hue;
   root.style.setProperty('--hue', hue);
   root.style.setProperty('--accent', `hsl(${hue} ${root.dataset.theme === 'light' ? '43% 34%' : '72% 78%'})`);
+  if (mobilePalette.matches) return;
   // Apply the paint property directly on the same tap that selects the pane.
   // Static mobile SVGs must not rely on the animation engine for a repaint.
   const paths = [...document.querySelectorAll('#art path')];

@@ -82,7 +82,14 @@ for index, svg_path in enumerate(paths):
         d += f' C {p1[0]+(p2[0]-p0[0])/6:.2f} {p1[1]+(p2[1]-p0[1])/6:.2f} {p2[0]-(p3[0]-p1[0])/6:.2f} {p2[1]-(p3[1]-p1[1])/6:.2f} {p2[0]:.2f} {p2[1]:.2f}'
     svg_path.set('d', d)
     row = index / (len(paths)-1)
-    svg_path.set('style', f'--wave-dark:hsl(calc(var(--hue,160) + {row*22-11}) 78% {70+row*12}%);--wave-light:hsl(calc(var(--hue,160) + {row*22-11}) 40% {37+row*9}%)')
+    def rainbow(palette):
+        position = row * (len(palette)-1)
+        stop = min(len(palette)-2, int(position))
+        mix = position-stop
+        return 'rgb(' + ','.join(str(round(a+(b-a)*mix)) for a,b in zip(palette[stop],palette[stop+1])) + ')'
+    dark = rainbow([(139,242,210),(148,199,255),(195,172,255),(246,173,225),(255,203,167)])
+    light = rainbow([(49,137,121),(87,133,185),(144,108,187),(187,106,162),(192,126,91)])
+    svg_path.set('style', f'--wave-dark:hsl(calc(var(--hue,160) + {row*22-11}) 78% {70+row*12}%);--wave-light:hsl(calc(var(--hue,160) + {row*22-11}) 40% {37+row*9}%);--wave-rainbow-dark:{dark};--wave-rainbow-light:{light}')
 page = re.sub(r'(<div class="art" id="art"[^>]*>).*?</div>', lambda m: m[1] + ET.tostring(svg, encoding='unicode') + '</div>', page, flags=re.S)
 for filename in ('wave.js', 'draft.js', 'draft.css'):
     digest = hashlib.sha256((path.parent / filename).read_bytes()).hexdigest()[:12]

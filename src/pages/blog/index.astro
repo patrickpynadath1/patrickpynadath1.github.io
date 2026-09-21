@@ -1,35 +1,58 @@
 ---
 import { getCollection } from 'astro:content';
-import BaseLayout from '../../layouts/BaseLayout.astro';
-import PostCard from '../../components/PostCard.astro';
+import homepage from '../../../public/home-draft/index.html?raw';
+import '../../styles/blog-index.css';
 
 const posts = (await getCollection('blog'))
   .filter((post) => !post.data.draft)
   .sort((a, b) => b.data.pubDate.valueOf() - a.data.pubDate.valueOf());
+const waveSvg = homepage.match(/<div class="art"[^>]*>(<svg[\s\S]*?<\/svg>)/)?.[1] ?? '';
+const waveScript = '/home-draft/' + (homepage.match(/src="\.\/(wave\.js\?v=[^"]+)"/)?.[1] ?? 'wave.js');
+const dateFormat = new Intl.DateTimeFormat('en', { dateStyle: 'medium' });
 ---
-<BaseLayout title="Blog | Patrick Pynadath" description="Blog posts by Patrick Pynadath">
-  
-  <div class="blog-theme">
-    <main class="blog-shell">
-      <section class="blog-hero">
-        <h1>Blog</h1>
-        <p>Notes on research, experiments, and updates.</p>
-      </section>
-      <section class="blog-grid">
-        {posts.length === 0 ? (
-          <p class="blog-empty">No posts yet — add a Markdown file under src/content/posts to publish.</p>
-        ) : (
-          posts.map((post) => (
-            <PostCard
-              href={`/blog/${post.slug}/`}
-              title={post.data.title}
-              description={post.data.description}
-              publishDate={post.data.pubDate}
-              tags={post.data.tags ?? []}
-            />
-          ))
-        )}
-      </section>
-    </main>
-  </div>
-</BaseLayout>
+<!doctype html>
+<html lang="en" data-theme="dark" data-hue="266">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="description" content="Notes on research, experiments, and updates by Patrick Pynadath." />
+    <meta name="theme-color" content="#121321" />
+    <title>Blog | Patrick Pynadath</title>
+    <link rel="canonical" href="https://patrickpynadath1.github.io/blog/" />
+    <link rel="icon" href="/favicon.svg" />
+  </head>
+  <body>
+    <a class="skip-link" href="#posts">Skip to posts</a>
+    <div class="wave-field" aria-hidden="true"><div class="art" id="art"><Fragment set:html={waveSvg} /></div></div>
+    <div class="blog-shell">
+      <header class="blog-header">
+        <a class="identity" href="/" aria-label="Patrick Pynadath — home">
+          <span class="portrait"><img src="/images/pic.jpg" width="64" height="64" alt="" /></span>
+          <span>Patrick Pynadath</span>
+        </a>
+        <a class="home-link" href="/">← Home</a>
+      </header>
+      <main id="posts">
+        <div class="blog-intro">
+          <span class="eyebrow">Research &amp; ideas</span>
+          <h1>Blog</h1>
+          <p>Notes on research, experiments, and updates.</p>
+        </div>
+        <div class="post-list">
+          {posts.length === 0 ? <p>No posts yet. Check back soon.</p> : posts.map(post => (
+            <article class="post-card">
+              <a href={`/blog/${post.slug}/`}>
+                <div class="post-meta"><time datetime={post.data.pubDate.toISOString()}>{dateFormat.format(post.data.pubDate)}</time><span aria-hidden="true">↗</span></div>
+                <h2>{post.data.title}</h2>
+                <p>{post.data.description}</p>
+                <div class="tag-list">{(post.data.tags ?? []).map(tag => <span>{tag}</span>)}</div>
+              </a>
+            </article>
+          ))}
+        </div>
+      </main>
+      <footer><span>Patrick Pynadath</span><span>Shape from <a href="https://bookofshapes.com">Book of Shapes</a></span></footer>
+    </div>
+    <script is:inline type="module" src={waveScript}></script>
+  </body>
+</html>
