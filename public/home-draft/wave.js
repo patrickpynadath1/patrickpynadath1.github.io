@@ -2,40 +2,15 @@ const art = document.querySelector('#art');
 const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)');
 
 try {
-  const response = await fetch(new URL('../wave-study/shape.svg', import.meta.url));
-  if (!response.ok) throw new Error('Shape could not be loaded');
-  const documentSvg = new DOMParser().parseFromString(await response.text(), 'image/svg+xml');
-  if (documentSvg.querySelector('parsererror')) throw new Error('Invalid shape');
-  const modelResponse = await fetch(new URL('../wave-study/wave-model.json', import.meta.url));
-  if (!modelResponse.ok) throw new Error('Wave model could not be loaded');
-  const models = await modelResponse.json();
-  const svg = document.importNode(documentSvg.documentElement, true);
-  // Give the original geometry room to move without clipping its outer lines.
-  svg.setAttribute('viewBox', '-20 -22 336 347');
-  svg.setAttribute('aria-hidden', 'true');
-  art.replaceChildren(svg);
-
-  // Preserve the export for comparison; animate a continuous model of its waves.
+  // The server-rendered SVG is both the static fallback and the first frame.
+  const svg = art.querySelector('svg');
   const paths = [...svg.querySelectorAll('path')];
-  // A continuous pastel spectrum: seafoam, periwinkle, lilac, rose, peach.
-  // Colors are set once, keeping color work out of the animation loop.
-  const darkPalette = [[139, 242, 210], [148, 199, 255], [195, 172, 255], [246, 173, 225], [255, 203, 167]];
-  const lightPalette = [[49, 137, 121], [87, 133, 185], [144, 108, 187], [187, 106, 162], [192, 126, 91]];
-  function lineColor(palette, row) {
-    const position = row * (palette.length - 1);
-    const index = Math.min(palette.length - 2, Math.floor(position));
-    const mix = position - index;
-    return `rgb(${palette[index].map((value, channel) => Math.round(value + (palette[index + 1][channel] - value) * mix)).join(',')})`;
-  }
-  const lines = paths.map((path, index) => {
-    path.style.setProperty('--wave-dark', lineColor(darkPalette, index / (paths.length - 1)));
-    path.style.setProperty('--wave-light', lineColor(lightPalette, index / (paths.length - 1)));
-    const original = path.getAttribute('d');
-    const numbers = original.match(/[-+]?(?:\d*\.\d+|\d+\.?\d*)(?:e[-+]?\d+)?/gi).map(Number);
-    const points = [];
-    for (let i = 0; i < numbers.length; i += 2) points.push([numbers[i], numbers[i + 1]]);
-    return { path, original, points, model: models[index] };
-  });
+  const lines = paths.map(path => ({
+    path,
+    original: path.getAttribute('d'),
+    points: JSON.parse(path.dataset.points),
+    model: { frequency: Number(path.dataset.frequency) },
+  }));
 
   function colorSection() {
     const hue = Number(document.documentElement.dataset.hue || 160);
@@ -73,6 +48,10 @@ try {
   const waves = Array.from({ length: 8 }, () => createWave(true));
 
   function draw() {
+    // Ease away from the exact fallback geometry with zero initial velocity.
+    const progress = Math.min(time / 2.4, 1);
+    const blend = progress * progress * (3 - 2 * progress);
+    if (blend === 0) return;
     // Compress the upper intensity range so maximum stays fluid and restrained.
     const intensity = .4;
     const amplitude = (.7 * intensity / (.4 + intensity));
@@ -94,7 +73,7 @@ try {
         phase: wave.phase + row * wave.rowPhase,
         frequency: wave.frequency + model.frequency * .3,
       }));
-      const movingPoints = points.map(([x]) => {
+      const movingPoints = points.map(([x, initialY]) => {
         const u = (x + 148) / 296;
         let displacement = 0;
         for (const wave of rowWaves) {
@@ -107,7 +86,8 @@ try {
         // The resting geometry is still straight; all bends come from packets.
         // Soft limiting keeps coincident waves inside a comfortable visual range.
         const strength = amplitude * (.28 + .72 * u ** 1.2);
-        return [x, 44 * Math.tanh(displacement * strength / 44)];
+        const animatedY = 44 * Math.tanh(displacement * strength / 44);
+        return [x, initialY + (animatedY - initialY) * blend];
       });
       // Interpolating cubic curves removes the export's angular line segments.
       const format = (value) => value.toFixed(2);
