@@ -118,7 +118,8 @@ body,.content-overlay,.text-block,.project,.education-item,.experience-item,.con
 .masthead::before,.content-overlay{background:transparent;backdrop-filter:none;-webkit-backdrop-filter:none}
 @supports not (backdrop-filter:blur(1px)){.wave-column::after{background:color-mix(in srgb,var(--bg) 85%,transparent)}}
 @media(prefers-reduced-motion:reduce){.wave-column::after{transition:none}}
-/* At rest, glass covers only the header; opening extends that same layer. */
-.wave-column::after{clip-path:inset(0 0 max(0px,calc(100% - var(--masthead-height,232px))) 0);transition:background-color .4s ease,clip-path .65s cubic-bezier(.22,.61,.36,1)}
-.pane-open .wave-column::after{clip-path:inset(0)}
+/* Both layers share one reveal edge, including interrupted/reversed motion. */
+:root{--pane-progress:0;--pane-hidden:calc((100dvh - var(--masthead-height,232px)) * (1 - var(--pane-progress)))}
+.wave-column::after,.pane-open .wave-column::after,.content-overlay{clip-path:inset(0 0 max(0px,var(--pane-hidden)) 0)}
+.wave-column::after{transition:background-color .4s ease}
 @media(prefers-reduced-motion:reduce){.wave-column::after{transition:none}}

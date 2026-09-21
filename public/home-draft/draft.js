@@ -77,15 +77,19 @@ function updateTabs(id) {
     document.getElementById(tab.getAttribute('aria-controls')).hidden = !active;
   });
 }
+const reveal = { progress: 0 };
+function setReveal(progress) {
+  reveal.progress = progress;
+  document.documentElement.style.setProperty('--pane-progress', String(progress));
+}
 function roll(opening, complete) {
-  // Reveal the entire glass pane from its top edge without scaling its text.
-  motion = animate(overlay, {
-    clipPath: opening ? ['inset(0% 0% 100% 0%)', 'inset(0% 0% 0% 0%)']
-      : ['inset(0% 0% 0% 0%)', 'inset(0% 0% 100% 0%)'],
-    opacity: opening ? [.55, 1] : [1, .55],
-    duration: opening ? 650 : 420,
-    ease: opening ? 'out(4)' : 'inOut(3)',
-    onComplete: () => { motion = null; overlay.style.clipPath = ''; overlay.style.opacity = ''; complete(); },
+  // One clock and one clipping edge drive both the glass and its content.
+  motion = animate(reveal, {
+    progress: opening ? 1 : 0,
+    duration: (opening ? 650 : 420) * Math.abs((opening ? 1 : 0) - reveal.progress),
+    ease: 'inOut(3)',
+    onUpdate: () => setReveal(reveal.progress),
+    onComplete: () => { motion = null; setReveal(opening ? 1 : 0); complete(); },
   });
 }
 function openSection(id, animated = true) {
@@ -95,8 +99,8 @@ function openSection(id, animated = true) {
   cancelMotion(); selected = id; setPalette(id); updateTabs(id);
   overlay.hidden = false; overlay.inert = true; scrollArea.scrollTop = 0;
   const show = () => { overlay.inert = false; };
-  if (!animated || reduced.matches) return show();
-  if (previous && previous !== id) {
+  if (!animated || reduced.matches) { setReveal(1); return show(); }
+  if (previous && previous !== id && reveal.progress === 1) {
     const before = document.getElementById(`panel-${previous}`);
     const after = document.getElementById(`panel-${id}`);
     const direction = Object.keys(modes).indexOf(id) > Object.keys(modes).indexOf(previous) ? 1 : -1;
@@ -125,7 +129,7 @@ function closeSection(animated = true) {
   cancelMotion();
   const button = tabs.find(tab => tab.dataset.section === selected);
   selected = null; history.replaceState(null, '', location.pathname); overlay.inert = true;
-  const finish = () => { overlay.hidden = true; updateTabs(null); button.focus({preventScroll:true}); };
+  const finish = () => { setReveal(0); overlay.hidden = true; updateTabs(null); button.focus({preventScroll:true}); };
   if (reduced.matches || !animated) return finish();
   roll(false, finish);
 }
@@ -159,7 +163,7 @@ window.addEventListener('hashchange', () => {
 });
 window.addEventListener('resize', () => {
   sizeViewport();
-  if(motion) { cancelMotion(); if(selected) openSection(selected,false); else {overlay.hidden=true;updateTabs(null);} }
+  if(motion) { cancelMotion(); if(selected) openSection(selected,false); else {setReveal(0);overlay.hidden=true;updateTabs(null);} }
 });
 reduced.addEventListener('change', () => { if(selected) openSection(selected,false); });
 updateTheme(); updateTabs(null);
