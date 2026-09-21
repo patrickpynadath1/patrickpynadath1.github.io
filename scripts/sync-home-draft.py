@@ -2,6 +2,7 @@
 import html
 import hashlib
 import json
+import struct
 from pathlib import Path
 import re
 import xml.etree.ElementTree as ET
@@ -64,9 +65,15 @@ svg.set('viewBox', '-20 -22 336 347')
 svg.set('aria-hidden', 'true')
 models = json.loads((ROOT / 'public/wave-study/wave-model.json').read_text())
 paths = list(svg.iter('{http://www.w3.org/2000/svg}path'))
+loop = (ROOT / 'public/home-draft/wave-loop.bin').read_bytes()
+svg.set('data-loop-src', './wave-loop.bin?v=' + hashlib.sha256(loop).hexdigest()[:12])
+svg.set('data-loop-fps', '15')
+loop_values = struct.unpack('<' + 'h' * (len(loop)//2), loop)
+point_offset = 0
 for index, svg_path in enumerate(paths):
     numbers = [float(n) for n in re.findall(r'[-+]?(?:\d*\.\d+|\d+\.?\d*)(?:e[-+]?\d+)?', svg_path.get('d'), re.I)]
-    points = list(zip(numbers[::2], numbers[1::2]))
+    points = [(x, loop_values[point_offset+i]/100) for i, x in enumerate(numbers[::2])]
+    point_offset += len(points)
     svg_path.set('data-points', json.dumps(points, separators=(',', ':')))
     svg_path.set('data-frequency', str(models[index]['frequency']))
     d = f'M {points[0][0]:.2f} {points[0][1]:.2f}'

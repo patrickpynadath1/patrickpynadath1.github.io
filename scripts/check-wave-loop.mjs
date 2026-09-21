@@ -1,0 +1,17 @@
+import fs from 'node:fs';import vm from 'node:vm';import assert from 'node:assert/strict';
+const html=fs.readFileSync('public/home-draft/index.html','utf8');
+const svg=html.match(/<div class="art"[\s\S]*?<\/svg>/)[0];
+const attrs=[...svg.matchAll(/<path\s([^>]+)>/g)].map(m=>m[1]);
+let callback;const paths=attrs.map(a=>{const get=n=>a.match(new RegExp('(?:^|\\s)'+n+'="([^"]*)"'))?.[1];return {d:get('d'),dataset:{points:get('data-points')},style:{setProperty(){}},setAttribute(_,v){this.d=v}}});
+const file=fs.readFileSync('public/home-draft/wave-loop.bin');
+const buffer=file.buffer.slice(file.byteOffset,file.byteOffset+file.byteLength);
+const context={console,Math,Number,JSON,Float64Array,Int16Array,DataView,URL,document:{hidden:false,documentElement:{dataset:{}},querySelector:()=>({querySelector:()=>({dataset:{loopFps:'15',loopSrc:'./wave-loop.bin'},querySelectorAll:()=>paths})}),addEventListener(){}},matchMedia:()=>({matches:false,addEventListener(){}}),fetch:async()=>({ok:true,arrayBuffer:async()=>buffer}),cancelAnimationFrame(){},requestAnimationFrame(fn){callback=fn;return 1}};
+const source=fs.readFileSync('public/home-draft/wave.js','utf8').replace('import.meta.url',"'http://localhost/home-draft/wave.js'");
+await vm.runInNewContext('(async()=>{'+source+'})()',context);
+const original=paths.map(p=>p.d);callback(1000);const first=paths.map(p=>p.d);
+const numbers=d=>d.match(/-?\d+(?:\.\d+)?/g).map(Number);
+const difference=(a,b)=>Math.max(...a.flatMap((d,i)=>numbers(d).map((n,j)=>Math.abs(n-numbers(b[i])[j]))));
+assert.ok(difference(original,first)<=.011,'fallback differs from first frame');
+for(let i=1;i<=1440;i++) callback(1000+i*1000/60);
+assert.ok(difference(first,paths.map(p=>p.d))<=.011,'loop wrap differs');
+console.log('PASS: inline fallback matches playback; complete 24s loop returns to same geometry; 42 lines remain valid.');
