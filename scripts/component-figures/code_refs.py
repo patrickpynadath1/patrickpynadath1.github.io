@@ -144,9 +144,15 @@ SPEC = {
                     code=[('core/samplers/autoregressive.py', 'AutoregressiveSampler.sample')]),
     # Sequence modifiers
     'block:off': dict(cfg=[('configs/config.yaml', 'block_diffusion')], ov='block_diffusion.enabled=false', code=[]),
-    'block:on': dict(cfg=[('configs/config.yaml', 'block_diffusion')], ov='block_diffusion.enabled=true block_diffusion.block_size=32',
+    'block:bc': dict(cfg=[('configs/config.yaml', 'block_diffusion')], ov='block_diffusion.enabled=true block_diffusion.x0_causal=false',
                      code=[('core/modifiers/block_diffusion/layout.py', 'make_layout'), ('core/modifiers/block_diffusion/training.py', 'BlockDiffusion.loss')],
-                     note='make_layout builds the 2L attention mask over the clean and noisy copies.'),
+                     note='make_layout builds the 2L mask; x0_causal=false makes clean-to-clean attention block causal, as in the BD3-LM paper.'),
+    'block:causal': dict(cfg=[('configs/config.yaml', 'block_diffusion')], ov='block_diffusion.enabled=true',
+                         code=[('core/modifiers/block_diffusion/layout.py', 'make_layout'), ('core/modifiers/block_diffusion/training.py', 'BlockDiffusion.loss')],
+                         note='The default x0_causal=true makes the clean stream token causal, like an ordinary causal LM.'),
+    'block:ar': dict(cfg=[('configs/config.yaml', 'block_diffusion')], ov='block_diffusion.enabled=true block_diffusion.clean_loss=autoregressive',
+                     code=[('core/modifiers/block_diffusion/training.py', 'BlockDiffusion.loss'), ('core/modifiers/block_diffusion/layout.py', 'make_layout')],
+                     note='clean_loss=autoregressive adds next-token cross-entropy on the clean stream (weight: clean_loss_weight). It needs the token-causal context.'),
     'varlen:off': dict(cfg=[], ov='variable_length=null', code=[]),
     'varlen:insert': dict(cfg=['configs/variable_length/insertion.yaml'], ov='variable_length=insertion',
                           code=[('core/modifiers/variable_length/birth.py', 'MaskInsertion'), ('core/modifiers/variable_length/training.py', 'VariableLengthDiffusion.loss')]),
@@ -156,7 +162,7 @@ SPEC = {
 RECIPE_IDS = ['mdlm', 'md4', 'radd', 'llada_style', 'ardm_style', 'd3pm_absorb', 'sedd_absorb', 'dfm_masked', 'udlm',
               'uniform_posterior', 'duo', 'dfm_uniform', 'gidd_elbo', 'gidd_corruption', 'candi_hybrid', 'cadd', 'cdcd',
               'flm_gaussian', 'langflow', 'replaid', 'simplex', 'spherical_flow_matching', 'spherical_vmf',
-              'blurring_diffusion', 'bd3lm', 'eb_masked', 'flexmdm_style']
+              'blurring_diffusion', 'bd3lm', 'eb_masked', 'flexmdm_style', 'tinygsm_blockgen_masked', 'tinygsm_blockgen_uniform']
 
 
 def symbol_range(path, symbol):
