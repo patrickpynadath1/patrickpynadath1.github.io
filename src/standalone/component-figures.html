@@ -179,25 +179,9 @@
 
 <section class="part" id="schematic" aria-labelledby="t-schematic">
   <div class="part-head"><span class="part-num">1</span><h2 class="part-title" id="t-schematic">How the parts fit together</h2></div>
-  <p class="lede">The whole pipeline in one picture. Click any part of the map, then step through its options with the arrows. The part redraws itself in place, and anything that no longer fits is flagged. For every part in full detail, see <a class="jump" href="#detail">part 2</a>.</p>
+  <p class="lede">The whole pipeline in one picture. Click any part of the map to open it in <a class="jump" href="#detail">part 2</a> below. Change it there and the map redraws to match.</p>
 
   <div class="map-wrap"><svg id="map" viewBox="0 10 1200 570" role="group" aria-label="Diffusion pipeline map"></svg></div>
-
-  <div class="stepper">
-    <section class="panel" aria-live="polite">
-      <div class="panel-head"><span class="tag" id="p-tag"></span><span class="count" id="p-count"></span></div>
-      <h2 id="p-title"></h2>
-      <div class="nav">
-        <button type="button" id="prev" aria-label="Previous option">&#9664;</button>
-        <span class="opt-name" id="p-opt"></span>
-        <button type="button" id="next" aria-label="Next option">&#9654;</button>
-      </div>
-      <div class="chips" id="chips" role="group" aria-label="All options"></div>
-      <p class="desc" id="p-desc"></p>
-      <p class="warn" id="p-warn" hidden></p>
-    </section>
-    <div class="big"><svg id="big" viewBox="0 0 400 220" role="img"></svg><p class="hint">Tip: use the left and right arrow keys to step through options.</p></div>
-  </div>
 </section>
 
 
@@ -652,43 +636,27 @@
     return null;
   }
 
-  // ---------- Stepper panel ----------
-  function drawPanel() {
-    var c = C[active], o = cur(active), n = c.opts.length;
-    document.getElementById('p-tag').textContent = 'Selected part';
-    document.getElementById('p-title').textContent = c.title;
-    document.getElementById('p-count').textContent = (S[active] + 1) + ' of ' + n;
-    document.getElementById('p-opt').textContent = o.n;
-    document.getElementById('p-desc').textContent = o.d;
-    var bad = clash(active), warn = document.getElementById('p-warn');
-    warn.hidden = !bad; warn.textContent = bad ? 'Doesn’t fit the current map: ' + bad : '';
-    document.getElementById('prev').disabled = n < 2;
-    document.getElementById('next').disabled = n < 2;
-    var chips = document.getElementById('chips');
-    chips.innerHTML = '';
-    c.opts.forEach(function (op, i) {
-      var b = document.createElement('button');
-      b.type = 'button';
-      b.textContent = op.n;
-      b.setAttribute('aria-pressed', i === S[active] ? 'true' : 'false');
-      if (clash(active, op)) { b.classList.add('clash'); b.title = clash(active, op); }
-      b.addEventListener('click', function () { S[active] = i; update(); });
-      chips.appendChild(b);
-    });
-    var big = document.getElementById('big');
-    big.setAttribute('aria-label', c.title + ': ' + o.n);
-    big.innerHTML = '<rect x="0" y="0" width="400" height="220" rx="12" fill="var(--surface-2)"/>' + (bigPic(active, o.k) || g(active, o.k, 40, 30, 320, 160));
-  }
-  function update() { drawMap(); drawPanel(); }
+  function update() { drawMap(); }
   function select(id) { active = id; update(); document.dispatchEvent(new CustomEvent('mapselect', { detail: id })); }
-  function step(d) { var n = C[active].opts.length; S[active] = (S[active] + d + n) % n; update(); }
-  document.getElementById('prev').addEventListener('click', function () { step(-1); });
-  document.getElementById('next').addEventListener('click', function () { step(1); });
-  document.addEventListener('keydown', function (e) {
-    if (e.target.closest && e.target.closest('input, textarea')) return;
-    if (e.target !== document.body && !(e.target.closest && e.target.closest('#schematic'))) return;
-    if (e.key === 'ArrowRight') { step(1); e.preventDefault(); }
-    else if (e.key === 'ArrowLeft') { step(-1); e.preventDefault(); }
+  // The detail figure below owns the choices; the map mirrors them.
+  var FROM = {
+    rep: function (P) { return P.rep; },
+    corr: function (P) { return P.combine !== 'none' ? 'hybrid' : P.corr; },
+    sched: function (P) { return P.sched; },
+    attn: function (P) { return P.attn; },
+    time: function (P) { return P.tcond === 'on' ? 'on' : 'off'; },
+    self: function (P) { return P.self; },
+    out: function (P) { return { posterior: 'post' }[P.param] || P.param; },
+    loss: function (P) { return P.loss; },
+    samp: function (P) { return { flow: 'proc' }[P.samp] || P.samp; },
+    mods: function (P) { return P.block === 'on' ? 'block' : P.varlen === 'insert' ? 'insert' : 'none'; }
+  };
+  document.addEventListener('pipestate', function (e) {
+    Object.keys(FROM).forEach(function (id) {
+      var k = FROM[id](e.detail), i = C[id].opts.map(function (o) { return o.k; }).indexOf(k);
+      if (i !== -1) S[id] = i;
+    });
+    drawMap();
   });
   update();
 })();
@@ -1689,6 +1657,7 @@
     });
     Object.keys(ctrlEls).forEach(function (id) { ctrlEls[id].sync(); });
     drawTokens(); drawRep(); drawCorr(); drawSched(); drawNet(); drawParam(); drawLoss(); drawSamp(); drawMods();
+    document.dispatchEvent(new CustomEvent('pipestate', { detail: Object.assign({}, S) }));
   }
   // ---------- Modes ----------
   var DEFAULTS = { combine: 'none', attn: 'bi', self: 'off', block: 'off', varlen: 'off' };
@@ -1854,7 +1823,11 @@
     btn.textContent = all ? 'Show only the picked part' : 'Show all parts';
     bar.querySelector('span').style.visibility = all ? 'hidden' : '';
   }
-  document.addEventListener('mapselect', function (e) { current = e.detail; apply(); });
+  document.addEventListener('mapselect', function (e) {
+    current = e.detail; apply();
+    var r = pipe.querySelector('.layer.picked');
+    if (r && r.getBoundingClientRect().top > window.innerHeight - 120) r.scrollIntoView({ behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth', block: 'nearest' });
+  });
   btn.addEventListener('click', function () { all = !all; apply(); });
   ['mode-explore', 'mode-recipes'].forEach(function (id) { document.getElementById(id).addEventListener('click', function () { setTimeout(apply, 0); }); });
   apply();
