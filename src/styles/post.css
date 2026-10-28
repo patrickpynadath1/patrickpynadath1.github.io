@@ -114,11 +114,12 @@ button { font: inherit; color: inherit; cursor: pointer; }
 .prose .wide-block { max-width: none; margin: 36px calc(-1 * (var(--margin-lane) + var(--gap-lane))) 36px 0; }
 .prose .wide-block > * { width: 100%; }
 
-/* Full-width interactive figures: reach into the empty right column on wide screens. */
+/* Posts built around a full-width interactive figure: widen the whole reading column to the
+   figure's width, so text and figure line up instead of the figure sticking out. */
 .prose .fig-bleed { max-width: none; margin: 28px 0 36px; }
 .prose .fig-frame { display: block; width: 100%; border: 0; background: transparent; color-scheme: normal; }
 @media (min-width: 1301px) {
-  .prose .fig-bleed { margin-right: calc(-1 * clamp(0px, (100vw - 968px) / 2 + 24px, 300px)); }
+  .post-grid:has(.fig-bleed) { --col: min(1100px, calc(100vw - 380px)); }
 }
 
 /* Citations (rehype-citation). */

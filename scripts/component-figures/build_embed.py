@@ -27,6 +27,8 @@ embed_css = """
   .top-controls { margin-top: 0; }
   .part:first-of-type { margin-top: 20px; }
   .code-dialog { margin: 0 auto; }
+  /* Text spans the figure's full width, like the post around it. */
+  .lede, .caption, .desc, .part .lede { max-width: none !important; }
 """
 embed_js = """
 <script>
