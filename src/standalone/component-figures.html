@@ -1854,15 +1854,13 @@
   var all = false, current = 'corr';
   function rows() { return pipe.querySelectorAll(':scope > .layer'); }
   function apply() {
-    var recipes = document.body.classList.contains('recipe-mode');
-    var showAll = all || recipes, want = TO_LAYER[current] || current;
+    var showAll = all, want = TO_LAYER[current] || current;
     pipe.classList.toggle('focused', !showAll);
     rows().forEach(function (r, i) {
       var on = IDS[i] === want;
       r.classList.toggle('picked', on);
       if (on) nameEl.textContent = r.querySelector('h2').textContent;
     });
-    bar.hidden = recipes;
     btn.setAttribute('aria-pressed', String(all));
     btn.textContent = all ? 'Show only the picked part' : 'Show all parts';
     bar.querySelector('span').style.visibility = all ? 'hidden' : '';
