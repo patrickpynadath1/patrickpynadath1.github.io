@@ -1,0 +1,341 @@
+<title>Diffusion Design Map</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<style>
+  /* Layout: one central map of the whole pipeline. Every box is a component you can click;
+     the panel underneath steps through that component's options and the box redraws itself.
+     Site palette (hue 266), Georgia display + Helvetica body. Dark first. */
+  :root {
+    color-scheme: dark;
+    --bg: #121321; --fg: #efedf6; --muted: #aaa9bd; --faint: #5d5c74; --border: #323240; --surface: #1c1d2d; --surface-2: #26273a;
+    --accent: #c29fef; --accent-2: #f4bd71; --teal: #7fd6c2; --rose: #ef7b8e;
+    --accent-wash: color-mix(in srgb, var(--accent) 16%, transparent);
+    --font-display: Georgia, 'Times New Roman', serif;
+    --font-body: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+    --font-mono: ui-monospace, 'SF Mono', Menlo, monospace;
+  }
+  @media (prefers-color-scheme: light) {
+    :root:not([data-theme="dark"]) {
+      color-scheme: light;
+      --bg: #f6f5fa; --fg: #302e42; --muted: #646174; --faint: #b4b1c4; --border: #d8d6e2; --surface: #ffffff; --surface-2: #eeecf5;
+      --accent: #603a92; --accent-2: #ae6113; --teal: #1f7a68; --rose: #b8324a;
+    }
+  }
+  :root[data-theme="light"] {
+    color-scheme: light;
+    --bg: #f6f5fa; --fg: #302e42; --muted: #646174; --faint: #b4b1c4; --border: #d8d6e2; --surface: #ffffff; --surface-2: #eeecf5;
+    --accent: #603a92; --accent-2: #ae6113; --teal: #1f7a68; --rose: #b8324a;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--fg); font: 15px/1.6 var(--font-body); }
+  button { font: inherit; color: inherit; cursor: pointer; }
+  :focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
+
+  .page { max-width: 1240px; margin: 0 auto; padding-block: 40px 64px; padding-left: max(20px, env(safe-area-inset-left, 0px)); padding-right: max(20px, env(safe-area-inset-right, 0px)); }
+  .eyebrow { font-size: 11px; letter-spacing: .13em; text-transform: uppercase; color: var(--accent); margin: 0 0 12px; }
+  h1 { font: 400 clamp(32px, 4.4vw, 50px)/1.08 var(--font-display); letter-spacing: -1.2px; margin: 0 0 12px; text-wrap: balance; }
+  .lede { color: var(--muted); max-width: 66ch; margin: 0 0 24px; font-size: 16px; }
+
+  .map-wrap { border-radius: 16px; background: var(--surface); box-shadow: inset 0 0 0 1px var(--border); padding: 12px; overflow-x: auto; }
+  #map { display: block; width: 100%; min-width: 760px; height: auto; }
+  #map text { font-family: var(--font-body); }
+  .node { cursor: pointer; }
+  .node .box { fill: var(--surface-2); stroke: var(--border); stroke-width: 1.4; transition: stroke .2s, fill .2s; }
+  .node:hover .box { stroke: var(--accent); }
+  .node.on .box { stroke: var(--accent); stroke-width: 2.4; fill: color-mix(in srgb, var(--accent) 10%, var(--surface-2)); }
+  .node:focus { outline: none; }
+  .node:focus-visible .box { stroke: var(--accent-2); stroke-width: 2.4; }
+  .ntitle { font-size: 10.5px; letter-spacing: .1em; text-transform: uppercase; fill: var(--muted); }
+  .nval { font-size: 13px; fill: var(--fg); font-weight: 600; }
+  .wire { fill: none; stroke: var(--faint); stroke-width: 1.6; }
+  .wire.train { stroke: var(--accent-2); }
+  .wire.gen { stroke: var(--teal); }
+  .wire.loop { stroke-dasharray: 6 5; }
+  .wlabel { font-size: 11px; fill: var(--muted); }
+  .wlabel.train { fill: var(--accent-2); } .wlabel.gen { fill: var(--teal); }
+
+  .stepper { margin-top: 16px; display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.1fr); gap: 24px; align-items: start; }
+  .panel { border-radius: 16px; background: var(--surface); box-shadow: inset 0 0 0 1px var(--border); padding: 18px 20px; min-width: 0; }
+  .panel-head { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+  .panel-head .tag { font-size: 11px; letter-spacing: .13em; text-transform: uppercase; color: var(--accent); }
+  .panel-head .count { font: 12px var(--font-mono); color: var(--muted); margin-left: auto; }
+  .panel h2 { font: 400 28px/1.15 var(--font-display); margin: 6px 0 10px; }
+  .nav { display: flex; align-items: center; gap: 10px; margin: 6px 0 14px; }
+  .nav button { width: 44px; height: 44px; border-radius: 50%; border: 1px solid var(--border); background: transparent; font-size: 18px; }
+  .nav button:hover { border-color: var(--accent); color: var(--accent); }
+  .nav .opt-name { font: 400 22px/1.2 var(--font-display); flex: 1; min-width: 0; }
+  .chips { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 4px; }
+  .chips button { min-height: 32px; padding: 4px 10px; border-radius: 8px; border: 1px solid var(--border); background: transparent; font-size: 13px; }
+  .chips button[aria-pressed="true"] { background: var(--accent); border-color: var(--accent); color: var(--bg); }
+  .chips button.clash { opacity: .45; }
+  .desc { font-size: 15px; line-height: 1.65; margin: 12px 0 0; max-width: 62ch; }
+  .warn { margin-top: 12px; padding: 10px 12px; border-radius: 10px; background: color-mix(in srgb, var(--rose) 14%, transparent); font-size: 13px; }
+  .warn[hidden] { display: none; }
+  .big { border-radius: 16px; background: var(--surface); box-shadow: inset 0 0 0 1px var(--border); padding: 12px; min-width: 0; }
+  .big svg { display: block; width: 100%; height: auto; }
+  .hint { font-size: 12.5px; color: var(--muted); margin: 10px 2px 0; }
+  .note { font-size: 12.5px; color: var(--muted); margin-top: 24px; }
+  @media (max-width: 860px) { .stepper { grid-template-columns: minmax(0, 1fr); } }
+  @media (prefers-reduced-motion: reduce) { .node .box { transition: none; } }
+</style>
+
+<div class="page">
+  <p class="eyebrow">Interactive figure &middot; mockup</p>
+  <h1>One map of every design choice</h1>
+  <p class="lede">The whole pipeline in one picture. Click any part of the map, then step through its options with the arrows. The part redraws itself in place, and anything that no longer fits is flagged.</p>
+
+  <div class="map-wrap"><svg id="map" viewBox="0 44 1200 506" role="group" aria-label="Diffusion pipeline map"></svg></div>
+
+  <div class="stepper">
+    <section class="panel" aria-live="polite">
+      <div class="panel-head"><span class="tag" id="p-tag"></span><span class="count" id="p-count"></span></div>
+      <h2 id="p-title"></h2>
+      <div class="nav">
+        <button type="button" id="prev" aria-label="Previous option">&#9664;</button>
+        <span class="opt-name" id="p-opt"></span>
+        <button type="button" id="next" aria-label="Next option">&#9654;</button>
+      </div>
+      <div class="chips" id="chips" role="group" aria-label="All options"></div>
+      <p class="desc" id="p-desc"></p>
+      <p class="warn" id="p-warn" hidden></p>
+    </section>
+    <div class="big"><svg id="big" viewBox="0 0 400 220" role="img"></svg><p class="hint">Tip: use the left and right arrow keys to step through options.</p></div>
+  </div>
+  <p class="note">Mockup: pictures are schematic. The full layer-by-layer version stays as it is.</p>
+</div>
+
+<script>
+(function () {
+  var NS = 'http://www.w3.org/2000/svg';
+  function esc(s) { return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;'); }
+  function rnd(i, salt) { var x = Math.sin((i + 1) * 12.9898 + (salt || 0) * 78.233) * 43758.5453; return x - Math.floor(x); }
+
+  // ---------- Components and options ----------
+  var C = {
+    tokens: { title: 'Tokens', opts: [{ k: 'seq', n: 'the cat sat on mat', d: 'Five clean tokens. Everything else in the map acts on these.' }] },
+    rep: { title: 'Representation', opts: [
+      { k: 'tokens', n: 'Token IDs', d: 'Keep tokens as discrete symbols. Noise must act on whole tokens.' },
+      { k: 'onehot', n: 'One-hot vectors', d: 'Each token becomes a vector with a single 1 at its word.' },
+      { k: 'embed', n: 'Learned embedding', d: 'Each word is a learned point in a vector space.' }] },
+    corr: { title: 'Corruption', opts: [
+      { k: 'masked', n: 'Masked', needs: ['tokens'], d: 'Tokens are hidden behind [M].' },
+      { k: 'uniform', n: 'Uniform', needs: ['tokens'], d: 'Tokens are swapped for random words.' },
+      { k: 'gidd', n: 'GIDD mix', needs: ['tokens'], d: 'One process that mostly masks but sometimes swaps in a random word.' },
+      { k: 'gaussian', n: 'Gaussian', needs: ['onehot', 'embed'], d: 'Gaussian noise is added to the vectors.' },
+      { k: 'simplex', n: 'Simplex', needs: ['onehot'], d: 'Probability vectors drift from their corner toward the uniform middle.' },
+      { k: 'spherical', n: 'Spherical', needs: ['embed'], d: 'Unit embeddings slide along an arc toward a random point on the sphere.' },
+      { k: 'blurring', n: 'Blurring', needs: ['embed'], d: 'Embedding features blur along the sequence, high frequencies first.' },
+      { k: 'hybrid', n: 'Hybrid: mask + Gaussian', needs: ['onehot', 'embed'], d: 'Two corruptions at once, each with its own view and schedule (CANDI).' }] },
+    sched: { title: 'Schedule', opts: [
+      { k: 'fixed', n: 'Predefined', d: 'A formula chosen before training: log-linear, rank-based, and so on.' },
+      { k: 'semi', n: 'Semi-adaptive', d: 'A fixed family with a few learned knobs, like LangFlow’s Gumbel clock.' },
+      { k: 'full', n: 'Fully adaptive', d: 'The whole curve is refit from the loss, like CDCD or RePlaid.' }] },
+    attn: { title: 'Attention', opts: [
+      { k: 'bi', n: 'Bidirectional', d: 'Every token sees every other token.' },
+      { k: 'causal', n: 'Causal', d: 'Each token sees only tokens to its left.' }] },
+    time: { title: 'Time input', opts: [
+      { k: 'off', n: 'Off', d: 'The network must infer the noise level from the input.' },
+      { k: 'on', n: 'On', d: 'The noise level t is given to the network.' }] },
+    self: { title: 'Self-cond.', opts: [
+      { k: 'off', n: 'Off', d: 'Each pass starts fresh.' },
+      { k: 'mean', n: 'Expected embedding', d: 'The previous probabilities p are averaged over the embedding table (p × E) and fed back.' },
+      { k: 'hidden', n: 'Hidden state', d: 'The previous last hidden vector h is fed back before it becomes probabilities.' }] },
+    out: { title: 'Output', opts: [
+      { k: 'post', n: 'Clean-token posterior', d: 'A probability over words for each position.' },
+      { k: 'score', n: 'Score ratio', needsCorr: ['masked'], d: 'How much more likely each word is than the current token (SEDD).' },
+      { k: 'plugin', n: 'Plug-in', needsCorr: ['uniform'], d: 'The posterior mixed with a uniform floor, for uniform noise.' },
+      { k: 'gpost', n: 'Gaussian posterior', needsCorr: ['gaussian', 'simplex', 'spherical'], d: 'The posterior combined with a Gaussian prior on the noisy vector.' },
+      { k: 'next', n: 'Next token', needsAttn: 'causal', d: 'Only the next position is predicted.' }] },
+    loss: { title: 'Loss', opts: [
+      { k: 'ce', n: 'Cross-entropy', d: 'Every noise level counts the same.' },
+      { k: 'elbo', n: 'ELBO', needsCorr: ['masked', 'uniform', 'gidd', 'gaussian'], d: 'A likelihood bound. Its form depends on the corruption: 1/t weighting for masking, three terms for Gaussian.' }] },
+    samp: { title: 'Sampler', opts: [
+      { k: 'ancestral', n: 'Ancestral', needsCorr: ['masked', 'uniform', 'gidd'], d: 'Reveal a few tokens per step.' },
+      { k: 'eb', n: 'Entropy-bounded', needsCorr: ['masked', 'uniform', 'gidd'], d: 'Reveal every confident token at once.' },
+      { k: 'analytic', n: 'Analytic', needsOut: 'score', d: 'Exact jumps from score ratios (SEDD).' },
+      { k: 'ctmc', n: 'CTMC jumps', needsCorr: ['masked', 'uniform', 'gidd'], d: 'Tokens jump between states; with uniform noise they can change again.' },
+      { k: 'ode', n: 'Gaussian solver', needsCorr: ['gaussian'], d: 'Euler, Heun or adaptive ODE: every vector moves a little each step.' },
+      { k: 'ddpm', n: 'DDPM', needsCorr: ['gaussian'], d: 'Stochastic Gaussian reverse steps.' },
+      { k: 'proc', n: 'Process sampler', needsCorr: ['simplex', 'spherical', 'blurring'], d: 'The process’s own reverse step.' },
+      { k: 'hybrid', n: 'Hybrid', needsCorr: ['hybrid'], d: 'Each view takes its own reverse step.' },
+      { k: 'ar', n: 'Autoregressive', needsOut: 'next', d: 'One token per step, left to right.' }] },
+    mods: { title: 'Sequence modifiers', opts: [
+      { k: 'none', n: 'None', d: 'The whole fixed-length sequence is generated together.' },
+      { k: 'block', n: 'Block diffusion', d: 'Blocks are generated left to right; tokens inside a block in parallel.' },
+      { k: 'insert', n: 'Insertion', d: 'New tokens can be inserted, so the model decides the length.' }] }
+  };
+  var S = { tokens: 0, rep: 0, corr: 0, sched: 0, attn: 0, time: 0, self: 0, out: 0, loss: 1, samp: 1, mods: 0 };
+  var active = 'corr';
+  function cur(id) { return C[id].opts[S[id]]; }
+
+  // ---------- Compatibility (flag, don't block) ----------
+  function clash(id, o) {
+    o = o || cur(id);
+    var rep = cur('rep').k, corr = cur('corr').k;
+    if (o.needs && o.needs.indexOf(rep) === -1) return 'Needs ' + o.needs.map(function (r) { return C.rep.opts.filter(function (x) { return x.k === r; })[0].n.toLowerCase(); }).join(' or ') + ' (representation is ' + cur('rep').n.toLowerCase() + ').';
+    if (o.needsCorr && o.needsCorr.indexOf(corr) === -1) return 'Does not fit ' + cur('corr').n.toLowerCase() + ' corruption.';
+    if (o.needsAttn && cur('attn').k !== o.needsAttn) return 'Needs causal attention.';
+    if (o.needsOut && cur('out').k !== o.needsOut) return 'Needs the ' + C.out.opts.filter(function (x) { return x.k === o.needsOut; })[0].n.toLowerCase() + ' output.';
+    return '';
+  }
+
+  // ---------- Glyphs: a small picture for each option, drawn inside a w x h box at (x, y) ----------
+  function g(id, k, x, y, w, h) {
+    var o = '', cx = x + w / 2, cy = y + h / 2, i;
+    function box(bx, by, bw, bh, label, st) { st = st || {}; return '<rect x="' + bx + '" y="' + by + '" width="' + bw + '" height="' + bh + '" rx="4" fill="' + (st.fill || 'var(--surface)') + '" stroke="' + (st.stroke || 'var(--faint)') + '" ' + (st.dash ? 'stroke-dasharray="3 3"' : '') + '/>' + (label ? '<text x="' + (bx + bw / 2) + '" y="' + (by + bh / 2 + 4) + '" text-anchor="middle" style="font:' + (st.size || 10) + 'px var(--font-display);fill:' + (st.color || 'var(--fg)') + (st.it ? ';font-style:italic' : '') + '">' + esc(label) + '</text>' : ''); }
+    function barsG(bx, by, bw, bh, vals, hi, color) { var n = vals.length, wd = bw / n; return vals.map(function (v, j) { var hh = Math.max(1, v * bh); return '<rect x="' + (bx + j * wd + 1) + '" y="' + (by + bh - hh) + '" width="' + (wd - 2) + '" height="' + hh + '" rx="1.5" fill="' + (j === hi ? 'var(--accent)' : (color || 'var(--faint)')) + '"/>'; }).join('') + '<line x1="' + bx + '" x2="' + (bx + bw) + '" y1="' + (by + bh) + '" y2="' + (by + bh) + '" stroke="var(--border)"/>'; }
+    function curve(fn, color, dash) { var d = ''; for (var s = 0; s <= 30; s++) { var t = s / 30; d += (s ? 'L' : 'M') + (x + t * w).toFixed(1) + ' ' + (y + h - fn(t) * h).toFixed(1); } return '<path d="' + d + '" fill="none" stroke="' + (color || 'var(--accent)') + '" stroke-width="2" ' + (dash ? 'stroke-dasharray="3 3"' : '') + '/>'; }
+    var words = ['the', 'cat', 'sat'], bw = Math.min(34, (w - 8) / 3);
+    if (id === 'tokens') { for (i = 0; i < 3; i++) o += box(x + i * (bw + 4), cy - 12, bw, 24, words[i]); }
+    else if (id === 'rep') {
+      if (k === 'tokens') for (i = 0; i < 3; i++) o += box(x + i * (bw + 4), cy - 12, bw, 24, words[i]);
+      else if (k === 'onehot') for (i = 0; i < 3; i++) o += barsG(x + i * (w / 3) + 4, y + 4, w / 3 - 10, h - 8, [0, 0, 0, 0, 0, 0].map(function (_, j) { return j === i + 1 ? 1 : 0.04; }), i + 1);
+      else { o += '<rect x="' + x + '" y="' + y + '" width="' + w + '" height="' + h + '" rx="6" fill="var(--surface)"/>'; [[0.2, 0.3], [0.7, 0.25], [0.5, 0.75], [0.25, 0.7], [0.82, 0.6]].forEach(function (p, j) { o += '<circle cx="' + (x + p[0] * w) + '" cy="' + (y + p[1] * h) + '" r="' + (j < 3 ? 3.5 : 2.5) + '" fill="' + (j < 3 ? 'var(--accent)' : 'var(--faint)') + '"/>'; }); }
+    } else if (id === 'corr') {
+      if (k === 'masked' || k === 'uniform' || k === 'gidd') for (i = 0; i < 3; i++) {
+        var hit = i !== 2;
+        if (!hit) o += box(x + i * (bw + 4), cy - 12, bw, 24, words[i]);
+        else if (k === 'masked' || (k === 'gidd' && i === 0)) o += box(x + i * (bw + 4), cy - 12, bw, 24, '[M]', { fill: 'transparent', dash: true, color: 'var(--muted)', size: 9 });
+        else o += box(x + i * (bw + 4), cy - 12, bw, 24, i === 0 ? 'dog' : 'on', { stroke: 'var(--rose)', color: 'var(--rose)', it: true });
+      }
+      else if (k === 'gaussian') { o += '<circle cx="' + cx + '" cy="' + cy + '" r="' + (h * 0.42) + '" fill="var(--accent)" opacity=".18"/><circle cx="' + cx + '" cy="' + cy + '" r="' + (h * 0.24) + '" fill="var(--accent)" opacity=".25"/>'; for (i = 0; i < 9; i++) o += '<circle cx="' + (cx + (rnd(i, 1) - 0.5) * h * 0.8) + '" cy="' + (cy + (rnd(i, 2) - 0.5) * h * 0.7) + '" r="2" fill="var(--accent)"/>'; }
+      else if (k === 'simplex') { var A = [cx, y + 3], B = [cx - h * 0.55, y + h - 3], D = [cx + h * 0.55, y + h - 3]; o += '<polygon points="' + [A, B, D].map(function (p) { return p.join(','); }).join(' ') + '" fill="var(--surface)" stroke="var(--faint)"/><line x1="' + A[0] + '" y1="' + A[1] + '" x2="' + (cx + 3) + '" y2="' + (cy + 4) + '" stroke="var(--accent)" stroke-dasharray="3 3"/><circle cx="' + (cx + 3) + '" cy="' + (cy + 4) + '" r="4" fill="var(--accent)"/>'; }
+      else if (k === 'spherical') { var R = h * 0.44; o += '<circle cx="' + cx + '" cy="' + cy + '" r="' + R + '" fill="var(--surface)" stroke="var(--faint)"/><ellipse cx="' + cx + '" cy="' + cy + '" rx="' + R + '" ry="' + (R * 0.3) + '" fill="none" stroke="var(--faint)" stroke-dasharray="2 3"/><path d="M' + (cx - R * 0.7) + ' ' + (cy - R * 0.7) + ' A' + R + ' ' + R + ' 0 0 1 ' + (cx + R) + ' ' + cy + '" fill="none" stroke="var(--accent)" stroke-width="2"/><circle cx="' + (cx + R * 0.5) + '" cy="' + (cy - R * 0.86) + '" r="4" fill="var(--accent)"/>'; }
+      else if (k === 'blurring') { for (var r = 0; r < 3; r++) for (i = 0; i < 5; i++) o += '<rect x="' + (x + i * (w / 5) + 1) + '" y="' + (y + 4 + r * (h / 3)) + '" width="' + (w / 5 - 2) + '" height="' + (h / 3 - 4) + '" rx="2" fill="var(--accent)" opacity="' + (0.2 + 0.6 * Math.abs(Math.sin(i * (r + 1) * 0.6 + r))).toFixed(2) + '"/>'; }
+      else if (k === 'hybrid') { o += box(x, cy - 12, bw, 24, '[M]', { fill: 'transparent', dash: true, color: 'var(--muted)', size: 9 }); o += '<text x="' + (x + bw + 10) + '" y="' + (cy + 5) + '" style="font:600 14px var(--font-body);fill:var(--muted)">+</text>'; o += '<circle cx="' + (x + w - h * 0.4) + '" cy="' + cy + '" r="' + (h * 0.36) + '" fill="var(--accent)" opacity=".22"/>'; for (i = 0; i < 6; i++) o += '<circle cx="' + (x + w - h * 0.4 + (rnd(i, 3) - 0.5) * h * 0.55) + '" cy="' + (cy + (rnd(i, 4) - 0.5) * h * 0.5) + '" r="2" fill="var(--accent)"/>'; }
+    } else if (id === 'sched') {
+      o += '<rect x="' + x + '" y="' + y + '" width="' + w + '" height="' + h + '" rx="5" fill="var(--surface)"/>';
+      if (k === 'fixed') o += curve(function (t) { return t; });
+      else if (k === 'semi') { o += curve(function (t) { return 1 / (1 + Math.exp(-9 * (t - 0.5))); }, 'var(--faint)', true) + curve(function (t) { return 1 / (1 + Math.exp(-9 * (t - 0.38))); }); o += '<circle cx="' + (x + 0.38 * w) + '" cy="' + (y + h / 2) + '" r="4" fill="var(--accent-2)"/>'; }
+      else o += curve(function (t) { return t; }, 'var(--faint)', true) + curve(function (t) { return Math.min(1, t + 0.18 * Math.sin(Math.PI * t * 2) * (1 - t)); });
+    } else if (id === 'attn') {
+      var n = 4, cs = Math.min(w, h) / n - 2, gx = cx - n * (cs + 2) / 2, gy = cy - n * (cs + 2) / 2;
+      for (var a = 0; a < n; a++) for (var b2 = 0; b2 < n; b2++) o += '<rect x="' + (gx + b2 * (cs + 2)) + '" y="' + (gy + a * (cs + 2)) + '" width="' + cs + '" height="' + cs + '" rx="1.5" fill="' + (k === 'bi' || b2 <= a ? 'var(--accent)' : 'var(--surface)') + '"/>';
+    } else if (id === 'time') {
+      var rr = Math.min(w, h) * 0.38, col = k === 'on' ? 'var(--accent-2)' : 'var(--faint)';
+      o += '<circle cx="' + cx + '" cy="' + cy + '" r="' + rr + '" fill="none" stroke="' + col + '" stroke-width="2"/><line x1="' + cx + '" y1="' + cy + '" x2="' + cx + '" y2="' + (cy - rr * 0.7) + '" stroke="' + col + '" stroke-width="2"/><line x1="' + cx + '" y1="' + cy + '" x2="' + (cx + rr * 0.5) + '" y2="' + (cy + rr * 0.3) + '" stroke="' + col + '" stroke-width="2"/>';
+      if (k === 'off') o += '<line x1="' + (cx - rr) + '" y1="' + (cy - rr) + '" x2="' + (cx + rr) + '" y2="' + (cy + rr) + '" stroke="var(--faint)" stroke-width="2"/>';
+    } else if (id === 'self') {
+      var on = k !== 'off', c2 = on ? 'var(--accent)' : 'var(--faint)';
+      o += '<path d="M' + (cx + 14) + ' ' + (cy + 8) + ' A14 12 0 1 1 ' + (cx + 14) + ' ' + (cy - 8) + '" fill="none" stroke="' + c2 + '" stroke-width="2" ' + (on ? 'stroke-dasharray="4 3"' : '') + '/><path d="M' + (cx + 9) + ' ' + (cy - 13) + ' L' + (cx + 15) + ' ' + (cy - 8) + ' L' + (cx + 9) + ' ' + (cy - 3) + '" fill="none" stroke="' + c2 + '" stroke-width="2"/>';
+      o += '<text x="' + (cx - 2) + '" y="' + (cy + 5) + '" text-anchor="middle" style="font:600 13px var(--font-display);fill:' + c2 + '">' + (k === 'mean' ? 'ē' : k === 'hidden' ? 'h' : '×') + '</text>';
+    } else if (id === 'out') {
+      var v6 = [0.12, 0.85, 0.2, 0.08, 0.15, 0.1];
+      if (k === 'post' || k === 'gpost') o += barsG(x + 8, y + 2, w - 16, h - 6, v6, 1);
+      else if (k === 'score') { o += barsG(x + 8, y + 2, w - 16, h - 6, [0.3, 1, 0.45, 0.2, 0.35, 0.25], 1, 'var(--accent-2)'); o += '<line x1="' + (x + 4) + '" x2="' + (x + w - 4) + '" y1="' + (y + h * 0.55) + '" y2="' + (y + h * 0.55) + '" stroke="var(--muted)" stroke-dasharray="2 3"/>'; }
+      else if (k === 'plugin') o += barsG(x + 8, y + 2, w - 16, h - 6, v6.map(function (q) { return 0.7 * q + 0.15; }), 1);
+      else o += barsG(x + 8, y + 2, w - 16, h - 6, [0.05, 0.05, 0.9, 0.05, 0.05, 0.05], 2);
+      if (k === 'gpost') o += '<path d="M' + (x + 8) + ' ' + (y + h - 4) + ' Q' + cx + ' ' + (y - 4) + ' ' + (x + w - 8) + ' ' + (y + h - 4) + '" fill="none" stroke="var(--accent-2)" stroke-width="1.5"/>';
+    } else if (id === 'loss') {
+      o += '<rect x="' + x + '" y="' + y + '" width="' + w + '" height="' + h + '" rx="5" fill="var(--surface)"/>';
+      if (k === 'ce') o += curve(function () { return 0.25; }, 'var(--accent-2)');
+      else o += curve(function (t) { return Math.min(0.95, 0.12 / Math.max(t, 0.12)); }, 'var(--accent-2)');
+    } else if (id === 'samp') {
+      var rows = { ancestral: [[1, 0, 0], [1, 1, 0], [1, 1, 1]], eb: [[1, 0, 1], [1, 1, 1]], analytic: [[0, 1, 1], [1, 1, 1]], ctmc: [[1, -1, 0], [1, 1, 1]], ar: [[1, 0, 0], [1, 1, 0], [1, 1, 1]], hybrid: [[1, 0.5, 0], [1, 1, 0.6], [1, 1, 1]] }[k];
+      if (!rows) rows = [[0.3, 0.3, 0.3], [0.65, 0.65, 0.65], [1, 1, 1]];
+      var cw = (w - 8) / 3, ch = Math.min(12, (h - 4) / rows.length - 3);
+      rows.forEach(function (rw, r) { rw.forEach(function (v, c) { o += '<rect x="' + (x + 4 + c * cw) + '" y="' + (y + 2 + r * (ch + 3)) + '" width="' + (cw - 4) + '" height="' + ch + '" rx="2" fill="' + (v < 0 ? 'var(--rose)' : 'var(--teal)') + '" opacity="' + (v === 0 ? 0.12 : v < 0 ? 0.8 : (0.2 + 0.8 * v)).toFixed(2) + '"/>'; }); });
+      if (k === 'ar') o += '<path d="M' + (x + 6) + ' ' + (y + h - 2) + ' L' + (x + w - 6) + ' ' + (y + h - 2) + '" stroke="var(--teal)" stroke-width="1.4"/><path d="M' + (x + w - 11) + ' ' + (y + h - 6) + ' L' + (x + w - 6) + ' ' + (y + h - 2) + ' L' + (x + w - 11) + ' ' + (y + h + 2) + '" fill="none" stroke="var(--teal)" stroke-width="1.4"/>';
+    } else if (id === 'mods') {
+      if (k === 'none') o += '<text x="' + cx + '" y="' + (cy + 4) + '" text-anchor="middle" style="font:12px var(--font-body);fill:var(--muted)">—</text>';
+      else if (k === 'block') { o += '<rect x="' + x + '" y="' + (cy - 10) + '" width="' + (w * 0.45) + '" height="20" rx="5" fill="var(--accent-wash)" stroke="var(--accent)"/><rect x="' + (x + w * 0.55) + '" y="' + (cy - 10) + '" width="' + (w * 0.45) + '" height="20" rx="5" fill="none" stroke="var(--faint)" stroke-dasharray="3 3"/>'; }
+      else { o += box(x, cy - 10, w * 0.3, 20, 'the') + '<text x="' + (x + w * 0.42) + '" y="' + (cy + 5) + '" style="font:700 14px var(--font-body);fill:var(--accent)">+</text>' + box(x + w * 0.55, cy - 10, w * 0.4, 20, 'mat'); }
+    }
+    return o;
+  }
+
+  // ---------- The map ----------
+  // Node positions (x, y, w, h) on a 1200 x 560 canvas.
+  var N = {
+    tokens: [40, 196, 120, 110], rep: [195, 196, 140, 110], corr: [375, 160, 170, 110], sched: [375, 300, 170, 84],
+    attn: [608, 190, 112, 96], time: [608, 300, 104, 84], self: [722, 300, 136, 84],
+    out: [880, 196, 140, 110], loss: [1050, 90, 120, 100], samp: [1050, 330, 120, 110], mods: [40, 470, 220, 66]
+  };
+  var map = document.getElementById('map');
+  function wire(d, cls) { return '<path class="wire ' + (cls || '') + '" d="' + d + '"/>'; }
+  function head(x, y, dir, cls) { var s = 6; var p = dir === 'r' ? [[x - s, y - s], [x, y], [x - s, y + s]] : dir === 'u' ? [[x - s, y + s], [x, y], [x + s, y + s]] : dir === 'l' ? [[x + s, y - s], [x, y], [x + s, y + s]] : [[x - s, y - s], [x, y], [x + s, y - s]]; return '<path class="wire ' + (cls || '') + '" style="stroke-dasharray:none" d="M' + p.map(function (q) { return q.join(' '); }).join(' L') + '"/>'; }
+  function drawMap() {
+    var b = '';
+    // Frame for the network
+    b += '<rect x="592" y="150" width="276" height="250" rx="18" fill="none" stroke="var(--accent)" stroke-opacity=".5" stroke-width="1.4"/>';
+    b += '<text x="604" y="172" style="font:400 18px var(--font-display);fill:var(--fg)">Network</text>';
+    // Modifier frame around the whole pipeline
+    b += '<rect x="22" y="56" width="1160" height="400" rx="22" fill="none" stroke="var(--faint)" stroke-dasharray="2 6"/>';
+    b += '<text x="40" y="80" class="wlabel">everything here can be wrapped by a sequence modifier ↓</text>';
+    // Wires
+    var y = 251;
+    b += wire('M160 ' + y + ' L195 ' + y) + head(195, y, 'r');
+    b += wire('M335 ' + y + ' L375 ' + (y - 36)) + head(375, y - 36, 'r');
+    b += wire('M460 270 L460 300') + '<text x="468" y="290" class="wlabel">how much</text>';
+    b += wire('M545 215 L610 238') + head(610, 238, 'r');
+    b += '<text x="548" y="206" class="wlabel">noisy xₜ</text>';
+    b += wire('M545 342 L610 342') + head(610, 342, 'r') + '<text x="550" y="336" class="wlabel">t</text>';
+    b += wire('M720 238 L880 251') + head(880, 251, 'r');
+    // train / generate split
+    b += wire('M1020 236 C1035 236 1035 140 1050 140', 'train') + head(1050, 140, 'r', 'train') + '<text x="1050" y="80" class="wlabel train">train</text>';
+    b += wire('M1020 266 C1035 266 1035 385 1050 385', 'gen') + head(1050, 385, 'r', 'gen') + '<text x="1050" y="460" class="wlabel gen">generate</text>';
+    // generation loop back into the network
+    b += wire('M1110 440 L1110 430 M1110 440 L1110 488 L680 488 L680 400', 'gen loop') + head(680, 402, 'u', 'gen');
+    b += '<text x="890" y="482" class="wlabel gen" text-anchor="middle">next noisy state, repeat until clean</text>';
+    // self-conditioning loop from output back to network input
+    if (cur('self').k !== 'off') {
+      b += wire('M950 196 L950 118 L665 118 L665 188', 'loop') + head(665, 188, 'd');
+      b += '<text x="808" y="110" class="wlabel" text-anchor="middle" style="fill:var(--accent)">self-conditioning: last ' + (cur('self').k === 'mean' ? 'ē' : 'h') + ' fed back</text>';
+    }
+    // Nodes
+    Object.keys(N).forEach(function (id) {
+      var p = N[id], o = cur(id), bad = clash(id);
+      b += '<g class="node' + (id === active ? ' on' : '') + '" data-id="' + id + '" tabindex="0" role="button" aria-label="' + C[id].title + ': ' + esc(o.n) + '">';
+      b += '<rect class="box" x="' + p[0] + '" y="' + p[1] + '" width="' + p[2] + '" height="' + p[3] + '" rx="12"' + (bad ? ' style="stroke:var(--rose)"' : '') + '/>';
+      b += '<text class="ntitle" x="' + (p[0] + 10) + '" y="' + (p[1] + 17) + '">' + C[id].title + '</text>';
+      var gh = p[3] - 46;
+      b += g(id, o.k, p[0] + 10, p[1] + 24, p[2] - 20, gh);
+      b += '<text class="nval" x="' + (p[0] + 10) + '" y="' + (p[1] + p[3] - 9) + '">' + esc(o.n.length > 20 ? o.n.slice(0, 19) + '…' : o.n) + (bad ? ' ⚠' : '') + '</text>';
+      b += '</g>';
+    });
+    map.innerHTML = b;
+    map.querySelectorAll('.node').forEach(function (el) {
+      el.addEventListener('click', function () { select(el.dataset.id); });
+      el.addEventListener('keydown', function (e) { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); select(el.dataset.id); } });
+    });
+  }
+
+  // ---------- Stepper panel ----------
+  function drawPanel() {
+    var c = C[active], o = cur(active), n = c.opts.length;
+    document.getElementById('p-tag').textContent = 'Selected part';
+    document.getElementById('p-title').textContent = c.title;
+    document.getElementById('p-count').textContent = (S[active] + 1) + ' of ' + n;
+    document.getElementById('p-opt').textContent = o.n;
+    document.getElementById('p-desc').textContent = o.d;
+    var bad = clash(active), warn = document.getElementById('p-warn');
+    warn.hidden = !bad; warn.textContent = bad ? 'Doesn’t fit the current map: ' + bad : '';
+    document.getElementById('prev').disabled = n < 2;
+    document.getElementById('next').disabled = n < 2;
+    var chips = document.getElementById('chips');
+    chips.innerHTML = '';
+    c.opts.forEach(function (op, i) {
+      var b = document.createElement('button');
+      b.type = 'button';
+      b.textContent = op.n;
+      b.setAttribute('aria-pressed', i === S[active] ? 'true' : 'false');
+      if (clash(active, op)) { b.classList.add('clash'); b.title = clash(active, op); }
+      b.addEventListener('click', function () { S[active] = i; update(); });
+      chips.appendChild(b);
+    });
+    var big = document.getElementById('big');
+    big.setAttribute('aria-label', c.title + ': ' + o.n);
+    big.innerHTML = '<rect x="0" y="0" width="400" height="220" rx="12" fill="var(--surface-2)"/>' + g(active, o.k, 40, 30, 320, 160);
+  }
+  function update() { drawMap(); drawPanel(); }
+  function select(id) { active = id; update(); }
+  function step(d) { var n = C[active].opts.length; S[active] = (S[active] + d + n) % n; update(); }
+  document.getElementById('prev').addEventListener('click', function () { step(-1); });
+  document.getElementById('next').addEventListener('click', function () { step(1); });
+  document.addEventListener('keydown', function (e) {
+    if (e.target.closest && e.target.closest('input, textarea')) return;
+    if (e.key === 'ArrowRight') { step(1); e.preventDefault(); }
+    else if (e.key === 'ArrowLeft') { step(-1); e.preventDefault(); }
+  });
+  update();
+})();
+</script>
