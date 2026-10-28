@@ -153,6 +153,9 @@ SPEC = {
     'block:ar': dict(cfg=[('configs/config.yaml', 'block_diffusion')], ov='block_diffusion.enabled=true block_diffusion.clean_loss=autoregressive',
                      code=[('core/modifiers/block_diffusion/training.py', 'BlockDiffusion.loss'), ('core/modifiers/block_diffusion/layout.py', 'make_layout')],
                      note='clean_loss=autoregressive adds next-token cross-entropy on the clean stream (weight: clean_loss_weight). It needs the token-causal context.'),
+    'block:mix': dict(cfg=['configs/experiment/blockgen_mixture.yaml'], ov='+experiment=blockgen_masked_mixture',
+                      code=[('core/modifiers/block_diffusion/mixture.py', 'BlockSizeMixture.sample'), ('core/modifiers/block_diffusion/training.py', 'BlockDiffusion.loss')],
+                      note='blockgen_mixture composes after any fixed-block recipe. One block size is drawn per GPU microbatch; size 1 uses pure noise and CE.'),
     'varlen:off': dict(cfg=[], ov='variable_length=null', code=[]),
     'varlen:insert': dict(cfg=['configs/variable_length/insertion.yaml'], ov='variable_length=insertion',
                           code=[('core/modifiers/variable_length/birth.py', 'MaskInsertion'), ('core/modifiers/variable_length/training.py', 'VariableLengthDiffusion.loss')]),
@@ -162,7 +165,7 @@ SPEC = {
 RECIPE_IDS = ['mdlm', 'md4', 'radd', 'llada_style', 'ardm_style', 'd3pm_absorb', 'sedd_absorb', 'dfm_masked', 'udlm',
               'uniform_posterior', 'duo', 'dfm_uniform', 'gidd_elbo', 'gidd_corruption', 'candi_hybrid', 'cadd', 'cdcd',
               'flm_gaussian', 'langflow', 'replaid', 'simplex', 'spherical_flow_matching', 'spherical_vmf',
-              'blurring_diffusion', 'bd3lm', 'eb_masked', 'flexmdm_style', 'blockgen_masked', 'blockgen_uniform']
+              'blurring_diffusion', 'bd3lm', 'eb_masked', 'flexmdm_style', 'blockgen_masked', 'blockgen_uniform', 'blockgen_masked_mixture', 'blockgen_uniform_mixture']
 
 
 def symbol_range(path, symbol):
