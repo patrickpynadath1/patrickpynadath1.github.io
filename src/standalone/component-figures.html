@@ -168,27 +168,21 @@
   .focus-bar[hidden] { display: none; }
   .pipe.focused .layer { border-top: 0; }
   .pipe.focused .layer:not(.picked) { display: none; }
+  .top-controls { margin: 4px 0 8px; }
+  .recipe-members[hidden] { display: none; }
+  .recipe-card a { color: var(--accent); }
+  .top-controls .modes { margin-bottom: 14px; }
+  .part:first-of-type { margin-top: 36px; }
   .jump { color: var(--accent); text-decoration: none; border-bottom: 1px solid currentColor; }
 </style>
 
 <div class="page">
   <p class="eyebrow">Interactive figure</p>
   <h1>Every design choice in a diffusion language model</h1>
-  <p class="lede">Two views of the same parts. First a schematic of how they connect. Then a closer look at each one, following a short sentence through the whole pipeline.</p>
+  <p class="lede">Two views of the same parts. First a schematic of how they connect. Then a closer look at each one, following a short sentence through the whole pipeline. Build your own, or load a recipe from a paper.</p>
 
 
-<section class="part" id="schematic" aria-labelledby="t-schematic">
-  <div class="part-head"><span class="part-num">1</span><h2 class="part-title" id="t-schematic">How the parts fit together</h2></div>
-  <p class="lede">The whole pipeline in one picture. Click any part of the map to open it in <a class="jump" href="#detail">part 2</a> below. Change it there and the map redraws to match.</p>
-
-  <div class="map-wrap"><svg id="map" viewBox="0 10 1200 570" role="group" aria-label="Diffusion pipeline map"></svg></div>
-</section>
-
-
-
-<section class="part" id="detail" aria-labelledby="t-detail">
-  <div class="part-head"><span class="part-num">2</span><h2 class="part-title" id="t-detail">Follow five tokens through every part</h2></div>
-  <p class="lede">Each layer is one component of the codebase. Pick a part and its picture changes. Parts that cannot work with your earlier choices are crossed out; hover one for the reason. Each picture has its own control for whatever that part changes.</p>
+<div class="top-controls">
   <div class="modes" role="tablist" aria-label="Mode">
     <button type="button" role="tab" id="mode-explore" aria-selected="true">Explore parts</button>
     <button type="button" role="tab" id="mode-recipes" aria-selected="false">Paper recipes</button>
@@ -207,6 +201,19 @@
       <p class="recipe-intro" id="recipe-intro"></p>
     </div>
   </section>
+</div>
+<section class="part" id="schematic" aria-labelledby="t-schematic">
+  <div class="part-head"><span class="part-num">1</span><h2 class="part-title" id="t-schematic">How the parts fit together</h2></div>
+  <p class="lede">The whole pipeline in one picture. Click any part of the map to open it in <a class="jump" href="#detail">part 2</a> below. Change it there and the map redraws to match.</p>
+
+  <div class="map-wrap"><svg id="map" viewBox="0 10 1200 570" role="group" aria-label="Diffusion pipeline map"></svg></div>
+</section>
+
+
+
+<section class="part" id="detail" aria-labelledby="t-detail">
+  <div class="part-head"><span class="part-num">2</span><h2 class="part-title" id="t-detail">Follow five tokens through every part</h2></div>
+  <p class="lede">Each layer is one component of the codebase. Pick a part and its picture changes. Parts that cannot work with your earlier choices are crossed out; hover one for the reason. Each picture has its own control for whatever that part changes.</p>
   <div class="focus-bar" id="focus-bar">
     <span>Showing <strong id="focus-name"></strong>. Pick a part on the map above to switch.</span>
     <button type="button" id="show-all" aria-pressed="false">Show all parts</button>
@@ -565,12 +572,14 @@
     b += lbl(800, 470, 'the sampler picks the next input xₛ; repeat until clean', 'gen', 'middle');
     // Nodes
     Object.keys(N).forEach(function (id) {
-      var p = N[id], o = cur(id), bad = clash(id);
+      var p = N[id], o = cur(id), bad = false; // part 2 enforces what fits
       b += '<g class="node' + (id === active ? ' on' : '') + '" data-id="' + id + '" tabindex="0" role="button" aria-label="' + C[id].title + ': ' + esc(o.n) + '">';
       b += '<rect class="box" x="' + p[0] + '" y="' + p[1] + '" width="' + p[2] + '" height="' + p[3] + '" rx="12"' + (bad ? ' style="stroke:var(--rose)"' : '') + '/>';
-      b += '<text class="ntitle" x="' + (p[0] + 10) + '" y="' + (p[1] + 17) + '">' + C[id].title + '</text>';
+      if (VARY[id]) b += '<rect x="' + (p[0] - 4) + '" y="' + (p[1] - 4) + '" width="' + (p[2] + 8) + '" height="' + (p[3] + 8) + '" rx="15" fill="none" stroke="var(--accent-2)" stroke-width="1.6" stroke-dasharray="5 4"/>';
+      b += '<text class="ntitle" x="' + (p[0] + 10) + '" y="' + (p[1] + 17) + '">' + C[id].title + (TAG[id] ? ' \u00b7 ' + esc(TAG[id]) : '') + '</text>';
+      if (VARY[id]) b += '<rect x="' + (p[0] + p[2] - 50) + '" y="' + (p[1] - 11) + '" width="44" height="14" rx="7" fill="var(--surface)"/><text x="' + (p[0] + p[2] - 28) + '" y="' + (p[1] - 0.5) + '" text-anchor="middle" style="font-size:10px;fill:var(--accent-2)">varies</text>';
       b += g(id, o.k, p[0] + 10, p[1] + 24, p[2] - 20, p[3] - 46);
-      var nm = o.n.length > 19 ? o.n.slice(0, 18) + '…' : o.n;
+      var full = NAME[id] || o.n, nm = full.length > 19 ? full.slice(0, 18) + '…' : full;
       b += '<text class="nval" x="' + (p[0] + 10) + '" y="' + (p[1] + p[3] - 9) + '">' + esc(nm) + (bad ? ' ⚠' : '') + '</text>';
       b += '</g>';
     });
@@ -651,11 +660,28 @@
     samp: function (P) { return { flow: 'proc' }[P.samp] || P.samp; },
     mods: function (P) { return P.block === 'on' ? 'block' : P.varlen === 'insert' ? 'insert' : 'none'; }
   };
+  var NAME = {}, TAG = {}, VARY = {};
+  var KEY_NODE = { rep: 'rep', corr: 'corr', combine: 'corr', sched: 'sched', 'f:sched': 'sched', 'f:schedNote': 'sched', attn: 'attn', tcond: 'time', self: 'self',
+    param: 'out', 'f:out': 'out', loss: 'loss', 'f:loss': 'loss', samp: 'samp', block: 'mods', varlen: 'mods' };
+  var SCHED_NAME = { loglinear: 'Log-linear', discrete: 'Discrete steps', duo: 'Log-lin. + curriculum', gidd: 'GIDD mixture', candi: 'CANDI rank', cadd: 'Per-view', cdcd: 'CDCD adaptive',
+    flm: 'Error clock', gumbel: 'Gumbel clock', replaid: 'Learned \u2212log SNR', simplex: 'Simplex', spherical: 'Geodesic', vmf: 'vMF', blurring: 'Frequency blur' };
+  // Which bound the ELBO becomes, for the current corruption and output.
+  function elboForm(P, F) {
+    if (F.loss === 'd3pm') return 'Per-step D3PM';
+    if (P.param === 'score' || F.loss === 'sedd') return 'Score entropy';
+    if (P.corr === 'gaussian') return 'RePlaid terms';
+    return { masked: '1/t-weighted CE', uniform: 'Uniform ELBO', gidd: 'GIDD ELBO' }[P.corr] || 'ELBO';
+  }
   document.addEventListener('pipestate', function (e) {
+    var P = e.detail.S, F = e.detail.F || {};
     Object.keys(FROM).forEach(function (id) {
-      var k = FROM[id](e.detail), i = C[id].opts.map(function (o) { return o.k; }).indexOf(k);
+      var k = FROM[id](P), i = C[id].opts.map(function (o) { return o.k; }).indexOf(k);
       if (i !== -1) S[id] = i;
     });
+    NAME = {}; TAG = {}; VARY = {};
+    if (P.loss === 'elbo') { TAG.loss = 'ELBO'; NAME.loss = elboForm(P, F); }
+    if (F.sched && SCHED_NAME[F.sched]) NAME.sched = SCHED_NAME[F.sched];
+    (e.detail.varies || []).forEach(function (k) { if (KEY_NODE[k]) VARY[KEY_NODE[k]] = true; });
     drawMap();
   });
   update();
@@ -1657,7 +1683,11 @@
     });
     Object.keys(ctrlEls).forEach(function (id) { ctrlEls[id].sync(); });
     drawTokens(); drawRep(); drawCorr(); drawSched(); drawNet(); drawParam(); drawLoss(); drawSamp(); drawMods();
-    document.dispatchEvent(new CustomEvent('pipestate', { detail: Object.assign({}, S) }));
+    emitState();
+  }
+  var variesKeys = [];
+  function emitState() {
+    document.dispatchEvent(new CustomEvent('pipestate', { detail: { S: Object.assign({}, S), F: recipeFig(), mode: mode, varies: mode === 'recipes' ? variesKeys.slice() : [] } }));
   }
   // ---------- Modes ----------
   var DEFAULTS = { combine: 'none', attn: 'bi', self: 'off', block: 'off', varlen: 'off' };
@@ -1712,6 +1742,7 @@
     return KEYNAME[k] ? KEYNAME[k] + ' ' + txt.toLowerCase() : txt;
   }
   function clearVaries() {
+    variesKeys = [];
     Object.keys(variesEls).forEach(function (id) { variesEls[id].hidden = true; layerRows[id].classList.remove('varies'); });
   }
   function markVaries(f) {
@@ -1725,6 +1756,7 @@
         return vals.some(function (x) { return x !== vals[0]; });
       });
       if (!keys.length) return;
+      variesKeys = variesKeys.concat(keys);
       // Picture-only differences only matter when the underlying choice is the same.
       var el = variesEls[layer];
       el.hidden = false;
@@ -1780,6 +1812,7 @@
     }
     render();
     markVaries(f);
+    emitState();
   }
   document.getElementById('recipe-intro').innerHTML = T('recipe.intro');
   function setMode(m) {
