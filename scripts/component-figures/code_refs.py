@@ -162,7 +162,7 @@ SPEC = {
 RECIPE_IDS = ['mdlm', 'md4', 'radd', 'llada_style', 'ardm_style', 'd3pm_absorb', 'sedd_absorb', 'dfm_masked', 'udlm',
               'uniform_posterior', 'duo', 'dfm_uniform', 'gidd_elbo', 'gidd_corruption', 'candi_hybrid', 'cadd', 'cdcd',
               'flm_gaussian', 'langflow', 'replaid', 'simplex', 'spherical_flow_matching', 'spherical_vmf',
-              'blurring_diffusion', 'bd3lm', 'eb_masked', 'flexmdm_style', 'tinygsm_blockgen_masked', 'tinygsm_blockgen_uniform']
+              'blurring_diffusion', 'bd3lm', 'eb_masked', 'flexmdm_style', 'blockgen_masked', 'blockgen_uniform']
 
 
 def symbol_range(path, symbol):
