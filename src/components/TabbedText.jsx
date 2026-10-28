@@ -86,23 +86,23 @@ export default function TabbedText({ children, label = 'Tabbed text', title }) {
         .tabbed-text {
           margin: 2rem 0;
           overflow: hidden;
-          border: 1px solid rgba(31, 45, 74, 0.9);
+          border: 1px solid rgba(var(--viz-border-rgb), 0.9);
           border-radius: 16px;
-          background: linear-gradient(145deg, rgba(15, 24, 43, 0.72), rgba(31, 45, 74, 0.38));
-          box-shadow: 0 8px 32px rgba(3, 8, 21, 0.36);
+          background: linear-gradient(145deg, rgba(var(--viz-panel-rgb), 0.72), rgba(var(--viz-border-rgb), 0.38));
+          box-shadow: 0 8px 32px rgba(var(--viz-shadow-rgb), 0.36);
           backdrop-filter: blur(12px);
         }
 
         .tabbed-text-title {
           margin: 0;
           padding: 1.1rem 1.5rem 0.2rem;
-          color: #8feaff;
+          color: var(--viz-accent);
           font-family: var(--font-heading);
           font-size: 1.2rem;
           font-weight: 700;
           line-height: 1.3;
           text-align: center;
-          text-shadow: 0 0 10px rgba(143, 234, 255, 0.24);
+          text-shadow: 0 0 10px rgba(var(--viz-accent-rgb), 0.24);
         }
 
         .tabbed-text-tabs {
@@ -110,8 +110,8 @@ export default function TabbedText({ children, label = 'Tabbed text', title }) {
           grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
           gap: 0.5rem;
           padding: 0.75rem;
-          border-bottom: 1px solid rgba(31, 45, 74, 0.72);
-          background: rgba(15, 24, 43, 0.34);
+          border-bottom: 1px solid rgba(var(--viz-border-rgb), 0.72);
+          background: rgba(var(--viz-panel-rgb), 0.34);
         }
 
         .tabbed-text-tabs:empty {
@@ -125,10 +125,10 @@ export default function TabbedText({ children, label = 'Tabbed text', title }) {
         .tabbed-text-tab {
           min-height: 44px;
           padding: 0.75rem 0.9rem;
-          border: 1px solid rgba(143, 234, 255, 0.15);
+          border: 1px solid rgba(var(--viz-accent-rgb), 0.15);
           border-radius: 8px;
-          background: linear-gradient(135deg, rgba(143, 234, 255, 0.05), rgba(143, 234, 255, 0.02));
-          color: #d6e7ff;
+          background: linear-gradient(135deg, rgba(var(--viz-accent-rgb), 0.05), rgba(var(--viz-accent-rgb), 0.02));
+          color: var(--viz-text);
           font: inherit;
           font-weight: 600;
           line-height: 1.25;
@@ -139,28 +139,28 @@ export default function TabbedText({ children, label = 'Tabbed text', title }) {
 
         .tabbed-text-tab:hover,
         .tabbed-text-tab:focus-visible {
-          border-color: rgba(143, 234, 255, 0.35);
-          color: #8feaff;
+          border-color: rgba(var(--viz-accent-rgb), 0.35);
+          color: var(--viz-accent);
           outline: none;
           transform: translateY(-1px);
-          box-shadow: 0 2px 10px rgba(3, 8, 21, 0.24);
+          box-shadow: 0 2px 10px rgba(var(--viz-shadow-rgb), 0.24);
         }
 
         .tabbed-text-tab.is-active {
-          border-color: rgba(143, 234, 255, 0.55);
-          background: linear-gradient(135deg, rgba(143, 234, 255, 0.2), rgba(143, 234, 255, 0.08));
-          color: #8feaff;
-          box-shadow: inset 0 0 0 1px rgba(143, 234, 255, 0.08), 0 0 16px rgba(143, 234, 255, 0.12);
+          border-color: rgba(var(--viz-accent-rgb), 0.55);
+          background: linear-gradient(135deg, rgba(var(--viz-accent-rgb), 0.2), rgba(var(--viz-accent-rgb), 0.08));
+          color: var(--viz-accent);
+          box-shadow: inset 0 0 0 1px rgba(var(--viz-accent-rgb), 0.08), 0 0 16px rgba(var(--viz-accent-rgb), 0.12);
         }
 
         .tabbed-text-panels {
-          background: rgba(15, 24, 43, 0.18);
+          background: rgba(var(--viz-panel-rgb), 0.18);
         }
 
         .tabbed-text-panel {
           position: relative;
           padding: 1.5rem;
-          color: #d6e7ff;
+          color: var(--viz-text);
           line-height: 1.75;
           animation: tabbedTextFade 220ms ease-out;
         }
@@ -176,7 +176,7 @@ export default function TabbedText({ children, label = 'Tabbed text', title }) {
           right: 1.5rem;
           left: 1.5rem;
           height: 1px;
-          background: linear-gradient(90deg, transparent, rgba(143, 234, 255, 0.35), transparent);
+          background: linear-gradient(90deg, transparent, rgba(var(--viz-accent-rgb), 0.35), transparent);
         }
 
         .tabbed-text-panel > :first-child {
@@ -209,7 +209,7 @@ export default function TabbedText({ children, label = 'Tabbed text', title }) {
         }
 
         .tabbed-text-panel li::marker {
-          color: #8feaff;
+          color: var(--viz-accent);
         }
 
         @keyframes tabbedTextFade {

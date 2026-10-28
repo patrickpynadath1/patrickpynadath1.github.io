@@ -130,11 +130,11 @@ As shown, all of the entropies are relatively similar and seem reasonable -- the
     flex-direction: column;
     align-items: center;
     padding: 32px;
-    font-family: sans-serif;
+    font-family: inherit;
   }
 
   .temp-table-wrapper h3 {
-    color: #e0e0e0;
+    color: var(--fg);
     font-size: 15px;
     font-weight: bold;
     letter-spacing: 0.05em;
@@ -144,7 +144,7 @@ As shown, all of the entropies are relatively similar and seem reasonable -- the
 
   .temp-table-wrapper table {
     border-collapse: collapse;
-    border: 1px solid #333355;
+    border: 1px solid var(--border);
     border-radius: 8px;
     overflow: hidden;
   }
@@ -155,18 +155,18 @@ As shown, all of the entropies are relatively similar and seem reasonable -- the
     font-weight: bold;
     letter-spacing: 0.08em;
     text-transform: uppercase;
-    border-bottom: 1px solid #333355;
-    border-right: 1px solid #2a2a4a;
-    color: #aaaaaa;
+    border-bottom: 1px solid var(--border);
+    border-right: 1px solid var(--border);
+    color: var(--muted);
   }
 
   .temp-table-wrapper td {
     padding: 10px 28px;
     text-align: center;
     font-size: 14px;
-    color: #e0e0e0;
-    border-right: 1px solid #2a2a4a;
-    border-bottom: 1px solid #2a2a4a;
+    color: var(--fg);
+    border-right: 1px solid var(--border);
+    border-bottom: 1px solid var(--border);
   }
 
   .temp-table-wrapper td.row-label {
@@ -174,18 +174,18 @@ As shown, all of the entropies are relatively similar and seem reasonable -- the
     font-size: 13px;
     letter-spacing: 0.05em;
     text-transform: uppercase;
-    border-right: 1px solid #333355;
+    border-right: 1px solid var(--border);
   }
 
-  .temp-table-wrapper td.mdlm  { color: #FF4C4C; }
-  .temp-table-wrapper td.duo   { color: #4CA6FF; }
-  .temp-table-wrapper td.candi { color: #4CFF8E; }
+  .temp-table-wrapper td.mdlm  { color: var(--viz-mdlm); }
+  .temp-table-wrapper td.duo   { color: var(--viz-duo); }
+  .temp-table-wrapper td.candi { color: var(--viz-candi); }
 
   .temp-table-wrapper tr:last-child td { border-bottom: none; }
   .temp-table-wrapper td:last-child,
   .temp-table-wrapper th:last-child { border-right: none; }
 
-  .temp-table-wrapper tr:hover td { background-color: #1e2a4a; }
+  .temp-table-wrapper tr:hover td { background-color: var(--accent-wash); }
 `}</style>
 
 <div class="temp-table-wrapper">

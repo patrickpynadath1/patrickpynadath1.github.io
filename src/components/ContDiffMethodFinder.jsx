@@ -110,13 +110,13 @@ export default function ContDiffMethodFinder() {
       <style>{`
         .cd-method-finder {
           margin: 2rem 0;
-          border: 1px solid rgba(143, 234, 255, 0.22);
+          border: 1px solid rgba(var(--viz-accent-rgb), 0.22);
           border-radius: 16px;
           background:
-            linear-gradient(145deg, rgba(143, 234, 255, 0.08), rgba(255, 183, 77, 0.05)),
-            rgba(15, 24, 43, 0.78);
-          box-shadow: 0 12px 34px rgba(3, 8, 21, 0.42);
-          color: #d6e7ff;
+            linear-gradient(145deg, rgba(var(--viz-accent-rgb), 0.08), rgba(var(--viz-highlight-rgb), 0.05)),
+            rgba(var(--viz-panel-rgb), 0.78);
+          box-shadow: 0 12px 34px rgba(var(--viz-shadow-rgb), 0.42);
+          color: var(--viz-text);
           overflow: hidden;
         }
 
@@ -126,7 +126,7 @@ export default function ContDiffMethodFinder() {
           align-items: flex-start;
           justify-content: space-between;
           padding: 1.25rem 1.35rem 1rem;
-          border-bottom: 1px solid rgba(143, 234, 255, 0.14);
+          border-bottom: 1px solid rgba(var(--viz-accent-rgb), 0.14);
         }
 
         .cd-method-finder h3,
@@ -138,7 +138,7 @@ export default function ContDiffMethodFinder() {
         }
 
         .cd-method-finder h3 {
-          color: #8feaff;
+          color: var(--viz-accent);
           font-size: 1.25rem;
           line-height: 1.25;
         }
@@ -146,7 +146,7 @@ export default function ContDiffMethodFinder() {
         .cd-method-finder__header p {
           max-width: 650px;
           margin: 0.45rem 0 0;
-          color: #abc3df;
+          color: var(--viz-muted);
           line-height: 1.55;
         }
 
@@ -154,10 +154,10 @@ export default function ContDiffMethodFinder() {
           flex: 0 0 auto;
           min-height: 38px;
           padding: 0.55rem 0.8rem;
-          border: 1px solid rgba(143, 234, 255, 0.28);
+          border: 1px solid rgba(var(--viz-accent-rgb), 0.28);
           border-radius: 8px;
-          background: rgba(6, 16, 32, 0.36);
-          color: #8feaff;
+          background: rgba(var(--viz-shadow-rgb), 0.36);
+          color: var(--viz-accent);
           font: inherit;
           font-weight: 700;
           cursor: pointer;
@@ -166,8 +166,8 @@ export default function ContDiffMethodFinder() {
 
         .cd-method-finder__reset:hover,
         .cd-method-finder__reset:focus-visible {
-          border-color: rgba(143, 234, 255, 0.62);
-          background: rgba(143, 234, 255, 0.12);
+          border-color: rgba(var(--viz-accent-rgb), 0.62);
+          background: rgba(var(--viz-accent-rgb), 0.12);
           outline: none;
           transform: translateY(-1px);
         }
@@ -185,7 +185,7 @@ export default function ContDiffMethodFinder() {
         }
 
         .cd-control label {
-          color: #8feaff;
+          color: var(--viz-accent);
           font-size: 0.9rem;
           font-weight: 800;
           line-height: 1.25;
@@ -195,18 +195,18 @@ export default function ContDiffMethodFinder() {
           width: 100%;
           min-height: 44px;
           padding: 0.65rem 0.75rem;
-          border: 1px solid rgba(143, 234, 255, 0.18);
+          border: 1px solid rgba(var(--viz-accent-rgb), 0.18);
           border-radius: 8px;
-          background: #101b31;
-          color: #eaf5ff;
+          background: var(--viz-inset);
+          color: var(--viz-text);
           font: inherit;
           line-height: 1.3;
           cursor: pointer;
         }
 
         .cd-control select:focus-visible {
-          border-color: rgba(143, 234, 255, 0.62);
-          box-shadow: 0 0 0 3px rgba(143, 234, 255, 0.12);
+          border-color: rgba(var(--viz-accent-rgb), 0.62);
+          box-shadow: 0 0 0 3px rgba(var(--viz-accent-rgb), 0.12);
           outline: none;
         }
 
@@ -221,12 +221,12 @@ export default function ContDiffMethodFinder() {
           align-items: center;
           justify-content: space-between;
           margin: 0 0 0.75rem;
-          color: #abc3df;
+          color: var(--viz-muted);
           font-size: 0.95rem;
         }
 
         .cd-method-finder__count strong {
-          color: #ffe08a;
+          color: var(--viz-highlight);
         }
 
         .cd-method-list {
@@ -243,10 +243,10 @@ export default function ContDiffMethodFinder() {
         .cd-method-finder__expand button {
           min-height: 40px;
           padding: 0.55rem 0.9rem;
-          border: 1px solid rgba(255, 224, 138, 0.34);
+          border: 1px solid rgba(var(--viz-highlight-rgb), 0.34);
           border-radius: 8px;
-          background: rgba(255, 224, 138, 0.08);
-          color: #ffe08a;
+          background: rgba(var(--viz-highlight-rgb), 0.08);
+          color: var(--viz-highlight);
           font: inherit;
           font-weight: 800;
           cursor: pointer;
@@ -255,16 +255,16 @@ export default function ContDiffMethodFinder() {
 
         .cd-method-finder__expand button:hover,
         .cd-method-finder__expand button:focus-visible {
-          border-color: rgba(255, 224, 138, 0.72);
-          background: rgba(255, 224, 138, 0.14);
+          border-color: rgba(var(--viz-highlight-rgb), 0.72);
+          background: rgba(var(--viz-highlight-rgb), 0.14);
           outline: none;
           transform: translateY(-1px);
         }
 
         .cd-method-card {
-          border: 1px solid rgba(143, 234, 255, 0.16);
+          border: 1px solid rgba(var(--viz-accent-rgb), 0.16);
           border-radius: 8px;
-          background: rgba(6, 16, 32, 0.46);
+          background: rgba(var(--viz-shadow-rgb), 0.46);
           padding: 1rem;
         }
 
@@ -276,7 +276,7 @@ export default function ContDiffMethodFinder() {
         }
 
         .cd-method-card h4 {
-          color: #f3fbff;
+          color: var(--viz-text);
           font-size: 1.05rem;
           line-height: 1.25;
         }
@@ -288,7 +288,7 @@ export default function ContDiffMethodFinder() {
 
         .cd-method-card h4 a:hover,
         .cd-method-card h4 a:focus-visible {
-          color: #8feaff;
+          color: var(--viz-accent);
           outline: none;
           text-decoration: underline;
           text-underline-offset: 0.18em;
@@ -296,7 +296,7 @@ export default function ContDiffMethodFinder() {
 
         .cd-method-card__header p {
           margin: 0.3rem 0 0;
-          color: #abc3df;
+          color: var(--viz-muted);
           line-height: 1.5;
         }
 
@@ -308,10 +308,10 @@ export default function ContDiffMethodFinder() {
         }
 
         .cd-method-card__tags span {
-          border: 1px solid rgba(143, 234, 255, 0.18);
+          border: 1px solid rgba(var(--viz-accent-rgb), 0.18);
           border-radius: 999px;
-          background: rgba(143, 234, 255, 0.08);
-          color: #d6e7ff;
+          background: rgba(var(--viz-accent-rgb), 0.08);
+          color: var(--viz-text);
           padding: 0.24rem 0.55rem;
           font-size: 0.78rem;
           line-height: 1.25;
@@ -323,28 +323,28 @@ export default function ContDiffMethodFinder() {
           min-height: 190px;
           place-items: center;
           overflow: hidden;
-          border: 1px solid rgba(255, 112, 177, 0.28);
+          border: 1px solid rgba(var(--viz-pink-rgb), 0.28);
           border-radius: 8px;
           background:
-            radial-gradient(circle at 18% 24%, rgba(255, 112, 177, 0.18), transparent 30%),
-            radial-gradient(circle at 82% 34%, rgba(255, 224, 138, 0.16), transparent 28%),
-            linear-gradient(135deg, rgba(143, 234, 255, 0.08), rgba(255, 112, 177, 0.08));
+            radial-gradient(circle at 18% 24%, rgba(var(--viz-pink-rgb), 0.18), transparent 30%),
+            radial-gradient(circle at 82% 34%, rgba(var(--viz-highlight-rgb), 0.16), transparent 28%),
+            linear-gradient(135deg, rgba(var(--viz-accent-rgb), 0.08), rgba(var(--viz-pink-rgb), 0.08));
           text-align: center;
         }
 
         .cd-empty h4 {
-          color: #ffe08a;
+          color: var(--viz-highlight);
           font-size: clamp(3rem, 12vw, 6.5rem);
           line-height: 0.9;
           text-shadow:
-            0 0 18px rgba(255, 224, 138, 0.34),
-            0 0 30px rgba(255, 112, 177, 0.24);
+            0 0 18px rgba(var(--viz-highlight-rgb), 0.34),
+            0 0 30px rgba(var(--viz-pink-rgb), 0.24);
         }
 
         .cd-empty p {
           margin: 0.75rem auto 0;
           max-width: 440px;
-          color: #f6d8ef;
+          color: var(--viz-pink-text);
           line-height: 1.5;
         }
 

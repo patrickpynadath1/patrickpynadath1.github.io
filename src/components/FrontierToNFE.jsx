@@ -1,4 +1,5 @@
 import { useState, useRef, useCallback, useEffect, useMemo } from "react";
+import { P, withVizTheme } from "./vizTheme.js";
 
 // ─── Real data ────────────────────────────────────────────────────────────────
 const MDLM_DATA = {
@@ -47,20 +48,12 @@ const METHODS = ["MDLM", "DUO", "CANDI"];
 const ENTROPY_SPREAD_WARN = 0.08;
 
 // ─── Theme ────────────────────────────────────────────────────────────────────
-const BG = "#0d0d1a";
-const PANEL_BG = "#13132b";
-const CARD_BG = "#0a0a18";
-const GRID = "#1a1a3a";
-const TEXT = "#ffffff";
-const DIM = "#444466";
-const MUTED = "#555";
-const ACCENT_CYAN = "#7ee8fa";
 const FONT = "'JetBrains Mono', 'Fira Code', 'SF Mono', monospace";
 
 const METHOD_COLORS = {
-  MDLM: "#e05c5c",
-  DUO: "#5b9bd5",
-  CANDI: "#57c27c",
+  get MDLM() { return P.mdlm; },
+  get DUO() { return P.duo; },
+  get CANDI() { return P.candi; },
 };
 
 // ─── Data helpers ─────────────────────────────────────────────────────────────
@@ -202,7 +195,7 @@ function MethodSlider({ method, value, onChange }) {
           top: "50%", transform: "translateY(-50%)",
           height: 3,
           borderRadius: 2,
-          background: GRID,
+          background: P.grid,
         }} />
         {/* Filled */}
         <div style={{
@@ -225,10 +218,10 @@ function MethodSlider({ method, value, onChange }) {
           height: isDragging ? 18 : 14,
           borderRadius: "50%",
           background: color,
-          border: `2px solid ${BG}`,
+          border: `2px solid ${P.bg}`,
           boxShadow: isDragging
             ? `0 0 0 4px ${color}22, 0 0 12px ${color}44`
-            : `0 0 0 2px ${color}15, 0 2px 4px rgba(0,0,0,0.3)`,
+            : `0 0 0 2px ${color}15, 0 2px 4px rgba(${P.shadowRgb}, 0.3)`,
           transition: isDragging ? "width 80ms, height 80ms, box-shadow 80ms" : "all 80ms ease",
           zIndex: 2,
         }}>
@@ -238,7 +231,7 @@ function MethodSlider({ method, value, onChange }) {
             transform: "translate(-50%, -50%)",
             width: 4, height: 4,
             borderRadius: "50%",
-            background: BG,
+            background: P.bg,
             opacity: 0.6,
           }} />
         </div>
@@ -263,7 +256,7 @@ function MethodSlider({ method, value, onChange }) {
 }
 
 // ─── Main widget ──────────────────────────────────────────────────────────────
-export default function EntropyRankingWidget() {
+function EntropyRankingWidget() {
   const [positions, setPositions] = useState(() => {
     const init = {};
     for (const m of METHODS) {
@@ -334,7 +327,7 @@ export default function EntropyRankingWidget() {
 
   return (
     <div style={{
-      background: BG, color: TEXT, padding: "20px 16px 24px",
+      background: P.bg, color: P.text, padding: "20px 16px 24px",
       fontFamily: FONT,
       userSelect: "none",
       overflow: "hidden",
@@ -345,13 +338,13 @@ export default function EntropyRankingWidget() {
           fontSize: "clamp(15px, 3.2vw, 20px)",
           fontWeight: 700,
           letterSpacing: "0.02em",
-          background: "linear-gradient(90deg, #7ee8fa 0%, #e879f9 100%)",
+          background: `linear-gradient(90deg, ${P.accent} 0%, ${P.accent2} 100%)`,
           WebkitBackgroundClip: "text",
           WebkitTextFillColor: "transparent",
         }}>
           Same Frontiers. Different Rankings.
         </div>
-        <div style={{ fontSize: "clamp(9px, 2vw, 11px)", color: MUTED, marginTop: 4, letterSpacing: "0.02em" }}>
+        <div style={{ fontSize: "clamp(9px, 2vw, 11px)", color: P.dim2, marginTop: 4, letterSpacing: "0.02em" }}>
           Use the sliders or drag any ● to move that method's operating point
         </div>
       </div>
@@ -376,11 +369,11 @@ export default function EntropyRankingWidget() {
 
       {/* Slider rails — one per method */}
       <div style={{
-        background: PANEL_BG, borderRadius: 8, border: `1px solid ${GRID}`,
+        background: P.panel, borderRadius: 8, border: `1px solid ${P.grid}`,
         padding: "8px 14px 6px", marginBottom: 10,
       }}>
         <div style={{
-          fontSize: "clamp(7px, 1.5vw, 9px)", color: DIM,
+          fontSize: "clamp(7px, 1.5vw, 9px)", color: P.dim,
           letterSpacing: "0.1em", textTransform: "uppercase", marginBottom: 4,
         }}>
           Entropy Operating Points
@@ -416,7 +409,7 @@ export default function EntropyRankingWidget() {
         justifyContent: "center",
         padding: "2px 0 8px 0",
       }}>
-        <span style={{ fontSize: "clamp(9px, 2vw, 11px)", color: MUTED }}>
+        <span style={{ fontSize: "clamp(9px, 2vw, 11px)", color: P.dim2 }}>
           Sample Entropy →
         </span>
       </div>
@@ -474,7 +467,7 @@ function FrontierPanel({ nfe, positions, selectedPoints, setPositions, dragging,
       <div style={{
         fontSize: "clamp(9px, 2vw, 12px)",
         fontWeight: 700,
-        color: ACCENT_CYAN,
+        color: P.accent,
         textAlign: "center",
         marginBottom: 3,
         letterSpacing: "0.04em",
@@ -484,13 +477,13 @@ function FrontierPanel({ nfe, positions, selectedPoints, setPositions, dragging,
       <svg
         ref={svgRef}
         width="100%" viewBox={`0 0 ${W} ${H}`}
-        style={{ display: "block", background: PANEL_BG, borderRadius: 8, border: `1px solid ${GRID}` }}
+        style={{ display: "block", background: P.panel, borderRadius: 8, border: `1px solid ${P.grid}` }}
       >
         {/* Grid lines */}
         {eGrids.map((eg) => (
           <line key={eg}
             x1={toX(eg)} y1={PAD_T} x2={toX(eg)} y2={H - PAD_B}
-            stroke={GRID} strokeWidth={0.7} strokeDasharray="3,3" />
+            stroke={P.grid} strokeWidth={0.7} strokeDasharray="3,3" />
         ))}
 
         {/* Frontier curves */}
@@ -533,14 +526,14 @@ function FrontierPanel({ nfe, positions, selectedPoints, setPositions, dragging,
             >
               <circle cx={cx} cy={cy} r={14} fill="transparent" />
               <circle cx={cx} cy={cy} r={9} fill={col} opacity={0.15} />
-              <circle cx={cx} cy={cy} r={5.5} fill={col} stroke="rgba(255,255,255,0.6)" strokeWidth={1.5} />
+              <circle cx={cx} cy={cy} r={5.5} fill={col} stroke={`rgba(${P.textRgb}, 0.6)`} strokeWidth={1.5} />
             </g>
           );
         })}
 
         {/* Y-axis label — rotated along the left edge */}
         {showYAxis && (
-          <text x={12} y={H / 2} fill={DIM} fontSize={9} fontFamily={FONT}
+          <text x={12} y={H / 2} fill={P.dim} fontSize={9} fontFamily={FONT}
             textAnchor="middle"
             transform={`rotate(-90, 12, ${H / 2})`}>
             Gen. Perplexity ↑
@@ -586,7 +579,7 @@ function NfePplPanel({ selectedPoints, ranking, entropySpread, positions }) {
       <div style={{
         fontSize: "clamp(10px, 2.2vw, 13px)",
         fontWeight: 600,
-        color: TEXT,
+        color: P.text,
         textAlign: "center",
         marginBottom: 8,
         letterSpacing: "0.02em",
@@ -594,14 +587,14 @@ function NfePplPanel({ selectedPoints, ranking, entropySpread, positions }) {
         NFE vs Perplexity — at selected temperatures
       </div>
       <svg width="100%" viewBox={`0 0 ${W} ${H}`}
-        style={{ display: "block", background: CARD_BG, borderRadius: 8, border: `1px solid ${GRID}` }}>
+        style={{ display: "block", background: P.inset, borderRadius: 8, border: `1px solid ${P.grid}` }}>
 
         {/* Y grid */}
         {yTicks.map((v) => (
           <g key={v}>
             <line x1={PAD_L} y1={toY(v)} x2={W - PAD_R} y2={toY(v)}
-              stroke={GRID} strokeWidth={0.7} strokeDasharray="4,4" />
-            <text x={PAD_L - 7} y={toY(v) + 4} textAnchor="end" fill={DIM} fontSize={10} fontFamily={FONT}>{v}</text>
+              stroke={P.grid} strokeWidth={0.7} strokeDasharray="4,4" />
+            <text x={PAD_L - 7} y={toY(v) + 4} textAnchor="end" fill={P.dim} fontSize={10} fontFamily={FONT}>{v}</text>
           </g>
         ))}
 
@@ -609,22 +602,22 @@ function NfePplPanel({ selectedPoints, ranking, entropySpread, positions }) {
         {NFES.map((nfe) => (
           <g key={nfe}>
             <line x1={toX(nfe)} y1={PAD_T} x2={toX(nfe)} y2={H - PAD_B}
-              stroke={GRID} strokeWidth={0.6} strokeDasharray="3,3" />
-            <text x={toX(nfe)} y={H - PAD_B + 15} textAnchor="middle" fill={DIM} fontSize={10} fontFamily={FONT}>{nfe}</text>
+              stroke={P.grid} strokeWidth={0.6} strokeDasharray="3,3" />
+            <text x={toX(nfe)} y={H - PAD_B + 15} textAnchor="middle" fill={P.dim} fontSize={10} fontFamily={FONT}>{nfe}</text>
           </g>
         ))}
 
         {/* Axes */}
-        <line x1={PAD_L} y1={PAD_T} x2={PAD_L} y2={H - PAD_B} stroke={GRID} strokeWidth={1} />
-        <line x1={PAD_L} y1={H - PAD_B} x2={W - PAD_R} y2={H - PAD_B} stroke={GRID} strokeWidth={1} />
+        <line x1={PAD_L} y1={PAD_T} x2={PAD_L} y2={H - PAD_B} stroke={P.grid} strokeWidth={1} />
+        <line x1={PAD_L} y1={H - PAD_B} x2={W - PAD_R} y2={H - PAD_B} stroke={P.grid} strokeWidth={1} />
 
         {/* Axis labels */}
         <text x={(PAD_L + W - PAD_R) / 2} y={H - 6}
-          textAnchor="middle" fill={MUTED} fontSize={11} fontFamily={FONT} fontWeight={600}>
+          textAnchor="middle" fill={P.dim2} fontSize={11} fontFamily={FONT} fontWeight={600}>
           Number of Function Evaluations (NFE)
         </text>
         <text x={13} y={(PAD_T + H - PAD_B) / 2}
-          textAnchor="middle" fill={MUTED} fontSize={11} fontFamily={FONT} fontWeight={600}
+          textAnchor="middle" fill={P.dim2} fontSize={11} fontFamily={FONT} fontWeight={600}
           transform={`rotate(-90, 13, ${(PAD_T + H - PAD_B) / 2})`}>
           Generative Perplexity ↓
         </text>
@@ -642,7 +635,7 @@ function NfePplPanel({ selectedPoints, ranking, entropySpread, positions }) {
                 strokeLinecap="round" strokeLinejoin="round" />
               {pts.map((pt, i) => (
                 <circle key={i} cx={toX(NFES[i])} cy={toY(pt.perplexity)}
-                  r={5} fill={col} stroke={BG} strokeWidth={1.5} />
+                  r={5} fill={col} stroke={P.bg} strokeWidth={1.5} />
               ))}
             </g>
           );
@@ -655,8 +648,8 @@ function NfePplPanel({ selectedPoints, ranking, entropySpread, positions }) {
         {entropySpread > ENTROPY_SPREAD_WARN && (
           <g>
             <rect x={PAD_L + 12} y={PAD_T + 10} width={400} height={34} rx={7}
-              fill="rgba(249,115,22,0.08)" stroke="#f97316" strokeWidth={1.4} opacity={0.95} />
-            <text x={PAD_L + 27} y={PAD_T + 32} fill="#f97316" fontSize={11} fontWeight={700} fontFamily={FONT}>
+              fill={`rgba(${P.orangeRgb}, 0.08)`} stroke={P.orange2} strokeWidth={1.4} opacity={0.95} />
+            <text x={PAD_L + 27} y={PAD_T + 32} fill={P.orange2} fontSize={11} fontWeight={700} fontFamily={FONT}>
               {`⚠  Methods at different entropies  (spread = ${entropySpread.toFixed(2)} nats)`}
             </text>
           </g>
@@ -684,9 +677,9 @@ function RankingBox({ ranking, W, H, PAD_R, PAD_T, PAD_B }) {
   return (
     <g>
       <rect x={bx} y={by} width={bw} height={rowH * 3 + 18} rx={8}
-        fill={PANEL_BG} stroke={GRID} strokeWidth={1.2} />
+        fill={P.panel} stroke={P.grid} strokeWidth={1.2} />
       <text x={bx + bw / 2} y={by + 13} textAnchor="middle"
-        fill={DIM} fontSize={9} fontFamily={FONT} fontWeight={600} letterSpacing="0.06em">
+        fill={P.dim} fontSize={9} fontFamily={FONT} fontWeight={600} letterSpacing="0.06em">
         RANKING @ NFE=128
       </text>
       {ranking.map(({ method, ppl }, r) => {
@@ -700,10 +693,12 @@ function RankingBox({ ranking, W, H, PAD_R, PAD_T, PAD_B }) {
             <text x={bx + 34} y={cy + 4}
               fill={col} fontSize={12} fontFamily={FONT} fontWeight={700}>{method}</text>
             <text x={bx + bw - 6} y={cy + 4} textAnchor="end"
-              fill={MUTED} fontSize={9} fontFamily={FONT}>{ppl.toFixed(1)}</text>
+              fill={P.dim2} fontSize={9} fontFamily={FONT}>{ppl.toFixed(1)}</text>
           </g>
         );
       })}
     </g>
   );
 }
+
+export default withVizTheme(EntropyRankingWidget);

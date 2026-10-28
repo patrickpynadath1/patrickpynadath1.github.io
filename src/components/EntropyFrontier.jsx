@@ -1,4 +1,5 @@
 import React, { useState, useRef, useCallback, useEffect, useMemo } from "react";
+import { P, withVizTheme } from "./vizTheme.js";
 
 // ╔══════════════════════════════════════════════════════════════════════════════╗
 // ║  DATA SOURCE TOGGLE                                                        ║
@@ -39,20 +40,12 @@ const candiData = {
 };
 
 // ─── Theme (Flow Matching dark space) ─────────────────────────────────────────
-const BG       = "#0d0d1a";
-const PANEL_BG = "#13132b";
-const CARD_BG  = "#0a0a18";
-const GRID     = "#1a1a3a";
-const TEXT     = "#ffffff";
-const DIM      = "#444466";
-const MUTED    = "#555";
-const ACCENT   = "#7ee8fa";   // signature cyan — cursor / highlight
 const FONT     = "'JetBrains Mono', 'Fira Code', 'SF Mono', monospace";
 
 const METHODS = [
-  { key: "candi", label: "CANDI", color: "#57c27c", data: candiData },
-  { key: "mdlm",  label: "MDLM",  color: "#e05c5c", data: mdlmData },
-  { key: "duo",   label: "DUO",   color: "#5b9bd5", data: duoData  },
+  { key: "candi", label: "CANDI", get color() { return P.candi; }, data: candiData },
+  { key: "mdlm",  label: "MDLM",  get color() { return P.mdlm; }, data: mdlmData },
+  { key: "duo",   label: "DUO",   get color() { return P.duo; }, data: duoData  },
 ];
 
 const MAX_NFE = 128;
@@ -202,7 +195,7 @@ function SliderRail({ entropy, onChange }) {
       }}>
         <div style={{
           fontSize: "clamp(8px, 1.8vw, 10px)",
-          color: DIM,
+          color: P.dim,
           letterSpacing: "0.1em",
           textTransform: "uppercase",
         }}>
@@ -211,7 +204,7 @@ function SliderRail({ entropy, onChange }) {
         <div style={{
           fontSize: "clamp(12px, 2.8vw, 15px)",
           fontWeight: 700,
-          color: ACCENT,
+          color: P.accent,
           fontFamily: FONT,
           letterSpacing: "0.04em",
           transition: "transform 120ms ease",
@@ -243,7 +236,7 @@ function SliderRail({ entropy, onChange }) {
           transform: "translateY(-50%)",
           height: 4,
           borderRadius: 2,
-          background: GRID,
+          background: P.grid,
         }} />
 
         {/* Filled portion */}
@@ -255,7 +248,7 @@ function SliderRail({ entropy, onChange }) {
           width: `${fraction * 100}%`,
           height: 4,
           borderRadius: 2,
-          background: `linear-gradient(90deg, ${ACCENT}88, ${ACCENT})`,
+          background: `linear-gradient(90deg, ${P.accent}88, ${P.accent})`,
           transition: isDragging ? "none" : "width 60ms ease",
         }} />
 
@@ -264,13 +257,13 @@ function SliderRail({ entropy, onChange }) {
           position: "absolute",
           left: 0, top: "50%", transform: "translate(-1px, -50%)",
           width: 2, height: 12, borderRadius: 1,
-          background: DIM, opacity: 0.5,
+          background: P.dim, opacity: 0.5,
         }} />
         <div style={{
           position: "absolute",
           right: 0, top: "50%", transform: "translate(1px, -50%)",
           width: 2, height: 12, borderRadius: 1,
-          background: DIM, opacity: 0.5,
+          background: P.dim, opacity: 0.5,
         }} />
 
         {/* Thumb */}
@@ -282,11 +275,11 @@ function SliderRail({ entropy, onChange }) {
           width: isDragging ? 22 : 18,
           height: isDragging ? 22 : 18,
           borderRadius: "50%",
-          background: ACCENT,
-          border: `2px solid ${BG}`,
+          background: P.accent,
+          border: `2px solid ${P.bg}`,
           boxShadow: isDragging
-            ? `0 0 0 6px ${ACCENT}22, 0 0 16px ${ACCENT}44, 0 2px 8px rgba(0,0,0,0.4)`
-            : `0 0 0 3px ${ACCENT}15, 0 2px 6px rgba(0,0,0,0.3)`,
+            ? `0 0 0 6px ${P.accent}22, 0 0 16px ${P.accent}44, 0 2px 8px rgba(${P.shadowRgb}, 0.4)`
+            : `0 0 0 3px ${P.accent}15, 0 2px 6px rgba(${P.shadowRgb}, 0.3)`,
           transition: isDragging ? "width 100ms ease, height 100ms ease, box-shadow 100ms ease" : "all 100ms ease",
           zIndex: 2,
         }}>
@@ -297,7 +290,7 @@ function SliderRail({ entropy, onChange }) {
             transform: "translate(-50%, -50%)",
             width: 5, height: 5,
             borderRadius: "50%",
-            background: BG,
+            background: P.bg,
             opacity: 0.7,
           }} />
         </div>
@@ -309,7 +302,7 @@ function SliderRail({ entropy, onChange }) {
         justifyContent: "space-between",
         marginTop: 2,
         fontSize: "clamp(7px, 1.5vw, 9px)",
-        color: DIM,
+        color: P.dim,
         fontFamily: FONT,
         padding: "0 2px",
       }}>
@@ -348,12 +341,12 @@ function KDEDisplay({ entropy }) {
       style={{ display: "block", overflow: "visible" }}>
       <defs>
         <linearGradient id="kde-fill" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stopColor={ACCENT} stopOpacity="0.12" />
-          <stop offset="100%" stopColor={ACCENT} stopOpacity="0.02" />
+          <stop offset="0%" stopColor={P.accent} stopOpacity="0.12" />
+          <stop offset="100%" stopColor={P.accent} stopOpacity="0.02" />
         </linearGradient>
         <linearGradient id="kde-shaded" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stopColor={ACCENT} stopOpacity="0.30" />
-          <stop offset="100%" stopColor={ACCENT} stopOpacity="0.06" />
+          <stop offset="0%" stopColor={P.accent} stopOpacity="0.30" />
+          <stop offset="100%" stopColor={P.accent} stopOpacity="0.06" />
         </linearGradient>
         <clipPath id="left-clip">
           <rect x={PL} y={PT} width={cursorX - PL} height={ph} />
@@ -363,17 +356,17 @@ function KDEDisplay({ entropy }) {
       {/* Grid lines */}
       {xTicks.map(t => (
         <line key={t} x1={toX(t)} y1={PT} x2={toX(t)} y2={PT + ph}
-          stroke={GRID} strokeWidth={0.6} strokeDasharray="3,3" />
+          stroke={P.grid} strokeWidth={0.6} strokeDasharray="3,3" />
       ))}
 
       {/* Out-of-range shading */}
       {validLeftX > PL && (
         <rect x={PL} y={PT} width={validLeftX - PL} height={ph}
-          fill={BG} opacity={0.7} />
+          fill={P.bg} opacity={0.7} />
       )}
       {validRightX < PL + pw && (
         <rect x={validRightX} y={PT} width={PL + pw - validRightX} height={ph}
-          fill={BG} opacity={0.7} />
+          fill={P.bg} opacity={0.7} />
       )}
 
       {/* Full area fill */}
@@ -381,25 +374,25 @@ function KDEDisplay({ entropy }) {
       {/* Shaded left region */}
       <path d={areaPath} fill="url(#kde-shaded)" clipPath="url(#left-clip)" />
       {/* KDE outline */}
-      <path d={curvePath} fill="none" stroke={ACCENT} strokeWidth={1.5} opacity={0.8} />
+      <path d={curvePath} fill="none" stroke={P.accent} strokeWidth={1.5} opacity={0.8} />
 
       {/* Valid range boundary lines */}
       <line x1={validLeftX} y1={PT} x2={validLeftX} y2={PT + ph}
-        stroke={DIM} strokeWidth={1} strokeDasharray="2,2" opacity={0.5} />
+        stroke={P.dim} strokeWidth={1} strokeDasharray="2,2" opacity={0.5} />
       <line x1={validRightX} y1={PT} x2={validRightX} y2={PT + ph}
-        stroke={DIM} strokeWidth={1} strokeDasharray="2,2" opacity={0.5} />
+        stroke={P.dim} strokeWidth={1} strokeDasharray="2,2" opacity={0.5} />
 
       {/* Baseline */}
-      <line x1={PL} y1={PT + ph} x2={PL + pw} y2={PT + ph} stroke={GRID} strokeWidth={1} />
+      <line x1={PL} y1={PT + ph} x2={PL + pw} y2={PT + ph} stroke={P.grid} strokeWidth={1} />
 
       {/* Cursor line */}
       <line x1={cursorX} y1={PT} x2={cursorX} y2={PT + ph}
-        stroke={ACCENT} strokeWidth={1.5} strokeDasharray="4,3" opacity={0.85} />
-      <circle cx={cursorX} cy={PT + ph} r={4} fill={ACCENT} />
+        stroke={P.accent} strokeWidth={1.5} strokeDasharray="4,3" opacity={0.85} />
+      <circle cx={cursorX} cy={PT + ph} r={4} fill={P.accent} />
 
       {/* X axis ticks */}
       {xTicks.map(t => (
-        <text key={t} x={toX(t)} y={H - 2} textAnchor="middle" fill={DIM} fontSize={8} fontFamily={FONT}>
+        <text key={t} x={toX(t)} y={H - 2} textAnchor="middle" fill={P.dim} fontSize={8} fontFamily={FONT}>
           {t.toFixed(1)}
         </text>
       ))}
@@ -407,7 +400,7 @@ function KDEDisplay({ entropy }) {
       {/* Y axis label */}
       <text
         x={PL - 6} y={PT + ph / 2}
-        fill={DIM} fontSize={8} fontFamily={FONT} textAnchor="middle"
+        fill={P.dim} fontSize={8} fontFamily={FONT} textAnchor="middle"
         transform={`rotate(-90, ${PL - 20}, ${PT + ph / 2})`}
       >
         density
@@ -496,7 +489,7 @@ function NfeChart({ entropy, enabled }) {
 
   if (!series.length) {
     return (
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "center", height: "100%", color: DIM, fontSize: 12, fontFamily: FONT }}>
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "center", height: "100%", color: P.dim, fontSize: 12, fontFamily: FONT }}>
         No data at this entropy value
       </div>
     );
@@ -511,8 +504,8 @@ function NfeChart({ entropy, enabled }) {
         {yTicks.map(v => (
           <g key={v}>
             <line x1={PL} y1={toY(v)} x2={PL + pw} y2={toY(v)}
-              stroke={GRID} strokeWidth={0.7} strokeDasharray="4,4" />
-            <text x={PL - 7} y={toY(v) + 4} textAnchor="end" fill={DIM} fontSize={10} fontFamily={FONT}>{v.toFixed(0)}</text>
+              stroke={P.grid} strokeWidth={0.7} strokeDasharray="4,4" />
+            <text x={PL - 7} y={toY(v) + 4} textAnchor="end" fill={P.dim} fontSize={10} fontFamily={FONT}>{v.toFixed(0)}</text>
           </g>
         ))}
 
@@ -520,20 +513,20 @@ function NfeChart({ entropy, enabled }) {
         {allNfes.map(nfe => (
           <g key={nfe}>
             <line x1={toX(nfe)} y1={PT} x2={toX(nfe)} y2={PT + ph}
-              stroke={GRID} strokeWidth={0.6} strokeDasharray="3,3" />
-            <text x={toX(nfe)} y={PT + ph + 16} textAnchor="middle" fill={DIM} fontSize={10} fontFamily={FONT}>{nfe}</text>
+              stroke={P.grid} strokeWidth={0.6} strokeDasharray="3,3" />
+            <text x={toX(nfe)} y={PT + ph + 16} textAnchor="middle" fill={P.dim} fontSize={10} fontFamily={FONT}>{nfe}</text>
           </g>
         ))}
 
         {/* Axis borders */}
-        <line x1={PL} y1={PT} x2={PL} y2={PT + ph} stroke={GRID} strokeWidth={1} />
-        <line x1={PL} y1={PT + ph} x2={PL + pw} y2={PT + ph} stroke={GRID} strokeWidth={1} />
+        <line x1={PL} y1={PT} x2={PL} y2={PT + ph} stroke={P.grid} strokeWidth={1} />
+        <line x1={PL} y1={PT + ph} x2={PL + pw} y2={PT + ph} stroke={P.grid} strokeWidth={1} />
 
         {/* Axis labels */}
-        <text x={PL + pw / 2} y={H - 4} textAnchor="middle" fill={MUTED} fontSize={11} fontFamily={FONT} fontWeight={600}>
+        <text x={PL + pw / 2} y={H - 4} textAnchor="middle" fill={P.dim2} fontSize={11} fontFamily={FONT} fontWeight={600}>
           Number of Function Evaluations (NFE)
         </text>
-        <text x={13} y={PT + ph / 2} textAnchor="middle" fill={MUTED} fontSize={11} fontFamily={FONT} fontWeight={600}
+        <text x={13} y={PT + ph / 2} textAnchor="middle" fill={P.dim2} fontSize={11} fontFamily={FONT} fontWeight={600}
           transform={`rotate(-90, 13, ${PT + ph / 2})`}>
           Generative Perplexity ↓
         </text>
@@ -555,7 +548,7 @@ function NfeChart({ entropy, enabled }) {
                 strokeLinecap="round" strokeLinejoin="round" />
               {s.points.map((pt, i) => (
                 <circle key={i} cx={toX(pt.nfe)} cy={toY(pt.ppl)}
-                  r={isWinner ? 6 : 5} fill={s.color} stroke={BG} strokeWidth={1.5} />
+                  r={isWinner ? 6 : 5} fill={s.color} stroke={P.bg} strokeWidth={1.5} />
               ))}
             </g>
           );
@@ -571,9 +564,9 @@ function NfeChart({ entropy, enabled }) {
           return (
             <g>
               <rect x={bx} y={by} width={bw} height={boxH}
-                rx={7} fill={PANEL_BG} stroke={GRID} strokeWidth={1.2} />
+                rx={7} fill={P.panel} stroke={P.grid} strokeWidth={1.2} />
               <text x={bx + bw / 2} y={by + 13}
-                textAnchor="middle" fill={DIM} fontSize={8} fontFamily={FONT} fontWeight={600}
+                textAnchor="middle" fill={P.dim} fontSize={8} fontFamily={FONT} fontWeight={600}
                 letterSpacing="0.08em">
                 RANK @ NFE {nfeMax}
               </text>
@@ -586,7 +579,7 @@ function NfeChart({ entropy, enabled }) {
                       fontSize={9} fontFamily={FONT} fontWeight={700}>{r + 1}</text>
                     <text x={bx + 28} y={cy - 2} fill={color}
                       fontSize={10} fontFamily={FONT} fontWeight={700}>{label}</text>
-                    <text x={bx + 28} y={cy + 10} fill={MUTED}
+                    <text x={bx + 28} y={cy + 10} fill={P.dim2}
                       fontSize={8} fontFamily={FONT}>{ppl.toFixed(1)}</text>
                   </g>
                 );
@@ -600,16 +593,16 @@ function NfeChart({ entropy, enabled }) {
       {tooltip && (
         <div style={{
           position: "fixed", left: tooltip.x + 14, top: tooltip.y - 36,
-          background: PANEL_BG, border: `1px solid ${tooltip.color}44`,
+          background: P.panel, border: `1px solid ${tooltip.color}44`,
           borderLeft: `3px solid ${tooltip.color}`,
-          color: TEXT, padding: "6px 10px", borderRadius: 6,
+          color: P.text, padding: "6px 10px", borderRadius: 6,
           fontSize: 11, fontFamily: FONT, pointerEvents: "none",
-          boxShadow: "0 8px 24px rgba(0,0,0,0.5)", zIndex: 9999,
+          boxShadow: `0 8px 24px rgba(${P.shadowRgb}, 0.5)`, zIndex: 9999,
         }}>
           <span style={{ color: tooltip.color, fontWeight: 700 }}>{tooltip.label}</span>
-          <span style={{ color: DIM }}> · NFE {tooltip.nfe}</span>
+          <span style={{ color: P.dim }}> · NFE {tooltip.nfe}</span>
           <br />
-          <span style={{ color: TEXT }}>PPL </span>
+          <span style={{ color: P.text }}>PPL </span>
           <span style={{ fontWeight: 700 }}>{tooltip.ppl.toFixed(2)}</span>
         </div>
       )}
@@ -625,9 +618,9 @@ function MethodPill({ method, enabled, onToggle }) {
       style={{
         display: "flex", alignItems: "center", gap: 7,
         padding: "5px 14px", borderRadius: 20,
-        border: `1px solid ${enabled ? method.color + "44" : GRID}`,
+        border: `1px solid ${enabled ? method.color + "44" : P.grid}`,
         background: enabled ? method.color + "14" : "transparent",
-        color: enabled ? method.color : DIM,
+        color: enabled ? method.color : P.dim,
         fontFamily: FONT,
         fontSize: "clamp(10px, 2.2vw, 11px)",
         fontWeight: 700,
@@ -638,7 +631,7 @@ function MethodPill({ method, enabled, onToggle }) {
     >
       <span style={{
         width: 8, height: 8, borderRadius: "50%",
-        background: enabled ? method.color : GRID,
+        background: enabled ? method.color : P.grid,
         flexShrink: 0, transition: "background 150ms ease",
       }} />
       {method.label}
@@ -647,7 +640,7 @@ function MethodPill({ method, enabled, onToggle }) {
 }
 
 // ─── Root component ───────────────────────────────────────────────────────────
-export default function EntropyFrontier() {
+function EntropyFrontier() {
   const clampedDefault = clamp(defaultEntropy, VALID_LO, VALID_HI);
   const [entropy, setEntropy]   = useState(clampedDefault);
   const [enabled, setEnabled]   = useState(
@@ -678,7 +671,7 @@ export default function EntropyFrontier() {
 
   return (
     <div style={{
-      background: BG, color: TEXT, fontFamily: FONT,
+      background: P.bg, color: P.text, fontFamily: FONT,
       padding: "24px 20px 28px", userSelect: "none",
       overflow: "hidden",
     }}>
@@ -689,13 +682,13 @@ export default function EntropyFrontier() {
           fontWeight: 700,
           letterSpacing: "0.02em",
           marginBottom: 4,
-          background: "linear-gradient(90deg, #7ee8fa 0%, #e879f9 100%)",
+          background: `linear-gradient(90deg, ${P.accent} 0%, ${P.accent2} 100%)`,
           WebkitBackgroundClip: "text",
           WebkitTextFillColor: "transparent",
         }}>
           Entropy-Controlled Perplexity Frontiers
         </div>
-        <div style={{ fontSize: "clamp(9px, 2vw, 11px)", color: MUTED, letterSpacing: "0.02em" }}>
+        <div style={{ fontSize: "clamp(9px, 2vw, 11px)", color: P.dim2, letterSpacing: "0.02em" }}>
           Use the slider to compare methods at a fair operating point
         </div>
       </div>
@@ -709,7 +702,7 @@ export default function EntropyFrontier() {
 
       {/* Entropy control panel */}
       <div style={{
-        background: PANEL_BG, borderRadius: 8, border: `1px solid ${GRID}`,
+        background: P.panel, borderRadius: 8, border: `1px solid ${P.grid}`,
         padding: "12px 16px 8px", marginBottom: 10,
       }}>
         {/* Slider rail — primary interaction, big touch target */}
@@ -718,11 +711,11 @@ export default function EntropyFrontier() {
         {/* KDE display — read-only context visualization */}
         <div style={{
           marginTop: 4,
-          borderTop: `1px solid ${GRID}`,
+          borderTop: `1px solid ${P.grid}`,
           paddingTop: 6,
         }}>
           <div style={{
-            fontSize: "clamp(7px, 1.5vw, 9px)", color: DIM,
+            fontSize: "clamp(7px, 1.5vw, 9px)", color: P.dim,
             letterSpacing: "0.1em", textTransform: "uppercase", marginBottom: 2,
           }}>
             OWT Entropy Distribution
@@ -737,20 +730,20 @@ export default function EntropyFrontier() {
           {liveStats.map((s, i) => (
             <div key={s.key} style={{
               display: "flex", alignItems: "center", gap: 8,
-              background: PANEL_BG, border: `1px solid ${i === 0 ? s.color + "55" : GRID}`,
+              background: P.panel, border: `1px solid ${i === 0 ? s.color + "55" : P.grid}`,
               borderRadius: 8, padding: "7px 12px",
               boxShadow: i === 0 ? `0 0 12px ${s.color}18` : "none",
               transition: "all 200ms ease",
             }}>
               <span style={{
-                background: s.color, color: "#fff", borderRadius: "50%",
+                background: s.color, color: P.text, borderRadius: "50%",
                 width: 18, height: 18, display: "flex", alignItems: "center", justifyContent: "center",
                 fontSize: 10, fontWeight: 700, flexShrink: 0,
               }}>{i + 1}</span>
               <span style={{ color: s.color, fontWeight: 700, fontSize: "clamp(10px, 2.2vw, 12px)" }}>{s.label}</span>
-              <span style={{ color: DIM, fontSize: "clamp(8px, 1.8vw, 10px)" }}>best PPL</span>
-              <span style={{ color: TEXT, fontWeight: 700, fontSize: "clamp(10px, 2.2vw, 12px)" }}>{s.ppl.toFixed(2)}</span>
-              <span style={{ color: DIM, fontSize: "clamp(8px, 1.8vw, 10px)" }}>@ NFE {s.nfe}</span>
+              <span style={{ color: P.dim, fontSize: "clamp(8px, 1.8vw, 10px)" }}>best PPL</span>
+              <span style={{ color: P.text, fontWeight: 700, fontSize: "clamp(10px, 2.2vw, 12px)" }}>{s.ppl.toFixed(2)}</span>
+              <span style={{ color: P.dim, fontSize: "clamp(8px, 1.8vw, 10px)" }}>@ NFE {s.nfe}</span>
             </div>
           ))}
         </div>
@@ -758,11 +751,11 @@ export default function EntropyFrontier() {
 
       {/* NFE chart panel */}
       <div style={{
-        background: CARD_BG, borderRadius: 8, border: `1px solid ${GRID}`,
+        background: P.inset, borderRadius: 8, border: `1px solid ${P.grid}`,
         padding: "14px 12px 8px",
       }}>
         <div style={{
-          fontSize: "clamp(8px, 1.8vw, 11px)", color: DIM,
+          fontSize: "clamp(8px, 1.8vw, 11px)", color: P.dim,
           letterSpacing: "0.08em", textTransform: "uppercase", marginBottom: 10,
         }}>
           NFE vs Perplexity — at H = {entropy.toFixed(3)}
@@ -772,3 +765,5 @@ export default function EntropyFrontier() {
     </div>
   );
 }
+
+export default withVizTheme(EntropyFrontier);

@@ -1,6 +1,7 @@
 import React, { useState } from "react";
+import { P, withVizTheme } from "./vizTheme.js";
 
-export default function SliderVisualizer() {
+function SliderVisualizer() {
   const [value, setValue] = useState(50);
 
   return (
@@ -24,13 +25,13 @@ export default function SliderVisualizer() {
       />
       <div style={{ margin: "1rem 0" }}>
         <svg width="100%" height="80">
-          <rect x="0" y="20" width="100%" height="20" fill="#eee" />
+          <rect x="0" y="20" width="100%" height="20" fill={P.grid} />
           <circle
             cx={`${value}%`}
             cy="30"
             r="15"
-            fill="#0077ff"
-            stroke="#333"
+            fill={P.accent}
+            stroke={P.line2}
             strokeWidth="2"
           />
         </svg>
@@ -39,3 +40,5 @@ export default function SliderVisualizer() {
     </div>
   );
 }
+
+export default withVizTheme(SliderVisualizer);

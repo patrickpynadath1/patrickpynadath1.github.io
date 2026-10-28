@@ -1,4 +1,5 @@
 import React, { useState, useMemo, useCallback, useRef, useEffect } from "react";
+import { P, withVizTheme } from "./vizTheme.js";
 
 // ── Math utilities ───────────────────────────────────────────────────────────
 
@@ -204,14 +205,14 @@ function buildCurvePoints(schedule, rhoLutVal, rhoLutT, rhoMax, V) {
 // ── Colors ───────────────────────────────────────────────────────────────────
 
 const C = {
-  bg: "#0d0d1a", card: "#13132b", panel: "#0a0a18",
-  correct: "#7ee8fa", correctDim: "#2a6a7a",
-  mask: "#555577",
-  corrupt: "#e879f9",
+  get bg() { return P.bg; }, get card() { return P.panel; }, get panel() { return P.inset; },
+  get correct() { return P.accent; }, get correctDim() { return P.accentDim; },
+  get mask() { return P.dim; },
+  get corrupt() { return P.accent2; },
   other: ["#e879f9","#f97316","#a3e635","#60a5fa","#fb7185","#fbbf24","#34d399","#f472b6","#818cf8","#fdba74","#86efac","#67e8f9"],
-  rho: "#f97316", r: "#a3e635",
-  label: "#444466", white: "#ffffff", muted: "#555", border: "#222",
-  tabActive: "#7ee8fa", tabInactive: "#444466",
+  get rho() { return P.orange2; }, get r() { return P.lime; },
+  get label() { return P.dim; }, get white() { return P.text; }, get muted() { return P.dim2; }, get border() { return P.line; },
+  get tabActive() { return P.accent; }, get tabInactive() { return P.dim; },
 };
 
 // ── Vocab presets ─────────────────────────────────────────────────────────────
@@ -246,7 +247,7 @@ const SCHEDULES = [
 
 // ── Main component ────────────────────────────────────────────────────────────
 
-export default function FlowMatchingViz() {
+function FlowMatchingViz() {
   const [schedule, setSchedule] = useState("uniform");
   const [tau, setTau] = useState(0);
   const [vocabSize, setVocabSize] = useState(50257);
@@ -326,7 +327,7 @@ export default function FlowMatchingViz() {
       <div style={{ textAlign: "center", marginBottom: 10 }}>
         <div style={{
           fontSize: "clamp(13px,3.2vw,19px)", fontWeight: 700, letterSpacing: "0.02em",
-          background: "linear-gradient(90deg,#7ee8fa 0%,#e879f9 100%)",
+          background: `linear-gradient(90deg,${P.accent} 0%,${P.accent2} 100%)`,
           WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent",
         }}>
           Token Emergence from Noise
@@ -337,9 +338,9 @@ export default function FlowMatchingViz() {
       <div style={{ display: "flex", justifyContent: "center", gap: 0, marginBottom: 12 }}>
         {SCHEDULES.map(({ key, label }) => (
           <button key={key} onClick={() => setSchedule(key)} style={{
-            background: schedule === key ? "rgba(126,232,250,0.12)" : "transparent",
+            background: schedule === key ? `rgba(${P.accentRgb}, 0.12)` : "transparent",
             color: schedule === key ? C.tabActive : C.tabInactive,
-            border: `1px solid ${schedule === key ? "rgba(126,232,250,0.35)" : "#222"}`,
+            border: `1px solid ${schedule === key ? `rgba(${P.accentRgb}, 0.35)` : P.line}`,
             borderRadius: tabRadius(key),
             padding: "8px 14px",
             fontSize: "clamp(10px,2.2vw,13px)",
@@ -355,20 +356,20 @@ export default function FlowMatchingViz() {
       {/* Vocab size control */}
       <div style={{
         maxWidth: 1100, margin: "0 auto 14px",
-        background: "rgba(126,232,250,0.04)",
-        border: "1px solid rgba(126,232,250,0.1)",
+        background: `rgba(${P.accentRgb}, 0.04)`,
+        border: `1px solid rgba(${P.accentRgb}, 0.1)`,
         borderRadius: 8, padding: "10px 14px",
       }}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
-          <span style={{ fontSize: "clamp(9px,2vw,11px)", color: "#7ee8fa", letterSpacing: "0.06em", fontWeight: 600 }}>
+          <span style={{ fontSize: "clamp(9px,2vw,11px)", color: P.accent, letterSpacing: "0.06em", fontWeight: 600 }}>
             VOCAB SIZE
           </span>
           <div style={{ display: "flex", gap: 6, alignItems: "center" }}>
             {VOCAB_PRESETS.map(({ label, value }) => (
               <button key={value} onClick={() => setVocabSize(value)} style={{
-                background: vocabSize === value ? "rgba(126,232,250,0.15)" : "transparent",
-                color: vocabSize === value ? "#7ee8fa" : "#444466",
-                border: `1px solid ${vocabSize === value ? "rgba(126,232,250,0.3)" : "#1a1a3a"}`,
+                background: vocabSize === value ? `rgba(${P.accentRgb}, 0.15)` : "transparent",
+                color: vocabSize === value ? P.accent : P.dim,
+                border: `1px solid ${vocabSize === value ? `rgba(${P.accentRgb}, 0.3)` : P.grid}`,
                 borderRadius: 4, padding: "2px 8px",
                 fontSize: "clamp(8px,1.8vw,10px)", fontFamily: "inherit",
                 cursor: "pointer", transition: "all 0.15s", letterSpacing: "0.04em",
@@ -376,7 +377,7 @@ export default function FlowMatchingViz() {
                 {label}
               </button>
             ))}
-            <span style={{ fontSize: "clamp(9px,2vw,11px)", color: "#888", minWidth: 90, textAlign: "right" }}>
+            <span style={{ fontSize: "clamp(9px,2vw,11px)", color: P.muted, minWidth: 90, textAlign: "right" }}>
               V={vocabSize.toLocaleString()} · n={nDisplay}
             </span>
           </div>
@@ -394,16 +395,16 @@ export default function FlowMatchingViz() {
               const xPct = ((logV - logMin) / (logMax - logMin)) * 100;
               return (
                 <div key={i} style={{ position: "absolute", left: `${xPct}%`, transform: "translateX(-50%)", display: "flex", flexDirection: "column", alignItems: "center" }}>
-                  <div style={{ width: 1, height: 4, background: "#333" }} />
-                  <span style={{ fontSize: 6, color: "#444", marginTop: 1 }}>{nTarget}</span>
+                  <div style={{ width: 1, height: 4, background: P.line2 }} />
+                  <span style={{ fontSize: 6, color: P.faint, marginTop: 1 }}>{nTarget}</span>
                 </div>
               );
             })}
           </div>
         </div>
-        <div style={{ display: "flex", justifyContent: "space-between", fontSize: "clamp(8px,1.6vw,9px)", color: "#444", marginTop: 10, letterSpacing: "0.03em" }}>
+        <div style={{ display: "flex", justifyContent: "space-between", fontSize: "clamp(8px,1.6vw,9px)", color: P.faint, marginTop: 10, letterSpacing: "0.03em" }}>
           <span>V=5 · n=5</span>
-          <span style={{ color: "#7ee8fa", fontWeight: 600 }}>showing {nDisplay} competitors per token</span>
+          <span style={{ color: P.accent, fontWeight: 600 }}>showing {nDisplay} competitors per token</span>
           <span>V=50,257 · n=12</span>
         </div>
       </div>
@@ -431,9 +432,9 @@ export default function FlowMatchingViz() {
             return (
               <div key={word} style={{
                 flex: 1,
-                background: isClean ? "rgba(126,232,250,0.06)" : C.card,
+                background: isClean ? `rgba(${P.accentRgb}, 0.06)` : C.card,
                 borderRadius: 8,
-                border: `1px solid ${isClean ? "rgba(126,232,250,0.2)" : "#1a1a3a"}`,
+                border: `1px solid ${isClean ? `rgba(${P.accentRgb}, 0.2)` : P.grid}`,
                 position: "relative",
                 height: "clamp(180px,45vw,300px)",
                 overflow: "hidden",
@@ -454,7 +455,7 @@ export default function FlowMatchingViz() {
                     position: "absolute", top: "50%", left: "50%",
                     transform: "translate(-50%,-50%)",
                     fontSize: "clamp(16px,4vw,24px)", fontWeight: 700,
-                    color: C.correct, textShadow: "0 0 18px rgba(126,232,250,0.5)",
+                    color: C.correct, textShadow: `0 0 18px rgba(${P.accentRgb}, 0.5)`,
                   }}>
                     {comp[0]}
                   </div>
@@ -541,7 +542,7 @@ export default function FlowMatchingViz() {
           marginBottom: 6, letterSpacing: "0.04em",
         }}>
           <span>noise (t = 1)</span>
-          <span style={{ color: "#888", fontWeight: 600 }}>
+          <span style={{ color: P.muted, fontWeight: 600 }}>
             t = {t.toFixed(3)} &nbsp;·&nbsp; τ = {tau.toFixed(3)}
           </span>
           <span>clean (t = 0)</span>
@@ -556,22 +557,22 @@ export default function FlowMatchingViz() {
       {/* Description */}
       <div style={{
         maxWidth: 1100, margin: "8px auto 0", textAlign: "center",
-        fontSize: "clamp(9px,2vw,11px)", color: "#555",
+        fontSize: "clamp(9px,2vw,11px)", color: P.dim2,
         lineHeight: 1.5, letterSpacing: "0.02em",
       }}>
         {descMap[schedule]}
       </div>
 
       <style>{`
-        .flow-slider::-webkit-slider-runnable-track { height:6px;border-radius:3px;background:linear-gradient(90deg,#1a1a3a 0%,rgba(126,232,250,0.25) 50%,#1a1a3a 100%); }
-        .flow-slider::-webkit-slider-thumb { -webkit-appearance:none;width:28px;height:28px;border-radius:50%;background:radial-gradient(circle at 40% 35%,#b0f0ff,#7ee8fa 60%,#3a8a9a);border:2px solid rgba(126,232,250,0.6);margin-top:-11px;box-shadow:0 0 12px rgba(126,232,250,0.4),0 2px 8px rgba(0,0,0,0.5);cursor:pointer; }
-        .flow-slider::-moz-range-track { height:6px;border-radius:3px;background:linear-gradient(90deg,#1a1a3a 0%,rgba(126,232,250,0.25) 50%,#1a1a3a 100%);border:none; }
-        .flow-slider::-moz-range-thumb { width:28px;height:28px;border-radius:50%;background:radial-gradient(circle at 40% 35%,#b0f0ff,#7ee8fa 60%,#3a8a9a);border:2px solid rgba(126,232,250,0.6);box-shadow:0 0 12px rgba(126,232,250,0.4),0 2px 8px rgba(0,0,0,0.5);cursor:pointer; }
-        .flow-slider:active::-webkit-slider-thumb { box-shadow:0 0 20px rgba(126,232,250,0.7),0 2px 8px rgba(0,0,0,0.5);transform:scale(1.1); }
-        .vocab-slider::-webkit-slider-runnable-track { height:4px;border-radius:2px;background:linear-gradient(90deg,#1a1a3a 0%,rgba(126,232,250,0.15) 100%); }
-        .vocab-slider::-webkit-slider-thumb { -webkit-appearance:none;width:20px;height:20px;border-radius:4px;background:linear-gradient(135deg,#7ee8fa,#3a8a9a);border:1px solid rgba(126,232,250,0.5);margin-top:-8px;box-shadow:0 0 8px rgba(126,232,250,0.3);cursor:pointer; }
-        .vocab-slider::-moz-range-track { height:4px;border-radius:2px;background:linear-gradient(90deg,#1a1a3a 0%,rgba(126,232,250,0.15) 100%);border:none; }
-        .vocab-slider::-moz-range-thumb { width:20px;height:20px;border-radius:4px;background:linear-gradient(135deg,#7ee8fa,#3a8a9a);border:1px solid rgba(126,232,250,0.5);box-shadow:0 0 8px rgba(126,232,250,0.3);cursor:pointer; }
+        .flow-slider::-webkit-slider-runnable-track { height:6px;border-radius:3px;background:linear-gradient(90deg,var(--viz-grid) 0%,rgba(var(--viz-accent-rgb), 0.25) 50%,var(--viz-grid) 100%); }
+        .flow-slider::-webkit-slider-thumb { -webkit-appearance:none;width:28px;height:28px;border-radius:50%;background:radial-gradient(circle at 40% 35%,var(--viz-accent-soft),var(--viz-accent) 60%,var(--viz-accent-dim));border:2px solid rgba(var(--viz-accent-rgb), 0.6);margin-top:-11px;box-shadow:0 0 12px rgba(var(--viz-accent-rgb), 0.4),0 2px 8px rgba(var(--viz-shadow-rgb), 0.5);cursor:pointer; }
+        .flow-slider::-moz-range-track { height:6px;border-radius:3px;background:linear-gradient(90deg,var(--viz-grid) 0%,rgba(var(--viz-accent-rgb), 0.25) 50%,var(--viz-grid) 100%);border:none; }
+        .flow-slider::-moz-range-thumb { width:28px;height:28px;border-radius:50%;background:radial-gradient(circle at 40% 35%,var(--viz-accent-soft),var(--viz-accent) 60%,var(--viz-accent-dim));border:2px solid rgba(var(--viz-accent-rgb), 0.6);box-shadow:0 0 12px rgba(var(--viz-accent-rgb), 0.4),0 2px 8px rgba(var(--viz-shadow-rgb), 0.5);cursor:pointer; }
+        .flow-slider:active::-webkit-slider-thumb { box-shadow:0 0 20px rgba(var(--viz-accent-rgb), 0.7),0 2px 8px rgba(var(--viz-shadow-rgb), 0.5);transform:scale(1.1); }
+        .vocab-slider::-webkit-slider-runnable-track { height:4px;border-radius:2px;background:linear-gradient(90deg,var(--viz-grid) 0%,rgba(var(--viz-accent-rgb), 0.15) 100%); }
+        .vocab-slider::-webkit-slider-thumb { -webkit-appearance:none;width:20px;height:20px;border-radius:4px;background:linear-gradient(135deg,var(--viz-accent),var(--viz-accent-dim));border:1px solid rgba(var(--viz-accent-rgb), 0.5);margin-top:-8px;box-shadow:0 0 8px rgba(var(--viz-accent-rgb), 0.3);cursor:pointer; }
+        .vocab-slider::-moz-range-track { height:4px;border-radius:2px;background:linear-gradient(90deg,var(--viz-grid) 0%,rgba(var(--viz-accent-rgb), 0.15) 100%);border:none; }
+        .vocab-slider::-moz-range-thumb { width:20px;height:20px;border-radius:4px;background:linear-gradient(135deg,var(--viz-accent),var(--viz-accent-dim));border:1px solid rgba(var(--viz-accent-rgb), 0.5);box-shadow:0 0 8px rgba(var(--viz-accent-rgb), 0.3);cursor:pointer; }
       `}</style>
     </div>
   );
@@ -610,18 +611,18 @@ function MetricPanel({ label, color, value, maxY, curvePoints, metric, tau, dash
   }
 
   return (
-    <div style={{ background: "#0a0a18", borderRadius: 6, border: "1px solid #1a1a3a", padding: "6px 6px 2px", flex: 1, display: "flex", flexDirection: "column" }}>
+    <div style={{ background: P.inset, borderRadius: 6, border: `1px solid ${P.grid}`, padding: "6px 6px 2px", flex: 1, display: "flex", flexDirection: "column" }}>
       <div style={{ fontSize: "clamp(7px,1.6vw,9px)", color, fontWeight: 600, textAlign: "center", marginBottom: 2, letterSpacing: "0.04em" }}>
         {label}
       </div>
       <svg viewBox={`0 0 ${W} ${H}`} style={{ width: "100%", display: "block" }}>
-        <line x1={pad.l} y1={toY(0)} x2={W - pad.r} y2={toY(0)} stroke="#222" strokeWidth="0.5" />
+        <line x1={pad.l} y1={toY(0)} x2={W - pad.r} y2={toY(0)} stroke={P.line} strokeWidth="0.5" />
         {dashAt != null && (
-          <line x1={pad.l} y1={toY(dashAt)} x2={W - pad.r} y2={toY(dashAt)} stroke="#444" strokeWidth="0.5" strokeDasharray="3,3" />
+          <line x1={pad.l} y1={toY(dashAt)} x2={W - pad.r} y2={toY(dashAt)} stroke={P.faint} strokeWidth="0.5" strokeDasharray="3,3" />
         )}
         {snapThresholds && snapThresholds.map((u, i) => (
           <line key={i} x1={toX(1 - u)} y1={pad.t} x2={toX(1 - u)} y2={H - pad.b}
-            stroke="#333" strokeWidth="0.5" strokeDasharray="2,2" />
+            stroke={P.line2} strokeWidth="0.5" strokeDasharray="2,2" />
         ))}
         {fillD && <path d={fillD} fill={color} opacity={0.08} />}
         <path d={pathD} fill="none" stroke={color} strokeWidth="1.5" opacity={0.5} />
@@ -629,9 +630,11 @@ function MetricPanel({ label, color, value, maxY, curvePoints, metric, tau, dash
         <text x={W - pad.r - 2} y={pad.t + 12} textAnchor="end" fill={color} fontSize="9" fontFamily="inherit">
           {value.toFixed(3)}
         </text>
-        <text x={pad.l} y={H - 2} fill="#555" fontSize="6" fontFamily="inherit">noise</text>
-        <text x={W - pad.r} y={H - 2} textAnchor="end" fill="#555" fontSize="6" fontFamily="inherit">clean</text>
+        <text x={pad.l} y={H - 2} fill={P.dim2} fontSize="6" fontFamily="inherit">noise</text>
+        <text x={W - pad.r} y={H - 2} textAnchor="end" fill={P.dim2} fontSize="6" fontFamily="inherit">clean</text>
       </svg>
     </div>
   );
 }
+
+export default withVizTheme(FlowMatchingViz);

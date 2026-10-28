@@ -1,14 +1,6 @@
 import { useState, useCallback, useRef, useEffect, useMemo } from "react";
+import { P, withVizTheme } from "./vizTheme.js";
 
-const BG        = "#0d0d1a";
-const PANEL_BG  = "#13132b";
-const CARD_BG   = "#0a0a18";
-const GRID      = "#1a1a3a";
-const TEXT      = "#ffffff";
-const DIM       = "#444466";
-const MUTED     = "#555";
-const ACCENT    = "#7ee8fa";
-const HIGHLIGHT = "#e879f9";
 const FONT      = "'JetBrains Mono', 'Fira Code', 'SF Mono', monospace";
 
 const H_ABS_MIN = 0.5;
@@ -31,7 +23,7 @@ function niceTicks(min, max, n = 5) {
 }
 
 // ─── Single slider ────────────────────────────────────────────────────────────
-function Slider({ value, onChange, min, max, label, format, color = ACCENT }) {
+function Slider({ value, onChange, min, max, label, format, color = P.accent }) {
   const railRef  = useRef(null);
   const dragging = useRef(false);
   const [isDragging, setIsDragging] = useState(false);
@@ -71,7 +63,7 @@ function Slider({ value, onChange, min, max, label, format, color = ACCENT }) {
   return (
     <div style={{ width: "100%", touchAction: "pan-y" }}>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: 6 }}>
-        <div style={{ fontSize: 10, color: DIM, letterSpacing: "0.1em", textTransform: "uppercase" }}>{label}</div>
+        <div style={{ fontSize: 10, color: P.dim, letterSpacing: "0.1em", textTransform: "uppercase" }}>{label}</div>
         <div style={{
           fontSize: 14, fontWeight: 700, color, fontFamily: FONT,
           transition: "transform 120ms ease",
@@ -80,7 +72,7 @@ function Slider({ value, onChange, min, max, label, format, color = ACCENT }) {
       </div>
       <div ref={railRef} onMouseDown={handleDown} onTouchStart={handleDown}
         style={{ position: "relative", width: "100%", height: 32, display: "flex", alignItems: "center", cursor: "ew-resize" }}>
-        <div style={{ position: "absolute", left: 0, right: 0, top: "50%", transform: "translateY(-50%)", height: 4, borderRadius: 2, background: GRID }} />
+        <div style={{ position: "absolute", left: 0, right: 0, top: "50%", transform: "translateY(-50%)", height: 4, borderRadius: 2, background: P.grid }} />
         <div style={{
           position: "absolute", left: 0, top: "50%", transform: "translateY(-50%)",
           width: `${fraction * 100}%`, height: 4, borderRadius: 2,
@@ -90,14 +82,14 @@ function Slider({ value, onChange, min, max, label, format, color = ACCENT }) {
           position: "absolute", left: `${fraction * 100}%`, top: "50%",
           transform: "translate(-50%, -50%)",
           width: isDragging ? 20 : 16, height: isDragging ? 20 : 16,
-          borderRadius: "50%", background: color, border: `2px solid ${BG}`,
+          borderRadius: "50%", background: color, border: `2px solid ${P.bg}`,
           boxShadow: isDragging
             ? `0 0 0 5px ${color}22, 0 0 14px ${color}44`
             : `0 0 0 3px ${color}18`,
           transition: "all 100ms ease", zIndex: 2,
         }} />
       </div>
-      <div style={{ display: "flex", justifyContent: "space-between", marginTop: 2, fontSize: 9, color: DIM, fontFamily: FONT }}>
+      <div style={{ display: "flex", justifyContent: "space-between", marginTop: 2, fontSize: 9, color: P.dim, fontFamily: FONT }}>
         <span>{format(min)}</span><span>{format(max)}</span>
       </div>
     </div>
@@ -143,20 +135,20 @@ function RangeSlider({ lo, hi, onChange, min, max, label, format }) {
   return (
     <div style={{ width: "100%", touchAction: "pan-y" }}>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: 6 }}>
-        <div style={{ fontSize: 10, color: DIM, letterSpacing: "0.1em", textTransform: "uppercase" }}>{label}</div>
-        <div style={{ fontSize: 13, fontWeight: 700, color: HIGHLIGHT, fontFamily: FONT }}>
+        <div style={{ fontSize: 10, color: P.dim, letterSpacing: "0.1em", textTransform: "uppercase" }}>{label}</div>
+        <div style={{ fontSize: 13, fontWeight: 700, color: P.accent2, fontFamily: FONT }}>
           {format(lo)} — {format(hi)}
         </div>
       </div>
       <div ref={railRef} style={{ position: "relative", width: "100%", height: 32, display: "flex", alignItems: "center" }}>
-        <div style={{ position: "absolute", left: 0, right: 0, top: "50%", transform: "translateY(-50%)", height: 4, borderRadius: 2, background: GRID }} />
+        <div style={{ position: "absolute", left: 0, right: 0, top: "50%", transform: "translateY(-50%)", height: 4, borderRadius: 2, background: P.grid }} />
         <div style={{
           position: "absolute",
           left: `${fracLo * 100}%`,
           width: `${(fracHi - fracLo) * 100}%`,
           top: "50%", transform: "translateY(-50%)",
           height: 4, borderRadius: 2,
-          background: `linear-gradient(90deg, ${HIGHLIGHT}88, ${HIGHLIGHT})`,
+          background: `linear-gradient(90deg, ${P.accent2}88, ${P.accent2})`,
         }} />
         {["lo", "hi"].map((thumb) => (
           <div key={thumb}
@@ -166,13 +158,13 @@ function RangeSlider({ lo, hi, onChange, min, max, label, format }) {
               left: `${(thumb === "lo" ? fracLo : fracHi) * 100}%`,
               top: "50%", transform: "translate(-50%, -50%)",
               width: 16, height: 16, borderRadius: "50%",
-              background: HIGHLIGHT, border: `2px solid ${BG}`,
-              boxShadow: `0 0 0 3px ${HIGHLIGHT}18`,
+              background: P.accent2, border: `2px solid ${P.bg}`,
+              boxShadow: `0 0 0 3px ${P.accent2}18`,
               cursor: "ew-resize", zIndex: 3,
             }} />
         ))}
       </div>
-      <div style={{ display: "flex", justifyContent: "space-between", marginTop: 2, fontSize: 9, color: DIM, fontFamily: FONT }}>
+      <div style={{ display: "flex", justifyContent: "space-between", marginTop: 2, fontSize: 9, color: P.dim, fontFamily: FONT }}>
         <span>{format(min)}</span><span>{format(max)}</span>
       </div>
     </div>
@@ -180,7 +172,7 @@ function RangeSlider({ lo, hi, onChange, min, max, label, format }) {
 }
 
 // ─── Root ─────────────────────────────────────────────────────────────────────
-export default function KLSensitivity() {
+function KLSensitivity() {
   const [kl,   setKL]   = useState(1.5);
   const [hLo,  setHLo]  = useState(4.5);
   const [hHi,  setHHi]  = useState(5.8);
@@ -252,35 +244,35 @@ export default function KLSensitivity() {
   const labelPt = visiblePts[Math.floor(visiblePts.length * 0.3)];
 
   return (
-    <div style={{ background: BG, color: TEXT, fontFamily: FONT, padding: "24px 20px 28px", userSelect: "none" }}>
+    <div style={{ background: P.bg, color: P.text, fontFamily: FONT, padding: "24px 20px 28px", userSelect: "none" }}>
 
       {/* Header */}
       <div style={{ textAlign: "center", marginBottom: 20 }}>
         <div style={{
           fontSize: 20, fontWeight: 700, letterSpacing: "0.02em", marginBottom: 6,
-          background: "linear-gradient(90deg, #7ee8fa 0%, #e879f9 100%)",
+          background: `linear-gradient(90deg, ${P.accent} 0%, ${P.accent2} 100%)`,
           WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent",
         }}>
           Gen Perplexity vs Entropy at Fixed KL
         </div>
-        <div style={{ fontSize: 11, color: MUTED }}>
+        <div style={{ fontSize: 11, color: P.dim2 }}>
           GenPPL = exp(KL + H) — linear scale shows the true exponential shape
         </div>
       </div>
 
       {/* KL slider */}
-      <div style={{ background: PANEL_BG, borderRadius: 8, border: `1px solid ${GRID}`, padding: "12px 16px 10px", marginBottom: 10 }}>
+      <div style={{ background: P.panel, borderRadius: 8, border: `1px solid ${P.grid}`, padding: "12px 16px 10px", marginBottom: 10 }}>
         <Slider
           value={kl} onChange={(v) => setKL(parseFloat(v.toFixed(2)))}
           min={0.5} max={4.0}
           label="KL Divergence"
           format={(v) => `KL = ${v.toFixed(2)}`}
-          color={ACCENT}
+          color={P.accent}
         />
       </div>
 
       {/* Chart */}
-      <div style={{ background: CARD_BG, borderRadius: 8, border: `1px solid ${GRID}`, padding: "14px 12px 8px", marginBottom: 10 }}>
+      <div style={{ background: P.inset, borderRadius: 8, border: `1px solid ${P.grid}`, padding: "14px 12px 8px", marginBottom: 10 }}>
         <svg width="100%" viewBox={`0 0 ${W} ${H}`} style={{ display: "block", overflow: "visible" }}>
           <defs>
             <clipPath id="chart-clip">
@@ -291,11 +283,11 @@ export default function KLSensitivity() {
           {/* Grid */}
           {xTicks.map(t => (
             <line key={t} x1={toX(t)} y1={PT} x2={toX(t)} y2={PT + ph}
-              stroke={GRID} strokeWidth={0.7} strokeDasharray="4,4" />
+              stroke={P.grid} strokeWidth={0.7} strokeDasharray="4,4" />
           ))}
           {yTicks.map(v => (
             <line key={v} x1={PL} y1={toY(v)} x2={PL + pw} y2={toY(v)}
-              stroke={GRID} strokeWidth={0.7} strokeDasharray="4,4" />
+              stroke={P.grid} strokeWidth={0.7} strokeDasharray="4,4" />
           ))}
 
           {/* Highlight band */}
@@ -303,27 +295,27 @@ export default function KLSensitivity() {
             <rect
               x={toX(clamp(hLo, xMin, xMax))} y={PT}
               width={toX(clamp(hHi, xMin, xMax)) - toX(clamp(hLo, xMin, xMax))} height={ph}
-              fill={HIGHLIGHT} opacity={0.06} clipPath="url(#chart-clip)"
+              fill={P.accent2} opacity={0.06} clipPath="url(#chart-clip)"
             />
           )}
           {hLo >= xMin && hLo <= xMax && (
             <line x1={toX(hLo)} y1={PT} x2={toX(hLo)} y2={PT + ph}
-              stroke={HIGHLIGHT} strokeWidth={1} strokeDasharray="3,3" opacity={0.5} />
+              stroke={P.accent2} strokeWidth={1} strokeDasharray="3,3" opacity={0.5} />
           )}
           {hHi >= xMin && hHi <= xMax && (
             <line x1={toX(hHi)} y1={PT} x2={toX(hHi)} y2={PT + ph}
-              stroke={HIGHLIGHT} strokeWidth={1} strokeDasharray="3,3" opacity={0.5} />
+              stroke={P.accent2} strokeWidth={1} strokeDasharray="3,3" opacity={0.5} />
           )}
 
           {/* Base curve dimmed */}
           {pathAll && (
-            <path d={pathAll} fill="none" stroke={ACCENT} strokeWidth={2}
+            <path d={pathAll} fill="none" stroke={P.accent} strokeWidth={2}
               opacity={0.18} clipPath="url(#chart-clip)" strokeLinecap="round" />
           )}
 
           {/* Highlight glow */}
           {pathHighlight && (
-            <path d={pathHighlight} fill="none" stroke={HIGHLIGHT}
+            <path d={pathHighlight} fill="none" stroke={P.accent2}
               strokeWidth={10} opacity={0.10} clipPath="url(#chart-clip)" strokeLinecap="round" />
           )}
           {/* Highlight curve */}
@@ -334,26 +326,26 @@ export default function KLSensitivity() {
 
           <defs>
             <linearGradient id="hl-grad" x1="0" y1="0" x2="1" y2="0">
-              <stop offset="0%" stopColor={ACCENT} />
-              <stop offset="100%" stopColor={HIGHLIGHT} />
+              <stop offset="0%" stopColor={P.accent} />
+              <stop offset="100%" stopColor={P.accent2} />
             </linearGradient>
           </defs>
 
           {/* Endpoint dots + labels */}
           {hLo >= xMin && hLo <= xMax && pplAtLo >= yMin && pplAtLo <= yMax && (
             <g>
-              <circle cx={toX(hLo)} cy={toY(pplAtLo)} r={5} fill={ACCENT} stroke={BG} strokeWidth={2} />
+              <circle cx={toX(hLo)} cy={toY(pplAtLo)} r={5} fill={P.accent} stroke={P.bg} strokeWidth={2} />
               <text x={toX(hLo) - 8} y={toY(pplAtLo) - 9} textAnchor="middle"
-                fill={ACCENT} fontSize={9} fontFamily={FONT} fontWeight={700}>
+                fill={P.accent} fontSize={9} fontFamily={FONT} fontWeight={700}>
                 {pplAtLo.toFixed(1)}
               </text>
             </g>
           )}
           {hHi >= xMin && hHi <= xMax && pplAtHi >= yMin && pplAtHi <= yMax && (
             <g>
-              <circle cx={toX(hHi)} cy={toY(pplAtHi)} r={5} fill={HIGHLIGHT} stroke={BG} strokeWidth={2} />
+              <circle cx={toX(hHi)} cy={toY(pplAtHi)} r={5} fill={P.accent2} stroke={P.bg} strokeWidth={2} />
               <text x={toX(hHi) + 8} y={toY(pplAtHi) - 9} textAnchor="start"
-                fill={HIGHLIGHT} fontSize={9} fontFamily={FONT} fontWeight={700}>
+                fill={P.accent2} fontSize={9} fontFamily={FONT} fontWeight={700}>
                 {pplAtHi.toFixed(1)}
               </text>
             </g>
@@ -362,30 +354,30 @@ export default function KLSensitivity() {
           {/* Equation label */}
           {labelPt && (
             <text x={toX(labelPt.h) + 10} y={toY(labelPt.ppl) - 10}
-              fill={ACCENT} fontSize={11} fontFamily={FONT} fontWeight={700} opacity={0.8}>
+              fill={P.accent} fontSize={11} fontFamily={FONT} fontWeight={700} opacity={0.8}>
               PPL = e^({kl.toFixed(2)} + H)
             </text>
           )}
 
           {/* Axes */}
-          <line x1={PL} y1={PT} x2={PL} y2={PT + ph} stroke={GRID} strokeWidth={1.2} />
-          <line x1={PL} y1={PT + ph} x2={PL + pw} y2={PT + ph} stroke={GRID} strokeWidth={1.2} />
+          <line x1={PL} y1={PT} x2={PL} y2={PT + ph} stroke={P.grid} strokeWidth={1.2} />
+          <line x1={PL} y1={PT + ph} x2={PL + pw} y2={PT + ph} stroke={P.grid} strokeWidth={1.2} />
 
           {yTicks.map(v => (
             <text key={v} x={PL - 8} y={toY(v) + 4} textAnchor="end"
-              fill={DIM} fontSize={9} fontFamily={FONT}>{v.toFixed(0)}</text>
+              fill={P.dim} fontSize={9} fontFamily={FONT}>{v.toFixed(0)}</text>
           ))}
           {xTicks.map(t => (
             <text key={t} x={toX(t)} y={PT + ph + 16} textAnchor="middle"
-              fill={DIM} fontSize={9.5} fontFamily={FONT}>{t.toFixed(1)}</text>
+              fill={P.dim} fontSize={9.5} fontFamily={FONT}>{t.toFixed(1)}</text>
           ))}
 
           <text x={PL + pw / 2} y={H - 6} textAnchor="middle"
-            fill={MUTED} fontSize={11} fontFamily={FONT} fontWeight={600}>
+            fill={P.dim2} fontSize={11} fontFamily={FONT} fontWeight={600}>
             Entropy H(q)
           </text>
           <text x={14} y={PT + ph / 2} textAnchor="middle"
-            fill={MUTED} fontSize={11} fontFamily={FONT} fontWeight={600}
+            fill={P.dim2} fontSize={11} fontFamily={FONT} fontWeight={600}
             transform={`rotate(-90, 14, ${PT + ph / 2})`}>
             Gen Perplexity (linear)
           </text>
@@ -393,7 +385,7 @@ export default function KLSensitivity() {
       </div>
 
       {/* Range slider */}
-      <div style={{ background: PANEL_BG, borderRadius: 8, border: `1px solid ${GRID}`, padding: "12px 16px 10px", marginBottom: 10 }}>
+      <div style={{ background: P.panel, borderRadius: 8, border: `1px solid ${P.grid}`, padding: "12px 16px 10px", marginBottom: 10 }}>
         <RangeSlider
           lo={hLo} hi={hHi}
           onChange={(lo, hi) => { setHLo(parseFloat(lo.toFixed(2))); setHHi(parseFloat(hi.toFixed(2))); }}
@@ -405,19 +397,21 @@ export default function KLSensitivity() {
 
       {/* Callout */}
       <div style={{
-        background: CARD_BG, border: `1px solid ${HIGHLIGHT}22`,
-        borderLeft: `3px solid ${HIGHLIGHT}88`,
+        background: P.inset, border: `1px solid ${P.accent2}22`,
+        borderLeft: `3px solid ${P.accent2}88`,
         borderRadius: 6, padding: "9px 14px",
-        fontSize: 11, color: MUTED, lineHeight: 1.7,
+        fontSize: 11, color: P.dim2, lineHeight: 1.7,
       }}>
-        <span style={{ color: HIGHLIGHT, fontWeight: 700 }}>Highlighted range: </span>
+        <span style={{ color: P.accent2, fontWeight: 700 }}>Highlighted range: </span>
         H ∈ [{hLo.toFixed(2)}, {hHi.toFixed(2)}] →
         PPL swings from{" "}
-        <span style={{ color: ACCENT, fontWeight: 700 }}>{pplAtLo.toFixed(1)}</span> to{" "}
-        <span style={{ color: HIGHLIGHT, fontWeight: 700 }}>{pplAtHi.toFixed(1)}</span>
-        {" "}(<span style={{ color: TEXT, fontWeight: 700 }}>Δ {pplSwing.toFixed(1)}</span>)
+        <span style={{ color: P.accent, fontWeight: 700 }}>{pplAtLo.toFixed(1)}</span> to{" "}
+        <span style={{ color: P.accent2, fontWeight: 700 }}>{pplAtHi.toFixed(1)}</span>
+        {" "}(<span style={{ color: P.text, fontWeight: 700 }}>Δ {pplSwing.toFixed(1)}</span>)
         {" "}at fixed KL = {kl.toFixed(2)}
       </div>
     </div>
   );
 }
+
+export default withVizTheme(KLSensitivity);

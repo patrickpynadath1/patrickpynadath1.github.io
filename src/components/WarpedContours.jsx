@@ -1,18 +1,11 @@
 import { useState, useCallback, useRef, useEffect, useMemo } from "react";
+import { P, withVizTheme } from "./vizTheme.js";
 
-const BG        = "#0d0d1a";
-const PANEL_BG  = "#13132b";
-const CARD_BG   = "#0a0a18";
-const GRID      = "#1a1a3a";
-const TEXT      = "#ffffff";
-const DIM       = "#444466";
-const MUTED     = "#555";
-const ACCENT    = "#7ee8fa";
 const FONT      = "'JetBrains Mono', 'Fira Code', 'SF Mono', monospace";
 
 const KL_LEVELS = [0.5, 0.75, 1.0, 1.25, 1.5];
 const KL_COLORS = [
-  "#3dd68c","#a8e063","#e8d44d","#f0a830","#e05060",
+  P.good,P.lime,P.warn,P.orange,P.bad,
 ];
 
 const H_MIN   = 4.0;
@@ -48,7 +41,7 @@ function niceTicks(min, max, n = 5) {
 }
 
 // ─── Slider ───────────────────────────────────────────────────────────────────
-function Slider({ value, onChange, min, max, label, format, color = ACCENT, centerNotch = false }) {
+function Slider({ value, onChange, min, max, label, format, color = P.accent, centerNotch = false }) {
   const railRef  = useRef(null);
   const dragging = useRef(false);
   const [isDragging, setIsDragging] = useState(false);
@@ -89,7 +82,7 @@ function Slider({ value, onChange, min, max, label, format, color = ACCENT, cent
   return (
     <div style={{ width: "100%", touchAction: "pan-y" }}>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: 6 }}>
-        <div style={{ fontSize: 10, color: DIM, letterSpacing: "0.1em", textTransform: "uppercase" }}>{label}</div>
+        <div style={{ fontSize: 10, color: P.dim, letterSpacing: "0.1em", textTransform: "uppercase" }}>{label}</div>
         <div style={{
           fontSize: 14, fontWeight: 700, color, fontFamily: FONT,
           transition: "transform 120ms ease",
@@ -98,9 +91,9 @@ function Slider({ value, onChange, min, max, label, format, color = ACCENT, cent
       </div>
       <div ref={railRef} onMouseDown={handleDown} onTouchStart={handleDown}
         style={{ position: "relative", width: "100%", height: 32, display: "flex", alignItems: "center", cursor: "ew-resize" }}>
-        <div style={{ position: "absolute", left: 0, right: 0, top: "50%", transform: "translateY(-50%)", height: 4, borderRadius: 2, background: GRID }} />
+        <div style={{ position: "absolute", left: 0, right: 0, top: "50%", transform: "translateY(-50%)", height: 4, borderRadius: 2, background: P.grid }} />
         {centerNotch && (
-          <div style={{ position: "absolute", left: "50%", top: "50%", transform: "translate(-50%,-50%)", width: 2, height: 10, borderRadius: 1, background: DIM, opacity: 0.5, zIndex: 1 }} />
+          <div style={{ position: "absolute", left: "50%", top: "50%", transform: "translate(-50%,-50%)", width: 2, height: 10, borderRadius: 1, background: P.dim, opacity: 0.5, zIndex: 1 }} />
         )}
         <div style={{
           position: "absolute", left: `${fillLeft * 100}%`, width: `${fillWidth * 100}%`,
@@ -111,12 +104,12 @@ function Slider({ value, onChange, min, max, label, format, color = ACCENT, cent
           position: "absolute", left: `${fraction * 100}%`, top: "50%",
           transform: "translate(-50%, -50%)",
           width: isDragging ? 20 : 16, height: isDragging ? 20 : 16,
-          borderRadius: "50%", background: color, border: `2px solid ${BG}`,
+          borderRadius: "50%", background: color, border: `2px solid ${P.bg}`,
           boxShadow: isDragging ? `0 0 0 5px ${color}22, 0 0 14px ${color}44` : `0 0 0 3px ${color}18`,
           transition: "all 100ms ease", zIndex: 2,
         }} />
       </div>
-      <div style={{ display: "flex", justifyContent: "space-between", marginTop: 2, fontSize: 9, color: DIM, fontFamily: FONT }}>
+      <div style={{ display: "flex", justifyContent: "space-between", marginTop: 2, fontSize: 9, color: P.dim, fontFamily: FONT }}>
         <span>{format(min)}</span><span>{format(max)}</span>
       </div>
     </div>
@@ -222,7 +215,7 @@ function ContourChart({ alpha, points, onDragPoint, showContours }) {
     };
   }, [fromX, fromY, onDragPoint, pplMin, pplMax]);
 
-  const POINT_COLORS = ["#57c27c", "#e05c5c"];
+  const POINT_COLORS = [P.candi, P.mdlm];
   const POINT_LABELS = ["A", "B"];
 
   const xTicks  = useMemo(() => niceTicks(H_MIN, H_MAX, 6), []);
@@ -240,15 +233,15 @@ function ContourChart({ alpha, points, onDragPoint, showContours }) {
       {/* Grid */}
       {xTicks.map(t => (
         <line key={t} x1={toX(t)} y1={PT} x2={toX(t)} y2={PT + ph}
-          stroke={GRID} strokeWidth={0.7} strokeDasharray="4,4" />
+          stroke={P.grid} strokeWidth={0.7} strokeDasharray="4,4" />
       ))}
       {yTicks.map(v => (
         <line key={v} x1={PL} y1={toY(Math.log(v))} x2={PL + pw} y2={toY(Math.log(v))}
-          stroke={GRID} strokeWidth={0.7} strokeDasharray="4,4" />
+          stroke={P.grid} strokeWidth={0.7} strokeDasharray="4,4" />
       ))}
 
       {/* Better annotation */}
-      <text x={PL + 8} y={PT + 16} fill={DIM} fontSize={9} fontFamily={FONT} opacity={0.5}>
+      <text x={PL + 8} y={PT + 16} fill={P.dim} fontSize={9} fontFamily={FONT} opacity={0.5}>
         ↑ better (lower PPL)
       </text>
 
@@ -259,7 +252,7 @@ function ContourChart({ alpha, points, onDragPoint, showContours }) {
           {labelPt && (
             <g>
               <rect x={labelPt.x - 40} y={labelPt.y - 9} width={36} height={13} rx={3}
-                fill={BG} opacity={0.88} />
+                fill={P.bg} opacity={0.88} />
               <text x={labelPt.x - 36} y={labelPt.y + 1}
                 fill={color} fontSize={9} fontFamily={FONT} fontWeight={700}>
                 KL={kl.toFixed(2)}
@@ -270,35 +263,35 @@ function ContourChart({ alpha, points, onDragPoint, showContours }) {
       ))}
 
       {/* Axes */}
-      <line x1={PL} y1={PT} x2={PL} y2={PT + ph} stroke={GRID} strokeWidth={1.2} />
-      <line x1={PL} y1={PT + ph} x2={PL + pw} y2={PT + ph} stroke={GRID} strokeWidth={1.2} />
+      <line x1={PL} y1={PT} x2={PL} y2={PT + ph} stroke={P.grid} strokeWidth={1.2} />
+      <line x1={PL} y1={PT + ph} x2={PL + pw} y2={PT + ph} stroke={P.grid} strokeWidth={1.2} />
 
       {/* Y ticks */}
       {yTicks.map(v => (
         <text key={v} x={PL - 8} y={toY(Math.log(v)) + 4} textAnchor="end"
-          fill={DIM} fontSize={9} fontFamily={FONT}>{v.toFixed(0)}</text>
+          fill={P.dim} fontSize={9} fontFamily={FONT}>{v.toFixed(0)}</text>
       ))}
 
       {/* X ticks */}
       {xTicks.map(t => (
         <text key={t} x={toX(t)} y={PT + ph + 16} textAnchor="middle"
-          fill={DIM} fontSize={9.5} fontFamily={FONT}>{t.toFixed(1)}</text>
+          fill={P.dim} fontSize={9.5} fontFamily={FONT}>{t.toFixed(1)}</text>
       ))}
 
       {/* Axis labels */}
       <text x={PL + pw / 2} y={H - 6} textAnchor="middle"
-        fill={MUTED} fontSize={11} fontFamily={FONT} fontWeight={600}>
+        fill={P.dim2} fontSize={11} fontFamily={FONT} fontWeight={600}>
         {alpha === 0 ? "Entropy  H(q)" : "Warped Entropy  H̃(q)"}
       </text>
       <text x={14} y={PT + ph / 2} textAnchor="middle"
-        fill={MUTED} fontSize={11} fontFamily={FONT} fontWeight={600}
+        fill={P.dim2} fontSize={11} fontFamily={FONT} fontWeight={600}
         transform={`rotate(-90, 14, ${PT + ph / 2})`}>
         Gen Perplexity  ↓ worse (linear)
       </text>
 
       {alpha !== 0 && (
         <text x={PL + pw - 4} y={PT + 14} textAnchor="end"
-          fill={ACCENT} fontSize={9} fontFamily={FONT} opacity={0.5}>
+          fill={P.accent} fontSize={9} fontFamily={FONT} opacity={0.5}>
           H̃ = H + {alpha.toFixed(3)}·sin({FREQ}·H)
         </text>
       )}
@@ -310,13 +303,13 @@ function ContourChart({ alpha, points, onDragPoint, showContours }) {
           onTouchStart={(e) => { e.preventDefault(); dragging.current = i; }}
           style={{ cursor: "grab" }}>
           <circle cx={sp.x} cy={sp.y} r={18} fill={POINT_COLORS[i]} opacity={0.08} />
-          <circle cx={sp.x} cy={sp.y} r={9}  fill={POINT_COLORS[i]} stroke={BG} strokeWidth={2} />
+          <circle cx={sp.x} cy={sp.y} r={9}  fill={POINT_COLORS[i]} stroke={P.bg} strokeWidth={2} />
           <text x={sp.x} y={sp.y + 4} textAnchor="middle"
-            fill="#fff" fontSize={10} fontFamily={FONT} fontWeight={700}>
+            fill={P.text} fontSize={10} fontFamily={FONT} fontWeight={700}>
             {POINT_LABELS[i]}
           </text>
           <rect x={sp.x - 24} y={sp.y - 28} width={48} height={15} rx={4}
-            fill={PANEL_BG} stroke={POINT_COLORS[i]} strokeWidth={0.8} opacity={0.95} />
+            fill={P.panel} stroke={POINT_COLORS[i]} strokeWidth={0.8} opacity={0.95} />
           <text x={sp.x} y={sp.y - 17} textAnchor="middle"
             fill={POINT_COLORS[i]} fontSize={9} fontFamily={FONT} fontWeight={700}>
             KL={pointKLs[i].toFixed(2)}
@@ -330,9 +323,9 @@ function ContourChart({ alpha, points, onDragPoint, showContours }) {
         return (
           <g>
             <rect x={lx} y={ly} width={lw} height={KL_LEVELS.length * 18 + 18}
-              rx={6} fill={PANEL_BG} stroke={GRID} strokeWidth={1} />
+              rx={6} fill={P.panel} stroke={P.grid} strokeWidth={1} />
             <text x={lx + lw / 2} y={ly + 12} textAnchor="middle"
-              fill={DIM} fontSize={8} fontFamily={FONT} letterSpacing="0.08em">KL LEVELS</text>
+              fill={P.dim} fontSize={8} fontFamily={FONT} letterSpacing="0.08em">KL LEVELS</text>
             {KL_LEVELS.map((kl, i) => (
               <g key={kl}>
                 <line x1={lx + 8} y1={ly + 22 + i * 18} x2={lx + 22} y2={ly + 22 + i * 18}
@@ -349,7 +342,7 @@ function ContourChart({ alpha, points, onDragPoint, showContours }) {
 }
 
 // ─── Root ─────────────────────────────────────────────────────────────────────
-export default function KLContours() {
+function KLContours() {
   const [alpha, setAlpha]               = useState(0);
   const [showContours, setShowContours] = useState(true);
   const [points, setPoints]             = useState([
@@ -368,39 +361,39 @@ export default function KLContours() {
   const pointPPLs = points.map(p => Math.exp(p.hxp).toFixed(0));
 
   return (
-    <div style={{ background: BG, color: TEXT, fontFamily: FONT, padding: "24px 20px 28px", userSelect: "none" }}>
+    <div style={{ background: P.bg, color: P.text, fontFamily: FONT, padding: "24px 20px 28px", userSelect: "none" }}>
 
       <div style={{ textAlign: "center", marginBottom: 20 }}>
         <div style={{
           fontSize: 20, fontWeight: 700, letterSpacing: "0.02em", marginBottom: 6,
-          background: "linear-gradient(90deg, #7ee8fa 0%, #e879f9 100%)",
+          background: `linear-gradient(90deg, ${P.accent} 0%, ${P.accent2} 100%)`,
           WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent",
         }}>
           KL Contours Under Entropy Warping
         </div>
-        <div style={{ fontSize: 11, color: MUTED }}>
+        <div style={{ fontSize: 11, color: P.dim2 }}>
           Drag A and B · warp the entropy axis to represent an imperfect but order preserving approximation · toggle contours to see how ordering becomes ambiguous
         </div>
       </div>
 
       {/* Controls */}
       <div style={{ display: "flex", gap: 10, marginBottom: 10, alignItems: "stretch" }}>
-        <div style={{ flex: 1, background: PANEL_BG, borderRadius: 8, border: `1px solid ${GRID}`, padding: "12px 16px 10px" }}>
+        <div style={{ flex: 1, background: P.panel, borderRadius: 8, border: `1px solid ${P.grid}`, padding: "12px 16px 10px" }}>
           <Slider
             value={alpha}
             onChange={(v) => setAlpha(parseFloat(v.toFixed(4)))}
             min={-ALPHA_MAX} max={ALPHA_MAX}
             label="Warp amplitude  α"
             format={(v) => v === 0 ? "α = 0  (identity)" : `α = ${v > 0 ? "+" : ""}${v.toFixed(3)}`}
-            color={ACCENT} centerNotch
+            color={P.accent} centerNotch
           />
         </div>
         <button
           onClick={() => setShowContours(s => !s)}
           style={{
-            background: showContours ? ACCENT + "18" : PANEL_BG,
-            border: `1px solid ${showContours ? ACCENT + "66" : GRID}`,
-            borderRadius: 8, color: showContours ? ACCENT : DIM,
+            background: showContours ? P.accent + "18" : P.panel,
+            border: `1px solid ${showContours ? P.accent + "66" : P.grid}`,
+            borderRadius: 8, color: showContours ? P.accent : P.dim,
             fontFamily: FONT, fontSize: 10, fontWeight: 700,
             letterSpacing: "0.08em", textTransform: "uppercase",
             padding: "0 18px", cursor: "pointer",
@@ -411,7 +404,7 @@ export default function KLContours() {
       </div>
 
       {/* Chart */}
-      <div style={{ background: CARD_BG, borderRadius: 8, border: `1px solid ${GRID}`, padding: "14px 12px 8px", marginBottom: 10 }}>
+      <div style={{ background: P.inset, borderRadius: 8, border: `1px solid ${P.grid}`, padding: "14px 12px 8px", marginBottom: 10 }}>
         <ContourChart
           alpha={alpha} points={points}
           onDragPoint={onDragPoint} showContours={showContours}
@@ -420,14 +413,14 @@ export default function KLContours() {
 
       {/* Status */}
       <div style={{
-        background: CARD_BG,
-        border: `1px solid ${ambiguous ? "#e8d44d44" : "#3dd68c44"}`,
-        borderLeft: `3px solid ${ambiguous ? "#e8d44d" : "#3dd68c"}`,
+        background: P.inset,
+        border: `1px solid ${ambiguous ? (P.warn + "44") : (P.good + "44")}`,
+        borderLeft: `3px solid ${ambiguous ? P.warn : P.good}`,
         borderRadius: 6, padding: "9px 14px",
-        fontSize: 11, color: MUTED, lineHeight: 1.8,
+        fontSize: 11, color: P.dim2, lineHeight: 1.8,
         transition: "border-color 300ms ease",
       }}>
-        <span style={{ color: ambiguous ? "#e8d44d" : "#3dd68c", fontWeight: 700 }}>
+        <span style={{ color: ambiguous ? P.warn : P.good, fontWeight: 700 }}>
           {ambiguous
             ? (!showContours
                 ? "⚠  Contours hidden — ordering unreadable from axes alone"
@@ -435,15 +428,17 @@ export default function KLContours() {
             : `✓  Clear ordering — ${gtWinner} has lower KL`}
         </span>
         {"  ·  "}
-        KL(A)=<span style={{ color: "#57c27c", fontWeight: 700 }}>{pointKLs[0].toFixed(2)}</span>
+        KL(A)=<span style={{ color: P.candi, fontWeight: 700 }}>{pointKLs[0].toFixed(2)}</span>
         {" "}
-        KL(B)=<span style={{ color: "#e05c5c", fontWeight: 700 }}>{pointKLs[1].toFixed(2)}</span>
+        KL(B)=<span style={{ color: P.mdlm, fontWeight: 700 }}>{pointKLs[1].toFixed(2)}</span>
         {"  ·  PPL(A)="}
-        <span style={{ color: "#57c27c", fontWeight: 700 }}>{pointPPLs[0]}</span>
+        <span style={{ color: P.candi, fontWeight: 700 }}>{pointPPLs[0]}</span>
         {" PPL(B)="}
-        <span style={{ color: "#e05c5c", fontWeight: 700 }}>{pointPPLs[1]}</span>
-        {alpha !== 0 && <span style={{ color: DIM }}>{"  ·  entropy order preserved"}</span>}
+        <span style={{ color: P.mdlm, fontWeight: 700 }}>{pointPPLs[1]}</span>
+        {alpha !== 0 && <span style={{ color: P.dim }}>{"  ·  entropy order preserved"}</span>}
       </div>
     </div>
   );
 }
+
+export default withVizTheme(KLContours);
