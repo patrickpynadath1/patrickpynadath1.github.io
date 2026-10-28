@@ -1,0 +1,1821 @@
+<title>Diffusion Design Map</title>
+<meta name="description" content="A schematic of how the parts of a diffusion language model fit together, followed by a layer-by-layer walkthrough.">
+<style>
+  /* Layout: one central map of the whole pipeline. Every box is a component you can click;
+     the panel underneath steps through that component's options and the box redraws itself.
+     Site palette (hue 266), Georgia display + Helvetica body. Dark first. */
+  :root {
+    color-scheme: dark;
+    --bg: #121321; --fg: #efedf6; --muted: #aaa9bd; --faint: #5d5c74; --border: #323240; --surface: #1c1d2d; --surface-2: #26273a;
+    --accent: #c29fef; --accent-2: #f4bd71; --teal: #7fd6c2; --rose: #ef7b8e;
+    --accent-wash: color-mix(in srgb, var(--accent) 16%, transparent);
+    --font-display: Georgia, 'Times New Roman', serif;
+    --font-body: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+    --font-mono: ui-monospace, 'SF Mono', Menlo, monospace;
+  }
+  @media (prefers-color-scheme: light) {
+    :root:not([data-theme="dark"]) {
+      color-scheme: light;
+      --bg: #f6f5fa; --fg: #302e42; --muted: #646174; --faint: #b4b1c4; --border: #d8d6e2; --surface: #ffffff; --surface-2: #eeecf5;
+      --accent: #603a92; --accent-2: #ae6113; --teal: #1f7a68; --rose: #b8324a;
+    }
+  }
+  :root[data-theme="light"] {
+    color-scheme: light;
+    --bg: #f6f5fa; --fg: #302e42; --muted: #646174; --faint: #b4b1c4; --border: #d8d6e2; --surface: #ffffff; --surface-2: #eeecf5;
+    --accent: #603a92; --accent-2: #ae6113; --teal: #1f7a68; --rose: #b8324a;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--fg); font: 15px/1.6 var(--font-body); }
+  button, input { font: inherit; color: inherit; } button { cursor: pointer; }
+  :focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
+
+  .page { max-width: 1240px; margin: 0 auto; padding-block: 40px 64px; padding-left: max(20px, env(safe-area-inset-left, 0px)); padding-right: max(20px, env(safe-area-inset-right, 0px)); }
+  .eyebrow { font-size: 11px; letter-spacing: .13em; text-transform: uppercase; color: var(--accent); margin: 0 0 12px; }
+  h1 { font: 400 clamp(32px, 4.4vw, 50px)/1.08 var(--font-display); letter-spacing: -1.2px; margin: 0 0 12px; text-wrap: balance; }
+  .lede { color: var(--muted); max-width: 66ch; margin: 0 0 24px; font-size: 16px; }
+
+  .map-wrap { border-radius: 16px; background: var(--surface); box-shadow: inset 0 0 0 1px var(--border); padding: 12px; overflow-x: auto; }
+  #map { display: block; width: 100%; min-width: 760px; height: auto; }
+  #map text { font-family: var(--font-body); }
+  .node { cursor: pointer; }
+  .node .box { fill: var(--surface-2); stroke: var(--border); stroke-width: 1.4; transition: stroke .2s, fill .2s; }
+  .node:hover .box { stroke: var(--accent); }
+  .node.on .box { stroke: var(--accent); stroke-width: 2.4; fill: color-mix(in srgb, var(--accent) 10%, var(--surface-2)); }
+  .node:focus { outline: none; }
+  .node:focus-visible .box { stroke: var(--accent-2); stroke-width: 2.4; }
+  .ntitle { font-size: 10.5px; letter-spacing: .1em; text-transform: uppercase; fill: var(--muted); }
+  .nval { font-size: 13px; fill: var(--fg); font-weight: 600; }
+  .wire { fill: none; stroke: var(--faint); stroke-width: 1.6; }
+  .wire.train { stroke: var(--accent-2); }
+  .wire.gen { stroke: var(--teal); }
+  .wire.loop { stroke-dasharray: 6 5; }
+  .wlabel { font-size: 11px; fill: var(--muted); }
+  .wlabel.train { fill: var(--accent-2); } .wlabel.gen { fill: var(--teal); }
+
+  .stepper { margin-top: 16px; display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.1fr); gap: 24px; align-items: start; }
+  .panel { border-radius: 16px; background: var(--surface); box-shadow: inset 0 0 0 1px var(--border); padding: 18px 20px; min-width: 0; }
+  .panel-head { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+  .panel-head .tag { font-size: 11px; letter-spacing: .13em; text-transform: uppercase; color: var(--accent); }
+  .panel-head .count { font: 12px var(--font-mono); color: var(--muted); margin-left: auto; }
+  .panel h2 { font: 400 28px/1.15 var(--font-display); margin: 6px 0 10px; }
+  .nav { display: flex; align-items: center; gap: 10px; margin: 6px 0 14px; }
+  .nav button { width: 44px; height: 44px; border-radius: 50%; border: 1px solid var(--border); background: transparent; font-size: 18px; }
+  .nav button:hover { border-color: var(--accent); color: var(--accent); }
+  .nav .opt-name { font: 400 22px/1.2 var(--font-display); flex: 1; min-width: 0; }
+  .chips { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 4px; }
+  .chips button { min-height: 32px; padding: 4px 10px; border-radius: 8px; border: 1px solid var(--border); background: transparent; font-size: 13px; }
+  .chips button[aria-pressed="true"] { background: var(--accent); border-color: var(--accent); color: var(--bg); }
+  .chips button.clash { opacity: .45; }
+  .desc { font-size: 15px; line-height: 1.65; margin: 12px 0 0; max-width: 62ch; }
+  .warn { margin-top: 12px; padding: 10px 12px; border-radius: 10px; background: color-mix(in srgb, var(--rose) 14%, transparent); font-size: 13px; }
+  .warn[hidden] { display: none; }
+  .big { border-radius: 16px; background: var(--surface); box-shadow: inset 0 0 0 1px var(--border); padding: 12px; min-width: 0; }
+  .big svg { display: block; width: 100%; height: auto; }
+  .hint { font-size: 12.5px; color: var(--muted); margin: 10px 2px 0; }
+  .note { font-size: 12.5px; color: var(--muted); margin-top: 24px; }
+  @media (max-width: 860px) { .stepper { grid-template-columns: minmax(0, 1fr); } }
+  @media (prefers-reduced-motion: reduce) { .node .box { transition: none; } }
+
+  /* ---- detail section (from the pipeline figure) ---- */
+  
+
+
+  .pipe { display: grid; }
+  .layer { display: grid; grid-template-columns: 250px minmax(0, 1fr); gap: 28px; padding: 22px 0; }
+  .layer + .layer { border-top: 1px solid var(--border); }
+  .layer-side { min-width: 0; }
+  .layer-num { font-size: 12px; color: var(--accent); font-variant-numeric: tabular-nums; }
+  .layer h2 { font: 400 24px/1.2 var(--font-display); margin: 2px 0 6px; }
+  .layer .what { font-size: 13px; color: var(--muted); margin: 0 0 12px; line-height: 1.5; }
+  .choice { margin-top: 10px; }
+  .choice-name { display: block; font-size: 10.5px; letter-spacing: .1em; text-transform: uppercase; color: var(--muted); margin-bottom: 6px; }
+  .opts { display: flex; flex-wrap: wrap; gap: 6px; }
+  .opts button { min-height: 32px; padding: 4px 10px; border-radius: 8px; border: 1px solid var(--border); background: transparent; font-size: 13px; cursor: pointer; transition: background-color .2s, border-color .2s, color .2s; }
+  .opts button:hover:not(:disabled):not([aria-pressed="true"]) { border-color: var(--accent); color: var(--accent); }
+  .opts button[aria-pressed="true"] { background: var(--accent); border-color: var(--accent); color: var(--bg); }
+  .opts button:disabled { opacity: .35; cursor: not-allowed; text-decoration: line-through; text-decoration-thickness: 1px; }
+  .why { font-size: 12px; color: var(--muted); margin: 8px 0 0; min-height: 1.5em; }
+
+  .viz { align-self: start; min-width: 0; border-radius: 14px; background: var(--surface); box-shadow: inset 0 0 0 1px var(--border); padding: 10px; }
+  .viz svg { display: block; width: 100%; height: auto; overflow: visible; }
+  .viz-col { min-width: 0; align-self: start; }
+  .modes { display: inline-flex; gap: 4px; padding: 4px; border-radius: 12px; background: var(--surface); box-shadow: inset 0 0 0 1px var(--border); margin-bottom: 18px; }
+  .modes button { min-height: 38px; padding: 6px 16px; border: 0; border-radius: 9px; background: transparent; cursor: pointer; font-size: 14px; color: var(--muted); }
+  .modes button[aria-selected="true"] { background: var(--accent); color: var(--bg); }
+  .recipes { display: grid; grid-template-columns: minmax(0, 1.3fr) minmax(0, 1fr); gap: 24px; margin-bottom: 18px; align-items: start; }
+  .recipes[hidden] { display: none; }
+  .rgroup { margin-bottom: 14px; }
+  .rgroup h4 { margin: 0 0 6px; font-size: 10.5px; letter-spacing: .1em; text-transform: uppercase; color: var(--muted); font-weight: 400; }
+  .recipe-card { position: sticky; top: 12px; padding: 18px 20px; border-radius: 14px; background: var(--accent-wash); }
+  .recipe-tag { font-size: 11px; letter-spacing: .13em; text-transform: uppercase; color: var(--accent); }
+  .recipe-card h3 { font: 400 26px/1.2 var(--font-display); margin: 4px 0 8px; }
+  .recipe-card p { margin: 0 0 10px; font-size: 14px; line-height: 1.6; }
+  .recipe-meta { display: flex; flex-wrap: wrap; gap: 8px 14px; align-items: center; }
+  .recipe-meta code { font: 12.5px var(--font-mono); padding: 3px 8px; border-radius: 6px; background: var(--surface); }
+  .recipe-members { list-style: none; margin: 0 0 12px; padding: 0; display: grid; gap: 10px; }
+  .recipe-members li { font-size: 13.5px; line-height: 1.5; }
+  .recipe-members .m-name { font-weight: 600; }
+  .recipe-members code { font: 12px var(--font-mono); padding: 2px 6px; border-radius: 5px; background: var(--surface); }
+  .recipe-members .m-note { display: block; color: var(--muted); font-size: 12.5px; }
+  .recipe-meta[hidden] { display: none; }
+  .variants { margin: 4px 0 14px; }
+  .variant-name { font: 600 15px var(--font-body); margin: 6px 0 4px; }
+  .layer .varies-note { margin-top: 12px; padding: 10px 12px; border-radius: 10px; background: color-mix(in srgb, var(--accent-2) 14%, transparent); font-size: 12.5px; line-height: 1.5; }
+  .layer .varies-note[hidden] { display: none; }
+  .varies-note strong { display: block; font-size: 10.5px; letter-spacing: .1em; text-transform: uppercase; color: var(--accent-2); margin-bottom: 4px; font-weight: 500; }
+  .varies-note button { display: flex; gap: 6px; width: 100%; text-align: left; padding: 3px 4px; border: 0; border-radius: 6px; background: transparent; cursor: pointer; font-size: 12.5px; color: var(--muted); }
+  .varies-note button:hover { color: var(--fg); }
+  .varies-note button[aria-current="true"] { color: var(--fg); font-weight: 600; }
+  .varies-note button[aria-current="true"]::before { content: "\25B8"; color: var(--accent-2); }
+  .layer.varies .viz { box-shadow: inset 0 0 0 2px color-mix(in srgb, var(--accent-2) 70%, transparent); }
+  .recipe-intro { color: var(--muted); font-size: 12.5px !important; }
+  .recipe-mode .opts button:disabled { text-decoration: none; opacity: .28; cursor: default; }
+  .recipe-mode .why { display: none; }
+  @media (max-width: 860px) { .recipes { grid-template-columns: minmax(0, 1fr); } .recipe-card { position: static; } }
+  .caption { font-size: 15px; color: var(--fg); margin: 14px 2px 0; line-height: 1.65; max-width: 72ch; }
+  .ctrl { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 14px; padding: 4px 6px 10px; margin-bottom: 6px; border-bottom: 1px solid var(--border); }
+  .ctrl[hidden] { display: none; }
+  .ctrl label { font-size: 10.5px; letter-spacing: .1em; text-transform: uppercase; color: var(--muted); }
+  .ctrl input[type=range] { flex: 1; min-width: 140px; accent-color: var(--accent); }
+  .ctrl output { font: 600 13px var(--font-mono); min-width: 9ch; font-variant-numeric: tabular-nums; }
+  .ctrl .ends { font-size: 11.5px; color: var(--muted); }
+  .ctrl button { min-height: 32px; padding: 4px 12px; border-radius: 8px; border: 1px solid var(--border); background: transparent; cursor: pointer; font-size: 13px; }
+  .ctrl button:hover { border-color: var(--accent); color: var(--accent); }
+
+  svg text { font-family: var(--font-body); }
+  .tok { font-family: var(--font-display); font-size: 17px; fill: var(--fg); }
+  .lbl { font-size: 11px; fill: var(--muted); letter-spacing: .03em; }
+  .lbl-acc { font-size: 11px; fill: var(--accent); }
+  .lbl-b { font-size: 12px; fill: var(--fg); }
+  .mono { font-family: var(--font-mono); font-size: 11px; fill: var(--muted); }
+  .head { font-size: 10.5px; letter-spacing: .1em; text-transform: uppercase; fill: var(--muted); }
+
+  @media (max-width: 860px) {
+    .layer { grid-template-columns: minmax(0, 1fr); gap: 14px; }
+  }
+  @media (prefers-reduced-motion: reduce) { .opts button { transition: none; } }
+
+  .part { margin-top: 56px; }
+  .part-head { display: flex; align-items: baseline; gap: 14px; margin-bottom: 8px; }
+  .part-num { font: 400 clamp(26px, 3vw, 34px)/1 var(--font-display); color: var(--accent); }
+  .part-title { font: 400 clamp(26px, 3vw, 34px)/1.15 var(--font-display); letter-spacing: -.6px; margin: 0; }
+  .part .lede { margin-bottom: 20px; }
+  .jump { color: var(--accent); text-decoration: none; border-bottom: 1px solid currentColor; }
+</style>
+
+<div class="page">
+  <p class="eyebrow">Interactive figure</p>
+  <h1>Every design choice in a diffusion language model</h1>
+  <p class="lede">Two views of the same parts. First a schematic of how they connect. Then a closer look at each one, following a short sentence through the whole pipeline.</p>
+
+
+<section class="part" id="schematic" aria-labelledby="t-schematic">
+  <div class="part-head"><span class="part-num">1</span><h2 class="part-title" id="t-schematic">How the parts fit together</h2></div>
+  <p class="lede">The whole pipeline in one picture. Click any part of the map, then step through its options with the arrows. The part redraws itself in place, and anything that no longer fits is flagged. For every part in full detail, see <a class="jump" href="#detail">part 2</a>.</p>
+
+  <div class="map-wrap"><svg id="map" viewBox="0 10 1200 570" role="group" aria-label="Diffusion pipeline map"></svg></div>
+
+  <div class="stepper">
+    <section class="panel" aria-live="polite">
+      <div class="panel-head"><span class="tag" id="p-tag"></span><span class="count" id="p-count"></span></div>
+      <h2 id="p-title"></h2>
+      <div class="nav">
+        <button type="button" id="prev" aria-label="Previous option">&#9664;</button>
+        <span class="opt-name" id="p-opt"></span>
+        <button type="button" id="next" aria-label="Next option">&#9654;</button>
+      </div>
+      <div class="chips" id="chips" role="group" aria-label="All options"></div>
+      <p class="desc" id="p-desc"></p>
+      <p class="warn" id="p-warn" hidden></p>
+    </section>
+    <div class="big"><svg id="big" viewBox="0 0 400 220" role="img"></svg><p class="hint">Tip: use the left and right arrow keys to step through options.</p></div>
+  </div>
+</section>
+
+
+
+<section class="part" id="detail" aria-labelledby="t-detail">
+  <div class="part-head"><span class="part-num">2</span><h2 class="part-title" id="t-detail">Follow five tokens through every part</h2></div>
+  <p class="lede">Each layer is one component of the codebase. Pick a part and its picture changes. Parts that cannot work with your earlier choices are crossed out; hover one for the reason. Each picture has its own control for whatever that part changes.</p>
+  <div class="modes" role="tablist" aria-label="Mode">
+    <button type="button" role="tab" id="mode-explore" aria-selected="true">Explore parts</button>
+    <button type="button" role="tab" id="mode-recipes" aria-selected="false">Paper recipes</button>
+  </div>
+  <section class="recipes" id="recipes" hidden>
+    <div id="recipe-groups"></div>
+    <div class="recipe-card" id="recipe-card">
+      <span class="recipe-tag">Recipe</span>
+      <h3 id="family-name"></h3>
+      <p id="family-note"></p>
+      <div class="opts variants" id="variants" role="group" aria-label="Variants"></div>
+      <h4 class="variant-name" id="recipe-name"></h4>
+      <p id="recipe-note"></p>
+      <p class="recipe-meta"><code id="recipe-cmd"></code> <a id="recipe-link" target="_blank" rel="noopener">Paper</a></p>
+      <ul class="recipe-members" id="recipe-members" hidden></ul>
+      <p class="recipe-intro" id="recipe-intro"></p>
+    </div>
+  </section>
+  <div class="pipe" id="pipe"></div>
+</section>
+
+<!-- ============================================================
+     Figure text. Edit the descriptions shown under each picture here.
+     Each <p> is one description; data-key says when it is shown.
+     Plain text or simple HTML (<em>, <strong>, links) both work.
+     ============================================================ -->
+<div id="figure-text" hidden>
+
+  <!-- Tokens and representation -->
+  <p data-key="tokens">Vocabulary: the, cat, sat, on, mat, dog.</p>
+  <p data-key="rep.tokens">No vectors at all: each position is one of six symbols.</p>
+  <p data-key="rep.onehot">Each token becomes a vector of length six with a single 1 at its word.</p>
+  <p data-key="rep.embed">Each word is a learned point in a vector space (two dimensions shown). Highlighted points are the five tokens.</p>
+
+  <!-- Corruption -->
+  <p data-key="corr.masked">Masked: each token is independently hidden behind [M]. A hidden token carries no information about its word.</p>
+  <p data-key="corr.gidd">GIDD: one process that mixes both kinds of discrete noise. A corrupted token is usually masked, but sometimes swapped for a random word (red).</p>
+  <p data-key="corr.uniform">Uniform: each token is independently replaced by a random word (red). It looks real, so the model must work out which ones changed.</p>
+  <p data-key="corr.gaussian-onehot">Gaussian on one-hot vectors: noise is added to every entry. As t grows the true word’s bar sinks into the noise.</p>
+  <p data-key="corr.gaussian-embed">Gaussian on embeddings: noise pushes each point off its word. The blob shows how far noise can reach at this t.</p>
+  <p data-key="corr.simplex">Simplex: each token is a probability vector. Noise drifts it from its corner toward the uniform middle while it always sums to one.</p>
+  <p data-key="corr.spherical">Spherical: embeddings live on the unit sphere. Noise picks a random point and moves along the arc toward it, so the state never leaves the sphere.</p>
+  <p data-key="corr.blurring">Blurring: each embedding feature is smoothed along the sequence, so neighboring tokens bleed into each other. Higher features blur first.</p>
+  <p data-key="corr.combined">Two corruptions run on the same clean sequence, each in its own representation and with its own schedule. The network sees both views at once. (CANDI is masked + Gaussian.)</p>
+
+  <!-- Noise schedule -->
+  <p data-key="sched.fixed">Predefined schedules never change: the same curve is used from the first training step to the last.</p>
+  <p data-key="sched.semi">Semi-adaptive: the curve comes from a fixed family (here a Gumbel-shaped one, as in LangFlow) with a few parameters learned alongside the network. Press Play to watch the knobs move.</p>
+  <p data-key="sched.full">Fully adaptive: the whole curve is refit from the training loss (CDCD-style warping, or RePlaid’s variational schedule). As the loss concentrates on some noise levels (right), the schedule warps (left) so training spends more time there.</p>
+  <p data-key="sched.full-discrete">For masked or uniform noise it warps the keep rate.</p>
+  <p data-key="sched.combined">With two corruptions, each view has its own schedule.</p>
+
+  <!-- Network -->
+  <p data-key="net.self-off">Self-conditioning off: each pass starts fresh from the noisy input.</p>
+  <p data-key="net.self-mean">Self-conditioning on the expected embedding: the previous pass’s probabilities p are multiplied by the embedding table E, giving the average embedding ē the model expects. That vector is fed back in.</p>
+  <p data-key="net.self-hidden">Self-conditioning on the hidden state: the previous pass’s last hidden vector h is fed back directly, before it is turned into word probabilities.</p>
+  <p data-key="net.time-off">Without time conditioning the network must infer the noise level from the input itself.</p>
+  <p data-key="net.time-on">Time conditioning tells the network how noisy its input is.</p>
+
+  <!-- Output -->
+  <p data-key="param.posterior">For every position, a probability over the six words for the clean token. Slide the input noise up and the bars flatten.</p>
+  <p data-key="param.score">Score ratios: how much more likely each word is than the current token. Not a normalized distribution.</p>
+  <p data-key="param.plugin">A plug-in estimate for uniform noise: the posterior mixed with a uniform floor that grows with noise.</p>
+  <p data-key="param.gpost">A clean-token posterior shaped by a Gaussian prior on the noisy vector, used to compute the expected clean vector.</p>
+  <p data-key="param.next">Only the next position is predicted, given everything to its left.</p>
+
+  <!-- Loss -->
+  <p data-key="loss.ce">Plain cross-entropy: predict the clean token, with every noise level counting the same. Simple, but not a likelihood bound.</p>
+  <p data-key="loss.elbo">The ELBO is a bound on the data likelihood.</p>
+  <p data-key="loss.elbo-masked">For masking the ELBO is cross-entropy weighted by 1/t (as in MDLM), so nearly clean examples count much more.</p>
+  <p data-key="loss.elbo-uniform">For uniform noise the ELBO has its own exact form (as in DUO).</p>
+  <p data-key="loss.elbo-gidd">For GIDD the ELBO is composed from its masking and uniform parts (gidd_elbo).</p>
+  <p data-key="loss.elbo-score">For score-ratio outputs the ELBO is score entropy (SEDD).</p>
+  <p data-key="loss.elbo-gaussian">For Gaussian noise, RePlaid’s three loss terms fall straight out of the ELBO. The endpoint at t = 0 gives a reconstruction cross-entropy, the endpoint at t = 1 gives a prior KL, and everything in between is an integral of a weighted MSE between the expected embedding ē and the true embedding.</p>
+
+  <!-- Sampler -->
+  <p data-key="samp.ancestral">Ancestral sampling reveals tokens a few at a time in random order, one network call per step.</p>
+  <p data-key="samp.eb">Entropy-bounded sampling commits every token the model is confident about at once, so it needs fewer steps.</p>
+  <p data-key="samp.ode">A Gaussian solver (Euler, Heun, adaptive ODE or DDPM) moves every vector a little each step; all words sharpen together.</p>
+  <p data-key="samp.flow">The process’s own reverse step (simplex bridge, spherical flow or un-blurring) sharpens all positions together.</p>
+  <p data-key="samp.hybrid">Each view takes its own reverse step: masked tokens are revealed while the continuous view sharpens.</p>
+  <p data-key="samp.analytic">SEDD's analytic step uses the score ratios to jump several masked tokens at once with exact transition probabilities.</p>
+  <p data-key="samp.ctmc">Discrete flow matching follows a continuous-time Markov chain: tokens jump between states, and with uniform noise a filled-in word can still change later (red).</p>
+  <p data-key="samp.ddpm">DDPM takes stochastic Gaussian reverse steps: every vector sharpens, with a little fresh noise added each step.</p>
+  <p data-key="samp.ar">Autoregressive decoding: one new token per step, strictly left to right.</p>
+  <p data-key="samp.note">New tokens at each step are outlined.</p>
+
+  <!-- Sequence modifiers -->
+  <p data-key="mods.none">Turn on block diffusion or insertion to see how they change generation.</p>
+  <p data-key="mods.block">Block diffusion splits the sequence into blocks. Blocks are generated left to right; inside a block, tokens are denoised in parallel, and each block can see every finished block (block-causal attention).</p>
+  <p data-key="mods.insert">Insertion lets the length change: generation starts short and new tokens are inserted between existing ones (outlined), so the model decides the length.</p>
+
+  <!-- Paper recipes (from docs/guides/paper-recipes.md in candiv2.1) -->
+  <p data-key="recipe.mdlm">Absorbing posterior, weighted CE, ancestral inference.</p>
+  <p data-key="recipe.md4">Standard state-independent masking; shares MDLM components. Not GenMD4.</p>
+  <p data-key="recipe.radd">Time-independent posterior (no time conditioning). No unchanged-state prediction cache.</p>
+  <p data-key="recipe.d3pm_absorb">Absorbing variant, discrete-time variational objective plus reconstruction.</p>
+  <p data-key="recipe.sedd_absorb">Absorbing scores, score entropy and analytic sampling.</p>
+  <p data-key="recipe.llada_style">Masked training with a local DiT and ancestral decoding.</p>
+  <p data-key="recipe.ardm_style">Basic absorbing order-agnostic construction, without upscaling or adaptive-budget machinery.</p>
+  <p data-key="recipe.dfm_masked">Posterior CE and base CTMC probability-velocity updates. No extra corrector.</p>
+  <p data-key="recipe.udlm">The plug-in uniform diffusion recipe. No paper guidance extensions.</p>
+  <p data-key="recipe.uniform_posterior">Uniform corruption with ordinary posterior CE; distinct from plug-in UDLM.</p>
+  <p data-key="recipe.duo">Continuous-relaxation / discrete curriculum (uses one-hot relaxations), uniform reverse inference.</p>
+  <p data-key="recipe.dfm_uniform">Posterior CE and base CTMC probability-velocity updates. No extra corrector.</p>
+  <p data-key="recipe.gidd_elbo">Mask / uniform mixture with composed ELBO. Not dynamic GIDD+.</p>
+  <p data-key="recipe.gidd_corruption">The GIDD mask / uniform mixture trained with plain CE, as a baseline. Not dynamic GIDD+.</p>
+  <p data-key="recipe.candi_hybrid">Masked / Gaussian hybrid with mask-dependent fusion and rank calibration.</p>
+  <p data-key="recipe.cadd">Gated Gaussian / masked hybrid. The YAML records missing dropout, sharing / detachment and schedule / sampler alignment.</p>
+  <p data-key="recipe.cdcd">Learned-embedding Gaussian CE and adaptive clock; the adaptation machinery differs from the paper.</p>
+  <p data-key="recipe.flm_gaussian">Gaussian one-hot linear flow and error-based clock; finite calibration bounds and local conditioning differ.</p>
+  <p data-key="recipe.langflow">Embedding Gaussian CE, Gumbel clock, expected-embedding self-conditioning. Normalization, conditioning and architectural details still differ.</p>
+  <p data-key="recipe.replaid">Learned embeddings and schedule, reconstruction / diffusion / prior terms, DDPM sampling. No separate original-PLAID preset.</p>
+  <p data-key="recipe.simplex">Dirichlet bridge construction, CE and churn. Not Dirichlet Flow Matching or SSD-LM.</p>
+  <p data-key="recipe.spherical_flow_matching">Geodesic sphere path and tangent integration. Not every paper architecture / velocity approximation.</p>
+  <p data-key="recipe.spherical_vmf">von Mises-Fisher spherical flows with predictor-corrector inference. Paper classifier / damping details differ.</p>
+  <p data-key="recipe.blurring_diffusion">Token-CE language adaptation of Blurring Diffusion.</p>
+  <p data-key="recipe.bd3lm">Block diffusion with a clean prefix, configurable block size, and ancestral sampling. No claim to the optimized paper schedules.</p>
+  <p data-key="recipe.eb_masked">Entropy-bounded unmasking on MDLM. This changes inference, not training.</p>
+  <p data-key="recipe.flexmdm_style">Masked insertion. Uses our count / gap objectives, not the full paper variational objective.</p>
+
+  <!-- Recipe-specific schedule, output and loss pictures -->
+  <p data-key="rsched.loglinear">Log-linear schedule: each token survives with probability α(t), which falls in a straight line from 1 to 0.</p>
+  <p data-key="rsched.discrete">D3PM trains on a fixed grid of discrete time steps (orange dots) along the same log-linear path.</p>
+  <p data-key="rsched.duo">DUO uses the log-linear schedule plus a curriculum: early in training the uniform noise is applied to a softened relaxation of the tokens, which anneals to hard tokens.</p>
+  <p data-key="rsched.gidd">GIDD’s path: a token stays clean, gets swapped for a random word, or gets masked. The random-word share peaks halfway, at p<sub>u</sub> = 0.2.</p>
+  <p data-key="rsched.candi">CANDI runs two schedules at once. Masking follows a log-linear path, and the Gaussian view is rank-calibrated against it.</p>
+  <p data-key="rsched.cadd">CADD-style hybrids also keep one schedule per view; the YAML records where its schedule alignment differs from the paper.</p>
+  <p data-key="rsched.cdcd">CDCD-style: the base is an exponential VE schedule, and the adaptive clock refits it from the loss as training goes.</p>
+  <p data-key="rsched.flm">FLM-style: time is defined by an error clock. t is the fraction of tokens a greedy argmax would get wrong, and the Gaussian σ (0.2 to 4) is calibrated to produce it.</p>
+  <p data-key="rsched.gumbel">LangFlow-style: γ(t) follows Gumbel quantiles. Its location and scale are refit from detached cross-entropy feedback, not by the network’s optimizer. Press Play to watch them move.</p>
+  <p data-key="rsched.replaid">RePlaid learns its −log SNR curve with a small monotone network, trained to lower the variance of the ELBO estimate. Press Play to watch it reshape.</p>
+  <p data-key="rsched.simplex">The simplex process ships its own schedule, paired with a loss-derivative time sampler.</p>
+  <p data-key="rsched.spherical">S-FLM moves along the geodesic; the schedule sets how far along the arc the state is at time t.</p>
+  <p data-key="rsched.vmf">vMF spherical flows spread noise as a von Mises-Fisher distribution whose concentration falls over time.</p>
+  <p data-key="rsched.blurring">Blurring diffusion blurs high-frequency feature bands first and low ones last, as in the image version.</p>
+  <p data-key="rout.mdlm">Masked recipes only predict the masked positions; visible tokens are copied through unchanged.</p>
+  <p data-key="rout.radd">RADD drops time conditioning: the posterior depends only on which tokens are still visible.</p>
+  <p data-key="rout.candi">CANDI predicts a clean-token posterior at masked positions, fusing what the masked and Gaussian views say.</p>
+  <p data-key="rout.replaid">RePlaid adds a Gaussian prior term to the network’s logits before the softmax: each word gets a bonus for how well its embedding lines up with the current noisy vector.</p>
+  <p data-key="rloss.d3pm">D3PM’s bound is a sum over discrete steps: a reconstruction term at the start, a KL term per step, and a prior term at the end.</p>
+  <p data-key="rloss.mdlm">The masked ELBO reduces to cross-entropy on masked tokens, weighted by 1/t under the log-linear schedule.</p>
+  <p data-key="rloss.sedd">SEDD trains score ratios with score entropy, using the same ELBO weighting.</p>
+  <p data-key="rloss.gidd">GIDD’s ELBO is assembled from its masking and uniform parts. Shapes are illustrative.</p>
+  <!-- Grouped recipes: several configs that build the same pipeline -->
+  <p data-key="recipe.group-mdlm">Several papers, one construction: absorbing (mask) noise, a clean-token posterior at masked positions, the 1/t-weighted ELBO, and ancestral unmasking. The configs below differ only in details this figure does not draw.</p>
+  <p data-key="recipe.group-uniform_posterior">Uniform noise trained with plain posterior cross-entropy. The two configs differ only in how the sampler takes each step.</p>
+  <!-- Recipe families -->
+  <p data-key="family.masked">One construction under many names: mask noise, a clean-token posterior at masked positions, the 1/t-weighted ELBO. Variants change the time steps and loss (D3PM), the sampler (entropy-bounded) or add blocks (BD3-LM).</p>
+  <p data-key="family.sedd">Masking noise, but the network predicts score ratios instead of clean tokens.</p>
+  <p data-key="family.uniform">Tokens are swapped for random words instead of masked. Variants differ in the output and loss, and DUO adds a training curriculum.</p>
+  <p data-key="family.dfm">The same flow-matching recipe on two kinds of discrete noise; only the corruption changes.</p>
+  <p data-key="family.gidd">GIDD’s mask/uniform mixture, trained with its ELBO or with plain CE as a baseline.</p>
+  <p data-key="family.hybrid">Masking and Gaussian noise run side by side. CANDI and CADD differ in how the views are arranged and fused, and in the sampler.</p>
+  <p data-key="family.gauss">Gaussian noise on vectors, solved back to tokens. The variants mostly differ in the schedule, plus self-conditioning, the loss and the sampler.</p>
+  <p data-key="family.sphere">Noise on the unit sphere of embeddings. The variants differ in the output and the sampler.</p>
+  <p data-key="family.simplex">Noise on the probability simplex with a Dirichlet bridge.</p>
+  <p data-key="family.blur">Blurring of embedding features along the sequence.</p>
+  <p data-key="family.flex">Masked diffusion that can also insert tokens, so the length is decided by the model.</p>
+  <p data-key="recipe.intro">Each recipe is a named config in the codebase (<code>+experiment=&lt;name&gt;</code>). Presets compose existing components; they do not certify paper benchmark parity.</p>
+</div>
+
+
+
+</div>
+<script>
+(function () {
+  var NS = 'http://www.w3.org/2000/svg';
+  function esc(s) { return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;'); }
+  function rnd(i, salt) { var x = Math.sin((i + 1) * 12.9898 + (salt || 0) * 78.233) * 43758.5453; return x - Math.floor(x); }
+
+  // ---------- Components and options ----------
+  var C = {
+    tokens: { title: 'Tokens', opts: [{ k: 'seq', n: 'the cat sat on mat', d: 'Five clean tokens. Everything else in the map acts on these.' }] },
+    rep: { title: 'Representation', opts: [
+      { k: 'tokens', n: 'Token IDs', d: 'Keep tokens as discrete symbols. Noise must act on whole tokens.' },
+      { k: 'onehot', n: 'One-hot vectors', d: 'Each token becomes a vector with a single 1 at its word.' },
+      { k: 'embed', n: 'Learned embedding', d: 'Each word is a learned point in a vector space.' }] },
+    corr: { title: 'Corruption', opts: [
+      { k: 'masked', n: 'Masked', needs: ['tokens'], d: 'Tokens are hidden behind [M].' },
+      { k: 'uniform', n: 'Uniform', needs: ['tokens'], d: 'Tokens are swapped for random words.' },
+      { k: 'gidd', n: 'GIDD mix', needs: ['tokens'], d: 'One process that mostly masks but sometimes swaps in a random word.' },
+      { k: 'gaussian', n: 'Gaussian', needs: ['onehot', 'embed'], d: 'Gaussian noise is added to the vectors.' },
+      { k: 'simplex', n: 'Simplex', needs: ['onehot'], d: 'Probability vectors drift from their corner toward the uniform middle.' },
+      { k: 'spherical', n: 'Spherical', needs: ['embed'], d: 'Unit embeddings slide along an arc toward a random point on the sphere.' },
+      { k: 'blurring', n: 'Blurring', needs: ['embed'], d: 'Embedding features blur along the sequence, high frequencies first.' },
+      { k: 'hybrid', n: 'Hybrid: mask + Gaussian', needs: ['onehot', 'embed'], d: 'Two corruptions at once, each with its own view and schedule (CANDI).' }] },
+    sched: { title: 'Schedule', opts: [
+      { k: 'fixed', n: 'Predefined', d: 'A formula chosen before training: log-linear, rank-based, and so on.' },
+      { k: 'semi', n: 'Semi-adaptive', d: 'A fixed family with a few learned knobs, like LangFlow’s Gumbel clock.' },
+      { k: 'full', n: 'Fully adaptive', d: 'The whole curve is refit from the loss, like CDCD or RePlaid.' }] },
+    attn: { title: 'Attention', opts: [
+      { k: 'bi', n: 'Bidirectional', d: 'Every token sees every other token.' },
+      { k: 'causal', n: 'Causal', d: 'Each token sees only tokens to its left.' }] },
+    time: { title: 'Time input', opts: [
+      { k: 'off', n: 'Off', d: 'The network must infer the noise level from the input.' },
+      { k: 'on', n: 'On', d: 'The noise level t is given to the network.' }] },
+    self: { title: 'Self-cond.', opts: [
+      { k: 'off', n: 'Off', d: 'Each pass starts fresh.' },
+      { k: 'mean', n: 'Expected embedding', d: 'Take the previous pass’s logits, turn them into probabilities, average the embedding table with them (softmax · E) and feed that vector ē back in.' },
+      { k: 'hidden', n: 'Hidden state', d: 'Intercept the previous pass’s hidden state h before the LM head and feed it back directly. It never becomes logits.' }] },
+    out: { title: 'Output', opts: [
+      { k: 'post', n: 'Clean-token posterior', d: 'A probability over words for each position.' },
+      { k: 'score', n: 'Score ratio', needsCorr: ['masked'], d: 'How much more likely each word is than the current token (SEDD).' },
+      { k: 'plugin', n: 'Plug-in', needsCorr: ['uniform'], d: 'The posterior mixed with a uniform floor, for uniform noise.' },
+      { k: 'gpost', n: 'Gaussian posterior', needsCorr: ['gaussian', 'simplex', 'spherical'], d: 'The posterior combined with a Gaussian prior on the noisy vector.' },
+      { k: 'next', n: 'Next token', needsAttn: 'causal', d: 'Only the next position is predicted.' }] },
+    loss: { title: 'Loss', opts: [
+      { k: 'ce', n: 'Cross-entropy', d: 'Every noise level counts the same.' },
+      { k: 'elbo', n: 'ELBO', needsCorr: ['masked', 'uniform', 'gidd', 'gaussian'], d: 'A likelihood bound. Its form depends on the corruption: 1/t weighting for masking, three terms for Gaussian.' }] },
+    samp: { title: 'Sampler', opts: [
+      { k: 'ancestral', n: 'Ancestral', needsCorr: ['masked', 'uniform', 'gidd'], d: 'Reveal a few tokens per step.' },
+      { k: 'eb', n: 'Entropy-bounded', needsCorr: ['masked', 'uniform', 'gidd'], d: 'Reveal every confident token at once.' },
+      { k: 'analytic', n: 'Analytic', needsOut: 'score', d: 'Exact jumps from score ratios (SEDD).' },
+      { k: 'ctmc', n: 'CTMC jumps', needsCorr: ['masked', 'uniform', 'gidd'], d: 'Tokens jump between states; with uniform noise they can change again.' },
+      { k: 'ode', n: 'Gaussian solver', needsCorr: ['gaussian'], d: 'Euler, Heun or adaptive ODE: every vector moves a little each step.' },
+      { k: 'ddpm', n: 'DDPM', needsCorr: ['gaussian'], d: 'Stochastic Gaussian reverse steps.' },
+      { k: 'proc', n: 'Process sampler', needsCorr: ['simplex', 'spherical', 'blurring'], d: 'The process’s own reverse step.' },
+      { k: 'hybrid', n: 'Hybrid', needsCorr: ['hybrid'], d: 'Each view takes its own reverse step.' },
+      { k: 'ar', n: 'Autoregressive', needsOut: 'next', d: 'One token per step, left to right.' }] },
+    mods: { title: 'Sequence modifiers', opts: [
+      { k: 'none', n: 'None', d: 'The whole fixed-length sequence is generated together.' },
+      { k: 'block', n: 'Block diffusion', d: 'In training the network sees the noisy sequence and a clean copy side by side (length 2L). Noisy blocks see themselves and earlier clean blocks. Clean tokens see clean tokens up to themselves. At generation, blocks are finished left to right.' },
+      { k: 'insert', n: 'Insertion', d: 'New tokens can be inserted, so the model decides the length.' }] }
+  };
+  var S = { tokens: 0, rep: 0, corr: 0, sched: 0, attn: 0, time: 0, self: 0, out: 0, loss: 1, samp: 1, mods: 0 };
+  var active = 'corr';
+  function cur(id) { return C[id].opts[S[id]]; }
+
+  // ---------- Compatibility (flag, don't block) ----------
+  function clash(id, o) {
+    o = o || cur(id);
+    var rep = cur('rep').k, corr = cur('corr').k;
+    if (o.needs && o.needs.indexOf(rep) === -1) return 'Needs ' + o.needs.map(function (r) { return C.rep.opts.filter(function (x) { return x.k === r; })[0].n.toLowerCase(); }).join(' or ') + ' (representation is ' + cur('rep').n.toLowerCase() + ').';
+    if (o.needsCorr && o.needsCorr.indexOf(corr) === -1) return 'Does not fit ' + cur('corr').n.toLowerCase() + ' corruption.';
+    if (o.needsAttn && cur('attn').k !== o.needsAttn) return 'Needs causal attention.';
+    if (o.needsOut && cur('out').k !== o.needsOut) return 'Needs the ' + C.out.opts.filter(function (x) { return x.k === o.needsOut; })[0].n.toLowerCase() + ' output.';
+    return '';
+  }
+
+  // ---------- Glyphs: a small picture for each option, drawn inside a w x h box at (x, y) ----------
+  function g(id, k, x, y, w, h) {
+    var o = '', cx = x + w / 2, cy = y + h / 2, i;
+    function box(bx, by, bw, bh, label, st) { st = st || {}; return '<rect x="' + bx + '" y="' + by + '" width="' + bw + '" height="' + bh + '" rx="4" fill="' + (st.fill || 'var(--surface)') + '" stroke="' + (st.stroke || 'var(--faint)') + '" ' + (st.dash ? 'stroke-dasharray="3 3"' : '') + '/>' + (label ? '<text x="' + (bx + bw / 2) + '" y="' + (by + bh / 2 + 4) + '" text-anchor="middle" style="font:' + (st.size || 10) + 'px var(--font-display);fill:' + (st.color || 'var(--fg)') + (st.it ? ';font-style:italic' : '') + '">' + esc(label) + '</text>' : ''); }
+    function barsG(bx, by, bw, bh, vals, hi, color) { var n = vals.length, wd = bw / n; return vals.map(function (v, j) { var hh = Math.max(1, v * bh); return '<rect x="' + (bx + j * wd + 1) + '" y="' + (by + bh - hh) + '" width="' + (wd - 2) + '" height="' + hh + '" rx="1.5" fill="' + (j === hi ? 'var(--accent)' : (color || 'var(--faint)')) + '"/>'; }).join('') + '<line x1="' + bx + '" x2="' + (bx + bw) + '" y1="' + (by + bh) + '" y2="' + (by + bh) + '" stroke="var(--border)"/>'; }
+    function curve(fn, color, dash) { var d = ''; for (var s = 0; s <= 30; s++) { var t = s / 30; d += (s ? 'L' : 'M') + (x + t * w).toFixed(1) + ' ' + (y + h - fn(t) * h).toFixed(1); } return '<path d="' + d + '" fill="none" stroke="' + (color || 'var(--accent)') + '" stroke-width="2" ' + (dash ? 'stroke-dasharray="3 3"' : '') + '/>'; }
+    var words = ['the', 'cat', 'sat'], bw = Math.min(34, (w - 8) / 3);
+    if (id === 'tokens') { for (i = 0; i < 3; i++) o += box(x + i * (bw + 4), cy - 12, bw, 24, words[i]); }
+    else if (id === 'rep') {
+      if (k === 'tokens') for (i = 0; i < 3; i++) o += box(x + i * (bw + 4), cy - 12, bw, 24, words[i]);
+      else if (k === 'onehot') for (i = 0; i < 3; i++) o += barsG(x + i * (w / 3) + 4, y + 4, w / 3 - 10, h - 8, [0, 0, 0, 0, 0, 0].map(function (_, j) { return j === i + 1 ? 1 : 0.04; }), i + 1);
+      else { o += '<rect x="' + x + '" y="' + y + '" width="' + w + '" height="' + h + '" rx="6" fill="var(--surface)"/>'; [[0.2, 0.3], [0.7, 0.25], [0.5, 0.75], [0.25, 0.7], [0.82, 0.6]].forEach(function (p, j) { o += '<circle cx="' + (x + p[0] * w) + '" cy="' + (y + p[1] * h) + '" r="' + (j < 3 ? 3.5 : 2.5) + '" fill="' + (j < 3 ? 'var(--accent)' : 'var(--faint)') + '"/>'; }); }
+    } else if (id === 'corr') {
+      if (k === 'masked' || k === 'uniform' || k === 'gidd') for (i = 0; i < 3; i++) {
+        var hit = i !== 2;
+        if (!hit) o += box(x + i * (bw + 4), cy - 12, bw, 24, words[i]);
+        else if (k === 'masked' || (k === 'gidd' && i === 0)) o += box(x + i * (bw + 4), cy - 12, bw, 24, '[M]', { fill: 'transparent', dash: true, color: 'var(--muted)', size: 9 });
+        else o += box(x + i * (bw + 4), cy - 12, bw, 24, i === 0 ? 'dog' : 'on', { stroke: 'var(--rose)', color: 'var(--rose)', it: true });
+      }
+      else if (k === 'gaussian') { o += '<circle cx="' + cx + '" cy="' + cy + '" r="' + (h * 0.42) + '" fill="var(--accent)" opacity=".18"/><circle cx="' + cx + '" cy="' + cy + '" r="' + (h * 0.24) + '" fill="var(--accent)" opacity=".25"/>'; for (i = 0; i < 9; i++) o += '<circle cx="' + (cx + (rnd(i, 1) - 0.5) * h * 0.8) + '" cy="' + (cy + (rnd(i, 2) - 0.5) * h * 0.7) + '" r="2" fill="var(--accent)"/>'; }
+      else if (k === 'simplex') { var A = [cx, y + 3], B = [cx - h * 0.55, y + h - 3], D = [cx + h * 0.55, y + h - 3]; o += '<polygon points="' + [A, B, D].map(function (p) { return p.join(','); }).join(' ') + '" fill="var(--surface)" stroke="var(--faint)"/><line x1="' + A[0] + '" y1="' + A[1] + '" x2="' + (cx + 3) + '" y2="' + (cy + 4) + '" stroke="var(--accent)" stroke-dasharray="3 3"/><circle cx="' + (cx + 3) + '" cy="' + (cy + 4) + '" r="4" fill="var(--accent)"/>'; }
+      else if (k === 'spherical') { var R = h * 0.44; o += '<circle cx="' + cx + '" cy="' + cy + '" r="' + R + '" fill="var(--surface)" stroke="var(--faint)"/><ellipse cx="' + cx + '" cy="' + cy + '" rx="' + R + '" ry="' + (R * 0.3) + '" fill="none" stroke="var(--faint)" stroke-dasharray="2 3"/><path d="M' + (cx - R * 0.7) + ' ' + (cy - R * 0.7) + ' A' + R + ' ' + R + ' 0 0 1 ' + (cx + R) + ' ' + cy + '" fill="none" stroke="var(--accent)" stroke-width="2"/><circle cx="' + (cx + R * 0.5) + '" cy="' + (cy - R * 0.86) + '" r="4" fill="var(--accent)"/>'; }
+      else if (k === 'blurring') { for (var r = 0; r < 3; r++) for (i = 0; i < 5; i++) o += '<rect x="' + (x + i * (w / 5) + 1) + '" y="' + (y + 4 + r * (h / 3)) + '" width="' + (w / 5 - 2) + '" height="' + (h / 3 - 4) + '" rx="2" fill="var(--accent)" opacity="' + (0.2 + 0.6 * Math.abs(Math.sin(i * (r + 1) * 0.6 + r))).toFixed(2) + '"/>'; }
+      else if (k === 'hybrid') { o += box(x, cy - 12, bw, 24, '[M]', { fill: 'transparent', dash: true, color: 'var(--muted)', size: 9 }); o += '<text x="' + (x + bw + 10) + '" y="' + (cy + 5) + '" style="font:600 14px var(--font-body);fill:var(--muted)">+</text>'; o += '<circle cx="' + (x + w - h * 0.4) + '" cy="' + cy + '" r="' + (h * 0.36) + '" fill="var(--accent)" opacity=".22"/>'; for (i = 0; i < 6; i++) o += '<circle cx="' + (x + w - h * 0.4 + (rnd(i, 3) - 0.5) * h * 0.55) + '" cy="' + (cy + (rnd(i, 4) - 0.5) * h * 0.5) + '" r="2" fill="var(--accent)"/>'; }
+    } else if (id === 'sched') {
+      o += '<rect x="' + x + '" y="' + y + '" width="' + w + '" height="' + h + '" rx="5" fill="var(--surface)"/>';
+      if (k === 'fixed') o += curve(function (t) { return t; });
+      else if (k === 'semi') { o += curve(function (t) { return 1 / (1 + Math.exp(-9 * (t - 0.5))); }, 'var(--faint)', true) + curve(function (t) { return 1 / (1 + Math.exp(-9 * (t - 0.38))); }); o += '<circle cx="' + (x + 0.38 * w) + '" cy="' + (y + h / 2) + '" r="4" fill="var(--accent-2)"/>'; }
+      else o += curve(function (t) { return t; }, 'var(--faint)', true) + curve(function (t) { return Math.min(1, t + 0.18 * Math.sin(Math.PI * t * 2) * (1 - t)); });
+    } else if (id === 'attn' && cur('mods').k === 'block') {
+      var cs8 = Math.min(w, h) / 8 - 1.4, gx8 = cx - 4 * (cs8 + 1.4), gy8 = cy - 4 * (cs8 + 1.4);
+      for (var r8 = 0; r8 < 8; r8++) for (var c8 = 0; c8 < 8; c8++) {
+        var qn = r8 < 4, kn = c8 < 4, qb = Math.floor((r8 % 4) / 2), kb = Math.floor((c8 % 4) / 2);
+        var see = qn ? (kn ? qb === kb : kb < qb) : (!kn && (c8 % 4) <= (r8 % 4));
+        o += '<rect x="' + (gx8 + c8 * (cs8 + 1.4)) + '" y="' + (gy8 + r8 * (cs8 + 1.4)) + '" width="' + cs8 + '" height="' + cs8 + '" rx="1" fill="' + (see ? (qn ? 'var(--accent)' : 'var(--teal)') : 'var(--surface)') + '"/>';
+      }
+    } else if (id === 'attn') {
+      var n = 4, cs = Math.min(w, h) / n - 2, gx = cx - n * (cs + 2) / 2, gy = cy - n * (cs + 2) / 2;
+      for (var a = 0; a < n; a++) for (var b2 = 0; b2 < n; b2++) o += '<rect x="' + (gx + b2 * (cs + 2)) + '" y="' + (gy + a * (cs + 2)) + '" width="' + cs + '" height="' + cs + '" rx="1.5" fill="' + (k === 'bi' || b2 <= a ? 'var(--accent)' : 'var(--surface)') + '"/>';
+    } else if (id === 'time') {
+      var rr = Math.min(w, h) * 0.38, col = k === 'on' ? 'var(--accent-2)' : 'var(--faint)';
+      o += '<circle cx="' + cx + '" cy="' + cy + '" r="' + rr + '" fill="none" stroke="' + col + '" stroke-width="2"/><line x1="' + cx + '" y1="' + cy + '" x2="' + cx + '" y2="' + (cy - rr * 0.7) + '" stroke="' + col + '" stroke-width="2"/><line x1="' + cx + '" y1="' + cy + '" x2="' + (cx + rr * 0.5) + '" y2="' + (cy + rr * 0.3) + '" stroke="' + col + '" stroke-width="2"/>';
+      if (k === 'off') o += '<line x1="' + (cx - rr) + '" y1="' + (cy - rr) + '" x2="' + (cx + rr) + '" y2="' + (cy + rr) + '" stroke="var(--faint)" stroke-width="2"/>';
+    } else if (id === 'self') {
+      var on = k !== 'off', c2 = on ? 'var(--accent)' : 'var(--faint)';
+      o += '<path d="M' + (cx + 14) + ' ' + (cy + 8) + ' A14 12 0 1 1 ' + (cx + 14) + ' ' + (cy - 8) + '" fill="none" stroke="' + c2 + '" stroke-width="2" ' + (on ? 'stroke-dasharray="4 3"' : '') + '/><path d="M' + (cx + 9) + ' ' + (cy - 13) + ' L' + (cx + 15) + ' ' + (cy - 8) + ' L' + (cx + 9) + ' ' + (cy - 3) + '" fill="none" stroke="' + c2 + '" stroke-width="2"/>';
+      o += '<text x="' + (cx - 2) + '" y="' + (cy + 5) + '" text-anchor="middle" style="font:600 13px var(--font-display);fill:' + c2 + '">' + (k === 'mean' ? 'ē' : k === 'hidden' ? 'h' : '×') + '</text>';
+    } else if (id === 'out') {
+      var v6 = [0.12, 0.85, 0.2, 0.08, 0.15, 0.1];
+      if (k === 'post' || k === 'gpost') o += barsG(x + 8, y + 2, w - 16, h - 6, v6, 1);
+      else if (k === 'score') { o += barsG(x + 8, y + 2, w - 16, h - 6, [0.3, 1, 0.45, 0.2, 0.35, 0.25], 1, 'var(--accent-2)'); o += '<line x1="' + (x + 4) + '" x2="' + (x + w - 4) + '" y1="' + (y + h * 0.55) + '" y2="' + (y + h * 0.55) + '" stroke="var(--muted)" stroke-dasharray="2 3"/>'; }
+      else if (k === 'plugin') o += barsG(x + 8, y + 2, w - 16, h - 6, v6.map(function (q) { return 0.7 * q + 0.15; }), 1);
+      else o += barsG(x + 8, y + 2, w - 16, h - 6, [0.05, 0.05, 0.9, 0.05, 0.05, 0.05], 2);
+      if (k === 'gpost') o += '<path d="M' + (x + 8) + ' ' + (y + h - 4) + ' Q' + cx + ' ' + (y - 4) + ' ' + (x + w - 8) + ' ' + (y + h - 4) + '" fill="none" stroke="var(--accent-2)" stroke-width="1.5"/>';
+    } else if (id === 'loss') {
+      o += '<rect x="' + x + '" y="' + y + '" width="' + w + '" height="' + h + '" rx="5" fill="var(--surface)"/>';
+      if (k === 'ce') o += curve(function () { return 0.25; }, 'var(--accent-2)');
+      else o += curve(function (t) { return Math.min(0.95, 0.12 / Math.max(t, 0.12)); }, 'var(--accent-2)');
+    } else if (id === 'samp') {
+      var rows = { ancestral: [[1, 0, 0], [1, 1, 0], [1, 1, 1]], eb: [[1, 0, 1], [1, 1, 1]], analytic: [[0, 1, 1], [1, 1, 1]], ctmc: [[1, -1, 0], [1, 1, 1]], ar: [[1, 0, 0], [1, 1, 0], [1, 1, 1]], hybrid: [[1, 0.5, 0], [1, 1, 0.6], [1, 1, 1]] }[k];
+      if (!rows) rows = [[0.3, 0.3, 0.3], [0.65, 0.65, 0.65], [1, 1, 1]];
+      var cw = (w - 8) / 3, ch = Math.min(12, (h - 4) / rows.length - 3);
+      rows.forEach(function (rw, r) { rw.forEach(function (v, c) { o += '<rect x="' + (x + 4 + c * cw) + '" y="' + (y + 2 + r * (ch + 3)) + '" width="' + (cw - 4) + '" height="' + ch + '" rx="2" fill="' + (v < 0 ? 'var(--rose)' : 'var(--teal)') + '" opacity="' + (v === 0 ? 0.12 : v < 0 ? 0.8 : (0.2 + 0.8 * v)).toFixed(2) + '"/>'; }); });
+      if (k === 'ar') o += '<path d="M' + (x + 6) + ' ' + (y + h - 2) + ' L' + (x + w - 6) + ' ' + (y + h - 2) + '" stroke="var(--teal)" stroke-width="1.4"/><path d="M' + (x + w - 11) + ' ' + (y + h - 6) + ' L' + (x + w - 6) + ' ' + (y + h - 2) + ' L' + (x + w - 11) + ' ' + (y + h + 2) + '" fill="none" stroke="var(--teal)" stroke-width="1.4"/>';
+    } else if (id === 'mods') {
+      if (k === 'none') o += '<text x="' + cx + '" y="' + (cy + 4) + '" text-anchor="middle" style="font:12px var(--font-body);fill:var(--muted)">—</text>';
+      else if (k === 'block') { var cw8 = (w - 10) / 8; for (var i8 = 0; i8 < 8; i8++) o += '<rect x="' + (x + i8 * cw8 + (i8 >= 4 ? 10 : 0)) + '" y="' + (cy - 12) + '" width="' + (cw8 - 3) + '" height="16" rx="3" fill="' + (i8 < 4 ? 'var(--accent-wash)' : 'transparent') + '" stroke="' + (i8 < 4 ? 'var(--accent)' : 'var(--teal)') + '"/>'; o += '<text x="' + (x + w * 0.22) + '" y="' + (cy + 16) + '" text-anchor="middle" style="font:9px var(--font-body);fill:var(--muted)">noisy xₜ</text><text x="' + (x + w * 0.76) + '" y="' + (cy + 16) + '" text-anchor="middle" style="font:9px var(--font-body);fill:var(--muted)">clean x₀</text>'; }
+      else { o += box(x, cy - 10, w * 0.3, 20, 'the') + '<text x="' + (x + w * 0.42) + '" y="' + (cy + 5) + '" style="font:700 14px var(--font-body);fill:var(--accent)">+</text>' + box(x + w * 0.55, cy - 10, w * 0.4, 20, 'mat'); }
+    }
+    return o;
+  }
+
+  // ---------- The map ----------
+  // Node positions (x, y, w, h) on a 1200 x 600 canvas.
+  var N = {
+    tokens: [30, 200, 118, 104], rep: [170, 200, 130, 104], corr: [330, 180, 160, 110], sched: [330, 340, 160, 84],
+    time: [580, 312, 96, 86], attn: [612, 168, 124, 104], self: [690, 312, 118, 86],
+    out: [1012, 180, 150, 110], loss: [1012, 44, 150, 96], samp: [1012, 378, 150, 116], mods: [30, 470, 260, 96]
+  };
+  var map = document.getElementById('map');
+  function wire(d, cls, style) { return '<path class="wire ' + (cls || '') + '" d="' + d + '"' + (style ? ' style="' + style + '"' : '') + '/>'; }
+  function head(x, y, dir, cls, style) { var s = 6; var p = dir === 'r' ? [[x - s, y - s], [x, y], [x - s, y + s]] : dir === 'u' ? [[x - s, y + s], [x, y], [x + s, y + s]] : dir === 'l' ? [[x + s, y - s], [x, y], [x + s, y + s]] : [[x - s, y - s], [x, y], [x + s, y - s]]; return '<path class="wire ' + (cls || '') + '" style="stroke-dasharray:none;' + (style || '') + '" d="M' + p.map(function (q) { return q.join(' '); }).join(' L') + '"/>'; }
+  function lbl(x, y, t, cls, anchor, style) { return '<text class="wlabel ' + (cls || '') + '" x="' + x + '" y="' + y + '"' + (anchor ? ' text-anchor="' + anchor + '"' : '') + (style ? ' style="' + style + '"' : '') + '>' + t + '</text>'; }
+  function drawMap() {
+    var b = '', sc = cur('self').k, block = cur('mods').k === 'block', adapt = cur('sched').k !== 'fixed';
+    var acc = 'stroke:var(--accent)';
+    // Frames: the network, and the modifier band around everything
+    b += '<rect x="22" y="22" width="1160" height="438" rx="22" fill="none" stroke="var(--faint)" stroke-dasharray="2 6"/>';
+    b += lbl(36, 456, 'everything above can be wrapped by a sequence modifier ↓');
+    b += '<rect x="566" y="140" width="420" height="300" rx="18" fill="none" stroke="var(--accent)" stroke-opacity=".5" stroke-width="1.4"/>';
+    b += '<text x="580" y="160" style="font:400 18px var(--font-display);fill:var(--fg)">Network</text>';
+    // Inside the network: hidden state h -> LM head -> logits, and the p x E -> e-bar branch
+    var hx = 772, hy = 220;
+    b += wire('M736 ' + hy + ' L' + (hx - 7) + ' ' + hy);
+    b += '<circle cx="' + hx + '" cy="' + hy + '" r="7" fill="' + (sc === 'hidden' ? 'var(--accent)' : 'var(--surface-2)') + '" stroke="var(--accent)"/>';
+    b += lbl(hx, hy - 14, 'h', '', 'middle', 'font-size:13px;fill:var(--fg)');
+    b += wire('M' + (hx + 7) + ' ' + hy + ' L806 ' + hy) + head(806, hy, 'r');
+    b += '<rect x="806" y="198" width="72" height="44" rx="9" fill="var(--surface-2)" stroke="var(--border)"/>';
+    b += lbl(842, 225, 'LM head', '', 'middle', 'fill:var(--fg)');
+    b += wire('M878 ' + hy + ' L1012 ' + (hy + 15)) + head(1012, hy + 15, 'r');
+    b += lbl(945, 212, 'logits', '', 'middle');
+    var ebOn = sc === 'mean';
+    b += '<g opacity="' + (ebOn ? 1 : 0.35) + '">' + wire('M912 ' + (hy + 4) + ' L912 320', '', ebOn ? acc : '') + head(912, 320, 'd', '', ebOn ? acc : '');
+    b += '<rect x="852" y="322" width="120" height="50" rx="9" fill="var(--surface-2)" stroke="' + (ebOn ? 'var(--accent)' : 'var(--border)') + '"/>';
+    b += lbl(912, 342, 'softmax(logits) · E', '', 'middle', 'fill:var(--fg)') + lbl(912, 362, '= ē', '', 'middle') + '</g>';
+    // Inputs into the backbone: self-cond block and time
+    b += wire('M628 312 L644 274') + head(644, 274, 'u');
+    b += wire('M749 312 L716 274') + head(716, 274, 'u');
+    // Self-conditioning loops (inside the network frame)
+    if (sc === 'hidden') b += wire('M' + hx + ' 227 L' + hx + ' 256 L830 256 L830 345 L814 345', 'loop', acc) + head(812, 345, 'l', '', 'stroke:var(--accent)') + lbl(838, 296, 'previous h,', '', '', 'fill:var(--accent)') + lbl(838, 310, 'before the head', '', '', 'fill:var(--accent)');
+    if (sc === 'mean') b += wire('M852 347 L814 347', 'loop', acc) + head(812, 347, 'l', '', 'stroke:var(--accent)') + lbl(912, 390, 'previous ē fed back', '', 'middle', 'fill:var(--accent)');
+    // Pipeline into the network
+    var y = 252;
+    b += wire('M148 ' + y + ' L170 ' + y) + head(170, y, 'r');
+    b += wire('M300 ' + y + ' L330 ' + (y - 17)) + head(330, y - 17, 'r');
+    b += wire('M410 290 L410 340') + lbl(418, 320, 'how much noise');
+    b += wire('M490 235 L548 235') + '<circle cx="552" cy="235" r="4" fill="var(--muted)"/>' + wire('M556 235 L612 222') + head(612, 222, 'r');
+    b += lbl(552, block ? 192 : 204, block ? 'xₜ ⊕ x₀ (2L)' : 'xₜ', '', 'middle', 'fill:var(--fg)');
+    if (block) b += lbl(552, 208, 'noisy + clean copy', '', 'middle');
+    b += wire('M490 382 L580 382') + head(580, 382, 'r') + lbl(536, 376, 't');
+    // Training branch: output -> loss, and loss -> schedule when the schedule adapts
+    b += wire('M1087 180 L1087 140', 'train') + head(1087, 140, 'u', 'train') + lbl(1100, 165, 'train', 'train');
+    if (adapt) {
+      b += wire('M1012 92 L315 92 L315 400 L330 400', 'train loop') + head(330, 400, 'r', 'train');
+      b += lbl(760, 84, 'loss per noise level refits the schedule (' + cur('sched').n.toLowerCase() + ')', 'train', 'middle');
+    }
+    // Generation branch: output -> sampler -> next input, back into the network
+    b += wire('M1087 290 L1087 378', 'gen') + head(1087, 378, 'd', 'gen') + lbl(1100, 340, 'generate', 'gen');
+    b += wire('M1012 450 L552 450 L552 239', 'gen loop') + head(552, 241, 'u', 'gen');
+    b += lbl(800, 470, 'the sampler picks the next input xₛ; repeat until clean', 'gen', 'middle');
+    // Nodes
+    Object.keys(N).forEach(function (id) {
+      var p = N[id], o = cur(id), bad = clash(id);
+      b += '<g class="node' + (id === active ? ' on' : '') + '" data-id="' + id + '" tabindex="0" role="button" aria-label="' + C[id].title + ': ' + esc(o.n) + '">';
+      b += '<rect class="box" x="' + p[0] + '" y="' + p[1] + '" width="' + p[2] + '" height="' + p[3] + '" rx="12"' + (bad ? ' style="stroke:var(--rose)"' : '') + '/>';
+      b += '<text class="ntitle" x="' + (p[0] + 10) + '" y="' + (p[1] + 17) + '">' + C[id].title + '</text>';
+      b += g(id, o.k, p[0] + 10, p[1] + 24, p[2] - 20, p[3] - 46);
+      var nm = o.n.length > 19 ? o.n.slice(0, 18) + '…' : o.n;
+      b += '<text class="nval" x="' + (p[0] + 10) + '" y="' + (p[1] + p[3] - 9) + '">' + esc(nm) + (bad ? ' ⚠' : '') + '</text>';
+      b += '</g>';
+    });
+    map.innerHTML = b;
+    map.querySelectorAll('.node').forEach(function (el) {
+      el.addEventListener('click', function () { select(el.dataset.id); });
+      el.addEventListener('keydown', function (e) { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); select(el.dataset.id); } });
+    });
+  }
+
+  // ---------- Large pictures for the panel ----------
+  function bigPic(id, k) {
+    var b = '';
+    function box(x, y, w, h, t, st) { st = st || {}; return '<rect x="' + x + '" y="' + y + '" width="' + w + '" height="' + h + '" rx="5" fill="' + (st.fill || 'var(--surface)') + '" stroke="' + (st.stroke || 'var(--faint)') + '"' + (st.dash ? ' stroke-dasharray="3 3"' : '') + '/>' + (t ? '<text x="' + (x + w / 2) + '" y="' + (y + h / 2 + 4) + '" text-anchor="middle" style="font:' + (st.size || 11) + 'px var(--font-display);fill:' + (st.color || 'var(--fg)') + '">' + t + '</text>' : ''); }
+    function t(x, y, s, st) { return '<text x="' + x + '" y="' + y + '" style="font:11px var(--font-body);fill:var(--muted);' + (st || '') + '">' + s + '</text>'; }
+    function arr(x1, y1, x2, y2, c) { c = c || 'var(--faint)'; var a = Math.atan2(y2 - y1, x2 - x1); return '<line x1="' + x1 + '" y1="' + y1 + '" x2="' + x2 + '" y2="' + y2 + '" stroke="' + c + '" stroke-width="1.5"/><path d="M' + (x2 - 6 * Math.cos(a - 0.5)) + ' ' + (y2 - 6 * Math.sin(a - 0.5)) + ' L' + x2 + ' ' + y2 + ' L' + (x2 - 6 * Math.cos(a + 0.5)) + ' ' + (y2 - 6 * Math.sin(a + 0.5)) + '" fill="none" stroke="' + c + '" stroke-width="1.5"/>'; }
+    if ((id === 'mods' && k === 'block') || (id === 'attn' && cur('mods').k === 'block')) {
+      // Training sequence: noisy copy then clean copy, 2 blocks of 2 tokens each (L = 4).
+      var lab = ['[M]', 'cat', 'sat', '[M]', 'the', 'cat', 'sat', 'on'];
+      b += t(14, 18, 'training input: noisy copy xₜ, then clean copy x₀');
+      lab.forEach(function (w, i) { var noisy = i < 4; b += box(14 + i * 46 + (noisy ? 0 : 10), 26, 40, 24, w, noisy ? { dash: w === '[M]', color: w === '[M]' ? 'var(--muted)' : 'var(--fg)' } : { stroke: 'var(--teal)' }); });
+      b += '<line x1="203" x2="203" y1="22" y2="56" stroke="var(--muted)"/>';
+      [0, 2].forEach(function (s, k2) { b += '<path d="M' + (14 + s * 46) + ' 58 L' + (14 + s * 46) + ' 62 L' + (14 + s * 46 + 86) + ' 62 L' + (14 + s * 46 + 86) + ' 58" fill="none" stroke="var(--accent)"/>' + t(14 + s * 46 + 30, 74, 'block ' + (k2 + 1), 'fill:var(--accent)'); });
+      // Mask
+      var gx = 84, gy = 96, cs = 12;
+      b += t(14, gy + 50, 'queries ↓', '') + t(gx, gy - 6, 'keys →  (noisy | clean)');
+      for (var r = 0; r < 8; r++) for (var c = 0; c < 8; c++) {
+        var qn = r < 4, kn = c < 4, qb = Math.floor((r % 4) / 2), kb = Math.floor((c % 4) / 2), see;
+        if (qn && kn) see = qb === kb; else if (qn && !kn) see = kb < qb; else if (!qn && kn) see = false; else see = (c % 4) <= (r % 4);
+        b += '<rect x="' + (gx + c * (cs + 2) + (c >= 4 ? 4 : 0)) + '" y="' + (gy + r * (cs + 2) + (r >= 4 ? 4 : 0)) + '" width="' + cs + '" height="' + cs + '" rx="2" fill="' + (see ? (qn ? 'var(--accent)' : 'var(--teal)') : 'var(--surface)') + '"/>';
+      }
+      b += t(236, 110, 'noisy tokens see their own', 'fill:var(--accent)') + t(236, 124, 'block + earlier clean blocks') + t(236, 150, 'clean tokens see clean', 'fill:var(--teal)') + t(236, 164, 'tokens up to themselves') + t(236, 196, 'same network, ~2× length', 'fill:var(--fg)');
+      return b;
+    }
+    if (id === 'self') {
+      var on = function (x) { return x ? 'var(--accent)' : 'var(--faint)'; };
+      b += box(14, 30, 92, 40, 'Transformer', { size: 12 });
+      b += arr(106, 50, 140, 50) + '<circle cx="148" cy="50" r="8" fill="' + (k === 'hidden' ? 'var(--accent)' : 'var(--surface)') + '" stroke="var(--accent)"/>' + t(143, 30, 'h', 'fill:var(--fg);font-size:13px');
+      b += arr(156, 50, 186, 50) + box(186, 32, 62, 36, 'LM head', { size: 11 });
+      b += arr(248, 50, 278, 50) + t(282, 54, 'logits', 'fill:var(--fg)');
+      b += arr(300, 60, 300, 104, on(k === 'mean')) + box(240, 106, 120, 40, 'softmax · E', { stroke: on(k === 'mean'), size: 12 });
+      b += arr(300, 146, 300, 168, on(k === 'mean')) + t(250, 184, 'ē (expected embedding)', 'fill:' + on(k === 'mean'));
+      b += box(14, 150, 120, 40, 'self-cond block', { stroke: on(k !== 'off'), size: 11 });
+      b += arr(74, 150, 60, 72, on(k !== 'off'));
+      if (k === 'hidden') b += '<path d="M148 58 L148 120 L100 120 L100 148" fill="none" stroke="var(--accent)" stroke-width="1.6" stroke-dasharray="5 4"/>' + t(156, 112, 'tap h before the head', 'fill:var(--accent)');
+      if (k === 'mean') b += '<path d="M240 186 L200 186 L200 170 L136 170" fill="none" stroke="var(--accent)" stroke-width="1.6" stroke-dasharray="5 4"/>' + t(150, 212, 'feed back the averaged embedding', 'fill:var(--accent)');
+      if (k === 'off') b += t(14, 212, 'off: nothing is fed back', '');
+      return b;
+    }
+    if (id === 'samp') {
+      b += t(14, 18, 'the sampler decides what the network sees next');
+      b += box(14, 40, 100, 80, '', { stroke: 'var(--border)' }) + g('out', cur('out').k, 22, 50, 84, 50) + t(30, 136, 'prediction');
+      b += arr(116, 80, 150, 80, 'var(--teal)');
+      b += box(152, 40, 100, 80, '', { stroke: 'var(--teal)' }) + g('samp', k, 160, 50, 84, 60) + t(170, 136, cur('samp').n.slice(0, 16), 'fill:var(--teal)');
+      b += arr(254, 80, 288, 80, 'var(--teal)');
+      b += box(290, 40, 96, 80, '', { stroke: 'var(--border)' }) + t(300, 136, 'next input xₛ');
+      var nxt = { ancestral: ['the', '[M]', 'sat'], eb: ['the', 'cat', 'sat'], analytic: ['the', 'cat', '[M]'], ctmc: ['the', 'dog', 'sat'], ar: ['the', 'cat', '—'], hybrid: ['the', '[M]', 'sat~'] }[k];
+      if (nxt) nxt.forEach(function (w, i) { b += box(296, 50 + i * 22, 84, 18, w, { size: 10, dash: w === '[M]', color: w === 'dog' ? 'var(--rose)' : 'var(--fg)' }); });
+      else b += '<circle cx="338" cy="80" r="26" fill="var(--teal)" opacity=".2"/><circle cx="338" cy="80" r="12" fill="var(--teal)" opacity=".4"/>' + t(304, 114, 'slightly less noisy');
+      b += '<path d="M380 122 L380 170 L108 170 L108 122" fill="none" stroke="var(--teal)" stroke-width="1.6" stroke-dasharray="5 4"/>' + t(120, 190, 'xₛ goes back into the network for the next step', 'fill:var(--teal)');
+      return b;
+    }
+    return null;
+  }
+
+  // ---------- Stepper panel ----------
+  function drawPanel() {
+    var c = C[active], o = cur(active), n = c.opts.length;
+    document.getElementById('p-tag').textContent = 'Selected part';
+    document.getElementById('p-title').textContent = c.title;
+    document.getElementById('p-count').textContent = (S[active] + 1) + ' of ' + n;
+    document.getElementById('p-opt').textContent = o.n;
+    document.getElementById('p-desc').textContent = o.d;
+    var bad = clash(active), warn = document.getElementById('p-warn');
+    warn.hidden = !bad; warn.textContent = bad ? 'Doesn’t fit the current map: ' + bad : '';
+    document.getElementById('prev').disabled = n < 2;
+    document.getElementById('next').disabled = n < 2;
+    var chips = document.getElementById('chips');
+    chips.innerHTML = '';
+    c.opts.forEach(function (op, i) {
+      var b = document.createElement('button');
+      b.type = 'button';
+      b.textContent = op.n;
+      b.setAttribute('aria-pressed', i === S[active] ? 'true' : 'false');
+      if (clash(active, op)) { b.classList.add('clash'); b.title = clash(active, op); }
+      b.addEventListener('click', function () { S[active] = i; update(); });
+      chips.appendChild(b);
+    });
+    var big = document.getElementById('big');
+    big.setAttribute('aria-label', c.title + ': ' + o.n);
+    big.innerHTML = '<rect x="0" y="0" width="400" height="220" rx="12" fill="var(--surface-2)"/>' + (bigPic(active, o.k) || g(active, o.k, 40, 30, 320, 160));
+  }
+  function update() { drawMap(); drawPanel(); }
+  function select(id) { active = id; update(); }
+  function step(d) { var n = C[active].opts.length; S[active] = (S[active] + d + n) % n; update(); }
+  document.getElementById('prev').addEventListener('click', function () { step(-1); });
+  document.getElementById('next').addEventListener('click', function () { step(1); });
+  document.addEventListener('keydown', function (e) {
+    if (e.target.closest && e.target.closest('input, textarea')) return;
+    if (e.target !== document.body && !(e.target.closest && e.target.closest('#schematic'))) return;
+    if (e.key === 'ArrowRight') { step(1); e.preventDefault(); }
+    else if (e.key === 'ArrowLeft') { step(-1); e.preventDefault(); }
+  });
+  update();
+})();
+</script>
+
+<script>
+(function () {
+  // ---------- Data ----------
+  var VOCAB = ['the', 'cat', 'sat', 'on', 'mat', 'dog'];
+  var SEQ = [0, 1, 2, 3, 4];        // "the cat sat on mat"
+  var N = SEQ.length, V = VOCAB.length, D = 8;
+  var EMB = [[-0.75, 0.35], [0.55, 0.62], [0.2, -0.7], [-0.45, -0.55], [0.85, -0.15], [0.62, 0.1]];
+  var ANG = EMB.map(function (e) { return Math.atan2(e[1], e[0]); });
+
+  function rnd(i, salt) { var x = Math.sin((i + 1) * 12.9898 + (salt || 0) * 78.233) * 43758.5453; return x - Math.floor(x); }
+  function gauss(i, salt) { var u = Math.max(rnd(i, salt), 1e-6), v = rnd(i, salt + 17); return Math.sqrt(-2 * Math.log(u)) * Math.cos(2 * Math.PI * v); }
+  function clamp(x, a, b) { return Math.max(a, Math.min(b, x)); }
+  function esc(s) { return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;'); }
+
+  // Descriptions live in the "Figure text" block in the HTML above this script.
+  function T(key) {
+    var el = document.querySelector('#figure-text [data-key="' + key + '"]');
+    return el ? el.innerHTML.trim() : '';
+  }
+
+  // ---------- Components ----------
+  var REP = { tokens: 'Token IDs', onehot: 'One-hot vectors', embed: 'Learned embedding' };
+  var CORR = {
+    masked: { label: 'Masked', reps: ['tokens'], nat: 'tokens', why: 'Needs token IDs: it swaps whole tokens for a [M] symbol.' },
+    uniform: { label: 'Uniform', reps: ['tokens'], nat: 'tokens', why: 'Needs token IDs: it swaps whole tokens for random ones.' },
+    gaussian: { label: 'Gaussian', reps: ['onehot', 'embed'], nat: 'embed', why: 'Needs vectors: Gaussian noise is added to numbers, not to token IDs.' },
+    simplex: { label: 'Simplex', reps: ['onehot'], nat: 'onehot', why: 'Needs one-hot vectors: it moves on the probability simplex.' },
+    spherical: { label: 'Spherical', reps: ['embed'], nat: 'embed', why: 'Needs unit-length embeddings: it moves along a sphere.' },
+    blurring: { label: 'Blurring', reps: ['embed'], nat: 'embed', why: 'Needs embeddings: it blurs embedding features across the sequence.' },
+    gidd: { label: 'GIDD (mask + uniform mix)', reps: ['tokens'], nat: 'tokens', why: 'Needs token IDs: each token is masked or swapped for a random word.' }
+  };
+  var COMBINE = { none: 'Nothing' };
+  Object.keys(CORR).forEach(function (k) { COMBINE[k] = '+ ' + CORR[k].label; });
+  var DISCRETE = ['masked', 'uniform', 'gidd'];
+
+  var SCHED = {
+    fixed: { label: 'Predefined', ok: function () { return true; } },
+    semi: { label: 'Semi-adaptive', ok: function () { return true; } },
+    full: { label: 'Fully adaptive', ok: function () { return true; } }
+  };
+  var FIXED_CURVES = {
+    'log-linear': function (t) { return t; },
+    'rank-based': function (t) { return 1 / (1 + Math.exp(-11 * (t - 0.5))); },
+    'exponential VE': function (t) { return (Math.exp(4 * t) - 1) / (Math.exp(4) - 1); },
+    'cosine-like': function (t) { return t * t * (3 - 2 * t); }
+  };
+  var ATTN = { bi: 'Bidirectional', causal: 'Causal' };
+  var TCOND = { none: 'Off', on: 'On' };
+  var SELF = { off: 'Off', mean: 'Expected embedding', hidden: 'Hidden state' };
+  var PARAM = {
+    posterior: { label: 'Clean-token posterior', ok: function () { return true; } },
+    score: { label: 'Score ratio', ok: function () { return S.corr === 'masked' && S.combine === 'none'; }, why: 'Score ratios (SEDD) are implemented for masking alone.' },
+    plugin: { label: 'Plug-in', ok: function () { return S.corr === 'uniform' && S.combine === 'none'; }, why: 'The plug-in estimate belongs to uniform noise alone.' },
+    gpost: { label: 'Gaussian posterior', ok: function () { return ['gaussian', 'simplex', 'spherical'].indexOf(S.corr) !== -1; }, why: 'Combines the network with a Gaussian prior on vectors.' },
+    next: { label: 'Next token', ok: function () { return S.attn === 'causal'; }, why: 'Needs causal attention: it predicts only the next position.' }
+  };
+  var LOSS = {
+    ce: { label: 'Cross-entropy', ok: function () { return S.param !== 'score'; }, why: 'Score ratios are trained with score entropy, which is an ELBO.' },
+    elbo: { label: 'ELBO', ok: function () { return S.combine === 'none' && ['masked', 'uniform', 'gidd', 'gaussian'].indexOf(S.corr) !== -1; },
+      why: 'No ELBO is implemented yet for this corruption (simplex, spherical, blurring, or two combined).' }
+  };
+  var SAMP = {
+    ancestral: { label: 'Ancestral', ok: function () { return DISCRETE.indexOf(S.corr) !== -1 && S.combine === 'none'; }, why: 'Reverses discrete noise one step at a time.' },
+    eb: { label: 'Entropy-bounded', ok: function () { return DISCRETE.indexOf(S.corr) !== -1 && S.combine === 'none'; }, why: 'Commits discrete tokens by confidence.' },
+    ode: { label: 'Gaussian solver', ok: function () { return S.corr === 'gaussian' && S.combine === 'none'; }, why: 'Integrates a Gaussian velocity field.' },
+    flow: { label: 'Process sampler', ok: function () { return ['simplex', 'spherical', 'blurring'].indexOf(S.corr) !== -1 && S.combine === 'none'; }, why: 'Simplex, spherical and blurring each have their own reverse step.' },
+    hybrid: { label: 'Hybrid', ok: function () { return S.combine !== 'none'; }, why: 'Only when two corruptions are combined: each view takes its own reverse step.' },
+    analytic: { label: 'Analytic', ok: function () { return S.param === 'score'; }, why: 'The analytic step uses score-ratio outputs (SEDD).' },
+    ctmc: { label: 'CTMC jumps', ok: function () { return DISCRETE.indexOf(S.corr) !== -1 && S.combine === 'none'; }, why: 'Discrete flow matching steps on token states.' },
+    ddpm: { label: 'DDPM', ok: function () { return S.corr === 'gaussian' && S.combine === 'none'; }, why: 'Stochastic Gaussian reverse steps.' },
+    ar: { label: 'Autoregressive', ok: function () { return S.param === 'next'; }, why: 'Needs a next-token output.' }
+  };
+  var BLOCK = { off: 'Off', on: 'Blocks of 2 tokens' };
+  var VARLEN = { off: 'Off', insert: 'Insertion' };
+
+  var S = { rep: 'tokens', corr: 'masked', combine: 'none', sched: 'fixed', attn: 'bi', tcond: 'none', self: 'off', param: 'posterior', loss: 'elbo', samp: 'eb', block: 'off', varlen: 'off',
+            tCorr: 0.45, tOut: 0.45, train: 0, step: 3 };
+
+  var RECIPES = [
+    {"id": "mdlm", "name": "MDLM, MD4, RADD, LLaDA, ARDM", "url": "https://arxiv.org/abs/2406.07524", "set": {"rep": "tokens", "corr": "masked", "sched": "fixed", "tcond": "none", "param": "posterior", "loss": "elbo", "samp": "ancestral"}, "members": [{"id": "mdlm", "name": "MDLM", "url": "https://arxiv.org/abs/2406.07524"}, {"id": "md4", "name": "MD4", "url": "https://arxiv.org/abs/2406.04329"}, {"id": "radd", "name": "RADD", "url": "https://arxiv.org/abs/2406.03736"}, {"id": "llada_style", "name": "LLaDA-style", "url": "https://arxiv.org/abs/2502.09992"}, {"id": "ardm_style", "name": "ARDM-style", "url": "https://arxiv.org/abs/2110.02037"}]},
+    {"id": "d3pm_absorb", "name": "D3PM (absorbing)", "url": "https://arxiv.org/abs/2107.03006", "set": {"rep": "tokens", "corr": "masked", "sched": "fixed", "tcond": "on", "param": "posterior", "loss": "elbo", "samp": "ancestral"}},
+    {"id": "sedd_absorb", "name": "SEDD (absorbing)", "url": "https://arxiv.org/abs/2310.16834", "set": {"rep": "tokens", "corr": "masked", "sched": "fixed", "tcond": "on", "param": "score", "loss": "elbo", "samp": "analytic"}},
+    {"id": "dfm_masked", "name": "Discrete Flow Matching (masked)", "url": "https://arxiv.org/abs/2407.15595", "set": {"rep": "tokens", "corr": "masked", "sched": "fixed", "tcond": "on", "param": "posterior", "loss": "ce", "samp": "ctmc"}},
+    {"id": "udlm", "name": "UDLM", "url": "https://arxiv.org/abs/2412.10193", "set": {"rep": "tokens", "corr": "uniform", "sched": "fixed", "tcond": "on", "param": "plugin", "loss": "elbo", "samp": "ancestral"}},
+    {"id": "uniform_posterior", "name": "Uniform posterior", "url": "", "set": {"rep": "tokens", "corr": "uniform", "sched": "fixed", "tcond": "on", "param": "posterior", "loss": "ce", "samp": "ancestral"}},
+    {"id": "duo", "name": "DUO", "url": "https://arxiv.org/abs/2506.10892", "set": {"rep": "tokens", "corr": "uniform", "sched": "fixed", "tcond": "on", "param": "plugin", "loss": "elbo", "samp": "ancestral"}},
+    {"id": "dfm_uniform", "name": "Discrete Flow Matching (uniform)", "url": "https://arxiv.org/abs/2407.15595", "set": {"rep": "tokens", "corr": "uniform", "sched": "fixed", "tcond": "on", "param": "posterior", "loss": "ce", "samp": "ctmc"}},
+    {"id": "gidd_elbo", "name": "GIDD (ELBO)", "url": "https://proceedings.mlr.press/v267/von-rutte25a.html", "set": {"rep": "tokens", "corr": "gidd", "sched": "fixed", "tcond": "on", "param": "posterior", "loss": "elbo", "samp": "ancestral"}},
+    {"id": "gidd_corruption", "name": "GIDD corruption, CE baseline", "url": "https://proceedings.mlr.press/v267/von-rutte25a.html", "set": {"rep": "tokens", "corr": "gidd", "sched": "fixed", "tcond": "on", "param": "posterior", "loss": "ce", "samp": "ancestral"}},
+    {"id": "candi_hybrid", "name": "CANDI", "url": "https://arxiv.org/abs/2510.22510", "set": {"rep": "tokens", "corr": "masked", "combine": "gaussian", "sched": "fixed", "tcond": "on", "param": "posterior", "loss": "ce", "samp": "hybrid"}},
+    {"id": "cadd", "name": "CADD-style", "url": "https://arxiv.org/abs/2510.01329", "set": {"rep": "embed", "corr": "gaussian", "combine": "masked", "sched": "fixed", "tcond": "on", "param": "posterior", "loss": "ce", "samp": "hybrid"}},
+    {"id": "cdcd", "name": "CDCD-style", "url": "https://arxiv.org/abs/2211.15089", "set": {"rep": "embed", "corr": "gaussian", "sched": "full", "tcond": "on", "param": "gpost", "loss": "ce", "samp": "ode"}},
+    {"id": "flm_gaussian", "name": "FLM-style", "url": "https://arxiv.org/abs/2602.16813", "set": {"rep": "onehot", "corr": "gaussian", "sched": "fixed", "tcond": "on", "param": "gpost", "loss": "ce", "samp": "ode"}},
+    {"id": "langflow", "name": "LangFlow-style", "url": "https://arxiv.org/abs/2604.11748", "set": {"rep": "embed", "corr": "gaussian", "sched": "semi", "tcond": "on", "self": "mean", "param": "gpost", "loss": "ce", "samp": "ode"}},
+    {"id": "replaid", "name": "RePlaid", "url": "https://arxiv.org/abs/2605.18530", "set": {"rep": "embed", "corr": "gaussian", "sched": "full", "tcond": "on", "self": "mean", "param": "gpost", "loss": "elbo", "samp": "ddpm"}},
+    {"id": "simplex", "name": "Simplex Diffusion", "url": "https://arxiv.org/abs/2609.35553", "set": {"rep": "onehot", "corr": "simplex", "sched": "fixed", "tcond": "on", "param": "gpost", "loss": "ce", "samp": "flow"}},
+    {"id": "spherical_flow_matching", "name": "S-FLM (spherical)", "url": "https://arxiv.org/abs/2605.11125", "set": {"rep": "embed", "corr": "spherical", "sched": "fixed", "tcond": "on", "param": "gpost", "loss": "ce", "samp": "flow"}},
+    {"id": "spherical_vmf", "name": "vMF spherical flows", "url": "https://arxiv.org/abs/2605.05629", "set": {"rep": "embed", "corr": "spherical", "sched": "fixed", "tcond": "on", "param": "posterior", "loss": "ce", "samp": "flow"}},
+    {"id": "blurring_diffusion", "name": "Blurring Diffusion", "url": "https://arxiv.org/abs/2209.05557", "set": {"rep": "embed", "corr": "blurring", "sched": "fixed", "tcond": "on", "param": "gpost", "loss": "ce", "samp": "flow"}},
+    {"id": "bd3lm", "name": "BD3-LM (block diffusion)", "url": "https://arxiv.org/abs/2503.09573", "set": {"rep": "tokens", "corr": "masked", "sched": "fixed", "tcond": "none", "param": "posterior", "loss": "elbo", "samp": "ancestral", "block": "on"}},
+    {"id": "eb_masked", "name": "Entropy-bounded unmasking", "url": "https://arxiv.org/abs/2505.24857", "set": {"rep": "tokens", "corr": "masked", "sched": "fixed", "tcond": "none", "param": "posterior", "loss": "elbo", "samp": "eb"}},
+    {"id": "flexmdm_style", "name": "FlexMDM-style (insertion)", "url": "https://arxiv.org/abs/2509.01025", "set": {"rep": "tokens", "corr": "masked", "sched": "fixed", "tcond": "on", "self": "mean", "param": "posterior", "loss": "ce", "samp": "ancestral", "varlen": "insert"}}
+  ];
+  var FAMILIES = [
+    {"id": "masked", "group": "Masked and uniform", "name": "Masked diffusion", "variants": ["mdlm", "d3pm_absorb", "eb_masked", "bd3lm"]},
+    {"id": "sedd", "group": "Masked and uniform", "name": "Score entropy (SEDD)", "variants": ["sedd_absorb"]},
+    {"id": "uniform", "group": "Masked and uniform", "name": "Uniform diffusion", "variants": ["udlm", "duo", "uniform_posterior"]},
+    {"id": "dfm", "group": "Masked and uniform", "name": "Discrete flow matching", "variants": ["dfm_masked", "dfm_uniform"]},
+    {"id": "gidd", "group": "Masked and uniform", "name": "GIDD", "variants": ["gidd_elbo", "gidd_corruption"]},
+    {"id": "hybrid", "group": "Hybrid", "name": "Masked + Gaussian hybrids", "variants": ["candi_hybrid", "cadd"]},
+    {"id": "gauss", "group": "Continuous", "name": "Gaussian embedding diffusion", "variants": ["cdcd", "langflow", "replaid", "flm_gaussian"]},
+    {"id": "sphere", "group": "Continuous", "name": "Spherical flows", "variants": ["spherical_flow_matching", "spherical_vmf"]},
+    {"id": "simplex", "group": "Continuous", "name": "Simplex diffusion", "variants": ["simplex"]},
+    {"id": "blur", "group": "Continuous", "name": "Blurring diffusion", "variants": ["blurring_diffusion"]},
+    {"id": "flex", "group": "Variable length", "name": "Insertion (FlexMDM-style)", "variants": ["flexmdm_style"]}
+  ];
+
+  // ---------- Layers ----------
+  var LAYERS = [
+    { id: 'tokens', num: '0', title: 'Tokens', what: 'Five clean tokens from a six-word vocabulary.', choices: [] },
+    { id: 'rep', num: '1', title: 'Representation', what: 'The space the noise lives in.', choices: [{ key: 'rep', name: 'Represent tokens as', opts: REP }] },
+    { id: 'corr', num: '2', title: 'Corruption', what: 'How clean data becomes noise. Any two kinds can be combined.', choices: [
+      { key: 'corr', name: 'Noise process', opts: CORR }, { key: 'combine', name: 'Combine with', opts: COMBINE }],
+      ctrl: { type: 'range', key: 'tCorr', label: 'Noise level t', left: 'clean', right: 'all noise' } },
+    { id: 'sched', num: '3', title: 'Noise schedule', what: 'How much noise there is at each time t. Three families: fixed before training, a few learned knobs, or fully refit from the loss.', choices: [{ key: 'sched', name: 'Schedule', opts: SCHED }],
+      ctrl: { type: 'range', key: 'train', label: 'Training progress', left: 'start', right: 'end', max: 100, play: true, fmt: function (v) { return 'step ' + Math.round(v * 1000); } } },
+    { id: 'net', num: '4', title: 'Network', what: 'A transformer reads the noisy sequence and produces predictions.', choices: [
+      { key: 'attn', name: 'Attention', opts: ATTN }, { key: 'tcond', name: 'Time conditioning', opts: TCOND }, { key: 'self', name: 'Self-conditioning', opts: SELF }] },
+    { id: 'param', num: '5', title: 'Output', what: 'What the network’s output means.', choices: [{ key: 'param', name: 'Parameterization', opts: PARAM }],
+      ctrl: { type: 'range', key: 'tOut', label: 'Input noise level', left: 'clean', right: 'all noise' } },
+    { id: 'loss', num: '6', title: 'Loss', what: 'Plain cross-entropy, or the ELBO. What the ELBO looks like depends on the corruption.', choices: [{ key: 'loss', name: 'Objective', opts: LOSS }] },
+    { id: 'samp', num: '7', title: 'Sampler', what: 'How the output turns noise into text at generation time.', choices: [{ key: 'samp', name: 'Sampler', opts: SAMP }],
+      ctrl: { type: 'range', key: 'step', label: 'Generation step', left: 'start', right: 'done', max: 5, play: true, fmt: function (v) { return 'step ' + Math.round(v); } } },
+    { id: 'mods', num: '8', title: 'Sequence modifiers', what: 'Wrap the whole pipeline. They change which positions are generated, and when.', choices: [
+      { key: 'block', name: 'Block diffusion', opts: BLOCK }, { key: 'varlen', name: 'Variable length', opts: VARLEN }],
+      ctrl: { type: 'range', key: 'step', label: 'Generation step', left: 'start', right: 'done', max: 5, play: true, fmt: function (v) { return 'step ' + Math.round(v); } } }
+  ];
+
+  var pipe = document.getElementById('pipe');
+  var vizEls = {}, capEls = {}, btnEls = {}, whyEls = {}, ctrlEls = {}, variesEls = {}, layerRows = {};
+  var players = [];
+  LAYERS.forEach(function (L) {
+    var row = document.createElement('section');
+    row.className = 'layer';
+    row.id = 'layer-' + L.id;
+    var side = document.createElement('div');
+    side.className = 'layer-side';
+    side.innerHTML = '<span class="layer-num">' + L.num + '</span><h2>' + L.title + '</h2><p class="what">' + L.what + '</p>';
+    L.choices.forEach(function (ch) {
+      var box = document.createElement('div');
+      box.className = 'choice';
+      box.innerHTML = '<span class="choice-name">' + ch.name + '</span>';
+      var opts = document.createElement('div');
+      opts.className = 'opts';
+      opts.setAttribute('role', 'group');
+      opts.setAttribute('aria-label', ch.name);
+      btnEls[ch.key] = {};
+      Object.keys(ch.opts).forEach(function (k) {
+        var o = ch.opts[k];
+        var b = document.createElement('button');
+        b.type = 'button';
+        b.textContent = typeof o === 'string' ? o : o.label;
+        b.addEventListener('click', function () { if (mode === 'recipes') return; S[ch.key] = k; repair(); render(); });
+        opts.appendChild(b);
+        btnEls[ch.key][k] = b;
+      });
+      box.appendChild(opts);
+      side.appendChild(box);
+    });
+    var why = document.createElement('p');
+    why.className = 'why';
+    side.appendChild(why);
+    whyEls[L.id] = why;
+    var vn = document.createElement('div');
+    vn.className = 'varies-note';
+    vn.hidden = true;
+    side.appendChild(vn);
+    variesEls[L.id] = vn;
+    layerRows[L.id] = row;
+
+    var viz = document.createElement('div');
+    viz.className = 'viz';
+    if (L.ctrl) {
+      var c = L.ctrl, max = c.max || 1, id = 'ctl-' + L.id;
+      var ctrl = document.createElement('div');
+      ctrl.className = 'ctrl';
+      ctrl.innerHTML = '<label for="' + id + '">' + c.label + '</label><span class="ends">' + c.left + '</span>' +
+        '<input type="range" id="' + id + '" min="0" max="' + max + '" step="' + (max === 1 ? 0.01 : 1) + '"><span class="ends">' + c.right + '</span><output for="' + id + '"></output>' +
+        (c.play ? '<button type="button">Play</button>' : '');
+      var input = ctrl.querySelector('input'), out = ctrl.querySelector('output');
+      function sync() {
+        var v = S[c.key];
+        input.value = max === 100 ? v * 100 : v;
+        out.textContent = c.fmt ? c.fmt(v) : v.toFixed(2);
+      }
+      input.addEventListener('input', function () {
+        var v = parseFloat(input.value);
+        S[c.key] = max === 100 ? v / 100 : v;
+        redrawFor(c.key);
+      });
+      ctrlEls[L.id] = { el: ctrl, sync: sync, key: c.key };
+      if (c.play) {
+        var btn = ctrl.querySelector('button'), timer = null;
+        players.push(function stop() { if (timer) { clearInterval(timer); timer = null; btn.textContent = 'Play'; } });
+        btn.addEventListener('click', function () {
+          if (timer) { clearInterval(timer); timer = null; btn.textContent = 'Play'; return; }
+          btn.textContent = 'Pause';
+          var unit = max === 100 ? 0.01 : 1, top = max === 100 ? 1 : max;
+          if (S[c.key] >= top) S[c.key] = 0;
+          timer = setInterval(function () {
+            S[c.key] = Math.min(top, Math.round((S[c.key] + unit) * 100) / 100);
+            redrawFor(c.key);
+            if (S[c.key] >= top) { clearInterval(timer); timer = null; btn.textContent = 'Play'; }
+          }, max === 100 ? 60 : 700);
+        });
+        if (matchMedia('(prefers-reduced-motion: reduce)').matches) btn.hidden = true;
+      }
+      viz.appendChild(ctrl);
+    }
+    var svgEl = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+    svgEl.setAttribute('role', 'img');
+    viz.appendChild(svgEl);
+    var cap = document.createElement('p');
+    cap.className = 'caption';
+    var col = document.createElement('div');
+    col.className = 'viz-col';
+    col.appendChild(viz);
+    col.appendChild(cap);
+    row.appendChild(side);
+    row.appendChild(col);
+    pipe.appendChild(row);
+    vizEls[L.id] = svgEl;
+    capEls[L.id] = cap;
+  });
+
+  // ---------- Compatibility ----------
+  var mode = 'explore', recipe = 'mdlm', family = 'masked';
+  function allowed(key, k) {
+    if (mode === 'recipes') return S[key] === k;
+    if (key === 'corr') return CORR[k].reps.indexOf(S.rep) !== -1;
+    if (key === 'combine') return k === 'none' || k !== S.corr;
+    if (key === 'sched') return SCHED[k].ok(S.corr);
+    if (key === 'param') return PARAM[k].ok();
+    if (key === 'loss') return LOSS[k].ok();
+    if (key === 'samp') return SAMP[k].ok();
+    return true;
+  }
+  function reason(key, k) {
+    if (key === 'corr') return CORR[k].why;
+    if (key === 'combine') return 'Already the first noise process.';
+    var table = { sched: SCHED, param: PARAM, loss: LOSS, samp: SAMP }[key];
+    return table && table[k].why ? table[k].why : '';
+  }
+  function repair() {
+    [['corr', CORR], ['combine', COMBINE], ['sched', SCHED], ['param', PARAM], ['loss', LOSS], ['samp', SAMP]].forEach(function (p) {
+      if (!allowed(p[0], S[p[0]])) S[p[0]] = Object.keys(p[1]).filter(function (k) { return allowed(p[0], k); })[0];
+    });
+  }
+
+  // ---------- Drawing helpers ----------
+  var W = 760;
+  function setSvg(id, h, body, label) {
+    var el = vizEls[id];
+    el.setAttribute('viewBox', '0 0 ' + W + ' ' + h);
+    el.setAttribute('aria-label', label);
+    el.innerHTML = body;
+  }
+  function colX(i) { return 70 + i * 140; }
+  function tokenBox(x, y, word, o) {
+    o = o || {};
+    var w = o.w || 92, h = o.h || 44;
+    return '<rect x="' + (x - w / 2) + '" y="' + y + '" width="' + w + '" height="' + h + '" rx="9" fill="' + (o.fill || 'var(--surface-2)') + '" stroke="' + (o.stroke || 'var(--border)') + '" stroke-width="1.4" ' + (o.dash ? 'stroke-dasharray="4 4"' : '') + '/>' +
+      '<text class="tok" x="' + x + '" y="' + (y + h / 2 + 6) + '" text-anchor="middle" style="fill:' + (o.color || 'var(--fg)') + (o.italic ? ';font-style:italic' : '') + (o.size ? ';font-size:' + o.size + 'px' : '') + '">' + esc(word) + '</text>';
+  }
+  function bars(x, y, h, vals, o) {
+    o = o || {};
+    var bw = o.bw || 13, gap = 3, n = vals.length, total = n * bw + (n - 1) * gap, x0 = x - total / 2, out = '';
+    var base = o.signed ? y + h / 2 : y + h;
+    out += '<line x1="' + (x0 - 4) + '" x2="' + (x0 + total + 4) + '" y1="' + base + '" y2="' + base + '" stroke="var(--border)"/>';
+    vals.forEach(function (v, j) {
+      var hh = o.signed ? clamp(v, -1, 1) * h / 2 : clamp(v, 0, 1) * h;
+      var color = j === o.hi ? (o.hiColor || 'var(--accent)') : (o.color || 'var(--faint)');
+      out += '<rect x="' + (x0 + j * (bw + gap)) + '" y="' + (hh >= 0 ? base - hh : base) + '" width="' + bw + '" height="' + Math.max(Math.abs(hh), 1) + '" rx="2" fill="' + color + '"/>';
+      if (o.ring === j) out += '<rect x="' + (x0 + j * (bw + gap) - 2) + '" y="' + (y - 2) + '" width="' + (bw + 4) + '" height="' + (h + 4) + '" rx="3" fill="none" stroke="var(--accent-2)" stroke-width="1.4"/>';
+    });
+    return out;
+  }
+  function arrow(x1, y1, x2, y2, color, dash) {
+    color = color || 'var(--faint)';
+    var ang = Math.atan2(y2 - y1, x2 - x1), s = 6;
+    return '<line x1="' + x1 + '" y1="' + y1 + '" x2="' + x2 + '" y2="' + y2 + '" stroke="' + color + '" stroke-width="1.4" ' + (dash ? 'stroke-dasharray="4 4"' : '') + '/>' +
+      '<path d="M' + (x2 - s * Math.cos(ang - 0.5)) + ' ' + (y2 - s * Math.sin(ang - 0.5)) + ' L' + x2 + ' ' + y2 + ' L' + (x2 - s * Math.cos(ang + 0.5)) + ' ' + (y2 - s * Math.sin(ang + 0.5)) + '" fill="none" stroke="' + color + '" stroke-width="1.4"/>';
+  }
+  function hitBy(i, a, salt) { return rnd(i, salt || 3) < a; }
+  function randomWord(i) { var w = Math.floor(rnd(i, 9) * V); return w === SEQ[i] ? (w + 1) % V : w; }
+  function scatterFrame(x0, y0, w, h) {
+    return '<rect x="' + x0 + '" y="' + y0 + '" width="' + w + '" height="' + h + '" rx="10" fill="var(--surface-2)"/>' +
+      '<line x1="' + (x0 + w / 2) + '" x2="' + (x0 + w / 2) + '" y1="' + (y0 + 8) + '" y2="' + (y0 + h - 8) + '" stroke="var(--border)"/>' +
+      '<line x1="' + (x0 + 8) + '" x2="' + (x0 + w - 8) + '" y1="' + (y0 + h / 2) + '" y2="' + (y0 + h / 2) + '" stroke="var(--border)"/>';
+  }
+  function embedPoints(cx, cy, r, color) {
+    var out = '';
+    VOCAB.forEach(function (word, j) {
+      var px = cx + EMB[j][0] * r, py = cy - EMB[j][1] * r, inSeq = SEQ.indexOf(j) !== -1;
+      out += '<circle cx="' + px + '" cy="' + py + '" r="' + (inSeq ? 5 : 3.5) + '" fill="' + (inSeq ? color : 'var(--faint)') + '"/>';
+      out += '<text class="lbl" x="' + (px + 8) + '" y="' + (py - 6) + '">' + word + '</text>';
+    });
+    return out;
+  }
+
+  // ---------- 0 Tokens ----------
+  function drawTokens() {
+    var b = '';
+    SEQ.forEach(function (w, i) { b += tokenBox(colX(i), 18, VOCAB[w]); b += '<text class="mono" x="' + colX(i) + '" y="82" text-anchor="middle">id ' + w + '</text>'; });
+    setSvg('tokens', 96, b, 'Five tokens: the cat sat on mat');
+    capEls.tokens.innerHTML = T('tokens');
+  }
+
+  // ---------- 1 Representation ----------
+  function drawRep() {
+    var b = '', cap;
+    if (S.rep === 'tokens') {
+      SEQ.forEach(function (w, i) { b += tokenBox(colX(i), 70, VOCAB[w]); });
+      b += '<text class="lbl" x="380" y="40" text-anchor="middle">Kept as discrete symbols. Noise acts on whole tokens.</text>';
+      cap = T('rep.tokens');
+    } else if (S.rep === 'onehot') {
+      SEQ.forEach(function (w, i) {
+        b += bars(colX(i), 30, 100, VOCAB.map(function (_, j) { return j === w ? 1 : 0; }), { hi: w });
+        b += '<text class="tok" x="' + colX(i) + '" y="164" text-anchor="middle">' + VOCAB[w] + '</text>';
+      });
+      cap = T('rep.onehot');
+    } else {
+      b += scatterFrame(150, 10, 460, 170) + embedPoints(380, 95, 80, 'var(--accent)');
+      cap = T('rep.embed');
+    }
+    setSvg('rep', 190, b, 'Representation: ' + REP[S.rep]);
+    capEls.rep.innerHTML = cap;
+  }
+
+  // ---------- 2 Corruption ----------
+  // Each picture is drawn in its own 760 x h box; combined corruptions stack two of them.
+  function corrPicture(c, rep, a, salt) {
+    var b = '', h = 210, cap = '';
+    if (c === 'masked' || c === 'uniform' || c === 'gidd') {
+      SEQ.forEach(function (w, i) {
+        b += '<text class="lbl" x="' + colX(i) + '" y="22" text-anchor="middle" style="opacity:.6">' + VOCAB[w] + '</text>';
+        b += arrow(colX(i), 30, colX(i), 64);
+        if (!hitBy(i, a, salt)) b += tokenBox(colX(i), 72, VOCAB[w]);
+        else if (c === 'masked' || (c === 'gidd' && i % 2 === 0)) b += tokenBox(colX(i), 72, '[M]', { fill: 'transparent', stroke: 'var(--faint)', color: 'var(--muted)', dash: true });
+        else b += tokenBox(colX(i), 72, VOCAB[randomWord(i)], { stroke: 'var(--rose)', color: 'var(--rose)', italic: true });
+      });
+      var hit = SEQ.filter(function (_, i) { return hitBy(i, a, salt); }).length;
+      b += '<text class="lbl" x="380" y="150" text-anchor="middle">' + hit + ' of 5 tokens corrupted</text>';
+      h = 166;
+      cap = T('corr.' + c);
+    } else if (c === 'gaussian' && rep === 'onehot') {
+      SEQ.forEach(function (w, i) {
+        var v = VOCAB.map(function (_, j) { return (1 - a) * (j === w ? 1 : 0) + a * 0.9 * gauss(i * 7 + j, 5 + salt); });
+        b += bars(colX(i), 16, 140, v, { hi: w, signed: true });
+        b += '<text class="tok" x="' + colX(i) + '" y="186" text-anchor="middle" style="opacity:' + (1 - 0.7 * a) + '">' + VOCAB[w] + '</text>';
+      });
+      h = 200;
+      cap = T('corr.gaussian-onehot');
+    } else if (c === 'gaussian') {
+      var cx = 380, cy = 102, r = 80;
+      b += scatterFrame(150, 12, 460, 180) + embedPoints(cx, cy, r, 'var(--faint)');
+      SEQ.forEach(function (w, i) {
+        var px = cx + EMB[w][0] * r, py = cy - EMB[w][1] * r;
+        var nx = clamp(px + a * 70 * gauss(i, 2 + salt), 160, 600), ny = clamp(py + a * 70 * gauss(i, 4 + salt), 22, 182);
+        b += '<circle cx="' + nx + '" cy="' + ny + '" r="' + (6 + a * 40) + '" fill="var(--accent)" opacity="' + (0.08 + 0.1 * (1 - a)) + '"/>';
+        b += '<line x1="' + px + '" y1="' + py + '" x2="' + nx + '" y2="' + ny + '" stroke="var(--accent)" stroke-dasharray="3 3"/>';
+        b += '<circle cx="' + nx + '" cy="' + ny + '" r="5" fill="var(--accent)"/>';
+      });
+      cap = T('corr.gaussian-embed');
+    } else if (c === 'simplex') {
+      var A = [240, 24], B = [130, 190], C = [350, 190];
+      b += '<polygon points="' + [A, B, C].map(function (p) { return p.join(','); }).join(' ') + '" fill="var(--surface-2)" stroke="var(--border)"/>';
+      b += '<text class="lbl" x="' + A[0] + '" y="' + (A[1] - 8) + '" text-anchor="middle">cat</text><text class="lbl" x="' + (B[0] - 6) + '" y="' + (B[1] + 16) + '" text-anchor="middle">dog</text><text class="lbl" x="' + (C[0] + 6) + '" y="' + (C[1] + 16) + '" text-anchor="middle">mat</text>';
+      var w1 = 1 - a * 0.67 + 0.08 * a * gauss(1, 3), w2 = (1 - w1) * (0.5 + 0.25 * gauss(2, 3) * a), w3 = 1 - w1 - w2;
+      var ss = Math.max(w1 + w2 + w3, 1e-6); w1 /= ss; w2 /= ss; w3 /= ss;
+      var px = w1 * A[0] + w2 * B[0] + w3 * C[0], py = w1 * A[1] + w2 * B[1] + w3 * C[1];
+      var mx = (A[0] + B[0] + C[0]) / 3, my = (A[1] + B[1] + C[1]) / 3;
+      b += '<circle cx="' + mx + '" cy="' + my + '" r="3" fill="var(--faint)"/><text class="lbl" x="' + (mx + 8) + '" y="' + (my + 4) + '">uniform</text>';
+      b += '<line x1="' + A[0] + '" y1="' + A[1] + '" x2="' + px + '" y2="' + py + '" stroke="var(--accent)" stroke-dasharray="3 3"/>';
+      b += '<circle cx="' + px + '" cy="' + py + '" r="6" fill="var(--accent)"/><text class="lbl-acc" x="' + (px + 10) + '" y="' + (py + 4) + '">“cat” now</text>';
+      SEQ.forEach(function (w, i) {
+        var v = VOCAB.map(function (_, j) { return Math.max((j === w ? 1 - a * 0.8 : a * 0.8 / (V - 1)) * (1 + 0.5 * a * gauss(i * 7 + j, 8)), 0.001); });
+        var s = v.reduce(function (p, q) { return p + q; }, 0);
+        b += bars(440 + i * 66, 50, 110, v.map(function (q) { return q / s; }), { hi: w });
+        b += '<text class="lbl" x="' + (440 + i * 66) + '" y="180" text-anchor="middle">' + VOCAB[w] + '</text>';
+      });
+      cap = T('corr.simplex');
+    } else if (c === 'spherical') {
+      var sx = 250, sy = 104, R = 88;
+      b += '<circle cx="' + sx + '" cy="' + sy + '" r="' + R + '" fill="var(--surface-2)" stroke="var(--border)"/>';
+      b += '<ellipse cx="' + sx + '" cy="' + sy + '" rx="' + R + '" ry="24" fill="none" stroke="var(--border)" stroke-dasharray="3 4"/>';
+      SEQ.forEach(function (w, i) {
+        var a0 = ANG[w], a1 = a0 + (1.2 + 1.6 * rnd(i, 6)) * (rnd(i, 7) < 0.5 ? -1 : 1);
+        var p0 = [sx + R * Math.cos(a0), sy - R * Math.sin(a0)], p1 = [sx + R * Math.cos(a1), sy - R * Math.sin(a1)];
+        var at = a0 + (a1 - a0) * a, pt = [sx + R * Math.cos(at), sy - R * Math.sin(at)];
+        b += '<path d="M' + p0[0] + ' ' + p0[1] + ' A' + R + ' ' + R + ' 0 ' + (Math.abs(a1 - a0) > Math.PI ? 1 : 0) + ' ' + (a1 > a0 ? 0 : 1) + ' ' + p1[0] + ' ' + p1[1] + '" fill="none" stroke="var(--accent)" stroke-opacity=".35" stroke-width="1.4"/>';
+        b += '<circle cx="' + p1[0] + '" cy="' + p1[1] + '" r="3.5" fill="none" stroke="var(--faint)"/><circle cx="' + p0[0] + '" cy="' + p0[1] + '" r="3" fill="var(--faint)"/>';
+        b += '<circle cx="' + pt[0] + '" cy="' + pt[1] + '" r="5.5" fill="var(--accent)"/>';
+        b += '<text class="lbl" x="' + (p0[0] + (p0[0] > sx ? 8 : -8)) + '" y="' + (p0[1] - 6) + '" text-anchor="' + (p0[0] > sx ? 'start' : 'end') + '">' + VOCAB[w] + '</text>';
+      });
+      b += '<g transform="translate(430 44)"><circle cx="8" cy="8" r="3" fill="var(--faint)"/><text class="lbl" x="20" y="12">clean word on the sphere</text>' +
+        '<circle cx="8" cy="34" r="3.5" fill="none" stroke="var(--faint)"/><text class="lbl" x="20" y="38">random point on the sphere</text>' +
+        '<circle cx="8" cy="60" r="5" fill="var(--accent)"/><text class="lbl" x="20" y="64">noisy state, sliding along the arc</text></g>';
+      cap = T('corr.spherical');
+    } else if (c === 'blurring') {
+      var F = 6, cell = 24, x0 = 230, y0 = 16, sig = 0.15 + a * 2.6;
+      for (var f = 0; f < F; f++) {
+        for (var i = 0; i < N; i++) {
+          var num = 0, den = 0;
+          for (var k = 0; k < N; k++) { var g = Math.exp(-((k - i) * (k - i)) / (2 * sig * sig) * (1 + f * 0.6)); num += g * Math.sin((SEQ[k] + 1) * (f + 1) * 1.3); den += g; }
+          var v = num / den;
+          b += '<rect x="' + (x0 + i * 62) + '" y="' + (y0 + f * (cell + 3)) + '" width="58" height="' + cell + '" rx="3" fill="' + (v >= 0 ? 'var(--accent)' : 'var(--accent-2)') + '" opacity="' + (0.15 + 0.85 * Math.abs(v)).toFixed(2) + '"/>';
+        }
+        b += '<text class="mono" x="' + (x0 - 10) + '" y="' + (y0 + f * (cell + 3) + 16) + '" text-anchor="end">feature ' + (f + 1) + '</text>';
+      }
+      SEQ.forEach(function (w, i) { b += '<text class="lbl" x="' + (x0 + i * 62 + 29) + '" y="' + (y0 + F * (cell + 3) + 14) + '" text-anchor="middle">' + VOCAB[w] + '</text>'; });
+      h = 200;
+      cap = T('corr.blurring');
+    }
+    return { svg: b, h: h, cap: cap };
+  }
+
+  function drawCorr() {
+    var a = S.tCorr, first = corrPicture(S.corr, S.rep, a, 0);
+    if (S.combine === 'none') {
+      setSvg('corr', first.h, first.svg, 'Corruption: ' + CORR[S.corr].label);
+      capEls.corr.innerHTML = first.cap;
+      return;
+    }
+    var second = corrPicture(S.combine, CORR[S.combine].nat, a, 40);
+    var y2 = first.h + 34, y3 = y2 + second.h + 10, b = '';
+    b += '<text class="head" x="8" y="12">view 1 · ' + CORR[S.corr].label + '</text><g transform="translate(0 16)">' + first.svg + '</g>';
+    b += '<line x1="20" x2="740" y1="' + (first.h + 22) + '" y2="' + (first.h + 22) + '" stroke="var(--border)" stroke-dasharray="3 5"/>';
+    b += '<text class="head" x="8" y="' + (y2 + 4) + '">view 2 · ' + CORR[S.combine].label + '</text><g transform="translate(0 ' + (y2 + 8) + ')">' + second.svg + '</g>';
+    b += '<rect x="250" y="' + (y3 + 8) + '" width="260" height="36" rx="10" fill="var(--accent-wash)" stroke="var(--accent)"/>';
+    b += '<text class="lbl-b" x="380" y="' + (y3 + 31) + '" text-anchor="middle">both views fused into one network input</text>';
+    setSvg('corr', y3 + 52, b, 'Corruption: ' + CORR[S.corr].label + ' combined with ' + CORR[S.combine].label);
+    capEls.corr.innerHTML = T('corr.combined');
+  }
+
+  // ---------- 3 Noise schedule ----------
+  function lossShape(p, t) {
+    // How hard each noise level is to denoise, at training progress p (0 to 1).
+    var hump = Math.exp(-Math.pow((t - (0.35 + 0.25 * p)) / (0.22 - 0.08 * p), 2));
+    return (1 - 0.6 * p) * (0.35 + 0.65 * t) * 0.6 + (0.25 + 0.75 * p) * hump;
+  }
+  function adaptiveCurve(p) {
+    // CDCD-style warping: noise level follows the cumulative loss, so training time is spent where loss is.
+    var n = 60, acc = [0], s = 0;
+    for (var k = 1; k <= n; k++) { s += lossShape(p, k / n); acc.push(s); }
+    return function (t) { var idx = clamp(t * n, 0, n), lo = Math.floor(idx), hi = Math.min(n, lo + 1), f = idx - lo; return (acc[lo] * (1 - f) + acc[hi] * f) / s; };
+  }
+  function gumbelParams(p) { return { mu: 0.5 - 0.18 * p, beta: 0.22 - 0.12 * p }; }
+  function gumbelCurve(p) {
+    var g = gumbelParams(p), lo = Math.exp(-Math.exp(g.mu / g.beta)), hi = Math.exp(-Math.exp(-(1 - g.mu) / g.beta));
+    return function (t) { return (Math.exp(-Math.exp(-(t - g.mu) / g.beta)) - lo) / (hi - lo); };
+  }
+  function fixedName() { return DISCRETE.indexOf(S.corr) !== -1 ? 'log-linear' : S.corr === 'gaussian' ? 'rank-based' : 'cosine-like'; }
+  function plot(x0, y0, w, h, fn, color, width, dash) {
+    var d = '';
+    for (var k = 0; k <= 60; k++) { var t = k / 60, y = clamp(fn(t), 0, 1); d += (k ? 'L' : 'M') + (x0 + t * w).toFixed(1) + ' ' + (y0 + h - y * h).toFixed(1); }
+    return '<path d="' + d + '" fill="none" stroke="' + color + '" stroke-width="' + width + '" ' + (dash ? 'stroke-dasharray="3 4"' : '') + '/>';
+  }
+  // ---------- Recipe-specific pictures (Paper recipes mode) ----------
+  var FIGS = {
+    mdlm: { sched: 'loglinear', out: 'mdlm', loss: 'mdlm' }, md4: { sched: 'loglinear', out: 'mdlm', loss: 'mdlm' },
+    radd: { sched: 'loglinear', out: 'radd', loss: 'mdlm' }, llada_style: { sched: 'loglinear', out: 'mdlm', loss: 'mdlm' },
+    ardm_style: { sched: 'loglinear', out: 'mdlm', loss: 'mdlm' }, bd3lm: { sched: 'loglinear', out: 'mdlm', loss: 'mdlm' },
+    eb_masked: { sched: 'loglinear', out: 'mdlm', loss: 'mdlm' }, dfm_masked: { sched: 'loglinear', out: 'mdlm' },
+    flexmdm_style: { sched: 'loglinear', out: 'mdlm' },
+    d3pm_absorb: { sched: 'discrete', out: 'mdlm', loss: 'd3pm' }, sedd_absorb: { sched: 'loglinear', loss: 'sedd' },
+    udlm: { sched: 'loglinear' }, uniform_posterior: { sched: 'loglinear' }, dfm_uniform: { sched: 'loglinear' },
+    duo: { sched: 'duo' },
+    gidd_elbo: { sched: 'gidd', loss: 'gidd' }, gidd_corruption: { sched: 'gidd' },
+    candi_hybrid: { sched: 'candi', out: 'candi' }, cadd: { sched: 'cadd', out: 'candi' },
+    cdcd: { schedNote: 'cdcd' }, flm_gaussian: { sched: 'flm' }, langflow: { sched: 'gumbel' },
+    replaid: { sched: 'replaid', out: 'replaid', loss: 'replaid' },
+    simplex: { sched: 'simplex' }, spherical_flow_matching: { sched: 'spherical' }, spherical_vmf: { sched: 'vmf' },
+    blurring_diffusion: { sched: 'blurring' }
+  };
+  function recipeFig() { return mode === 'recipes' ? (FIGS[recipe] || {}) : {}; }
+
+  function frame(x0, y0, w, h, head) {
+    return '<text class="head" style="text-transform:none;letter-spacing:.04em;font-size:11.5px" x="' + x0 + '" y="' + (y0 - 10) + '">' + head + '</text><rect x="' + x0 + '" y="' + y0 + '" width="' + w + '" height="' + h + '" fill="var(--surface-2)" rx="6"/>';
+  }
+  function axisT(x0, y0, w, h, left, right) {
+    return '<text class="lbl" x="' + x0 + '" y="' + (y0 + h + 16) + '">' + (left || 't = 0') + '</text><text class="lbl" x="' + (x0 + w) + '" y="' + (y0 + h + 16) + '" text-anchor="end">' + (right || 't = 1') + '</text>';
+  }
+  function legend(x, y, items) {
+    return items.map(function (it, k) {
+      return '<line x1="' + x + '" x2="' + (x + 22) + '" y1="' + (y + k * 22) + '" y2="' + (y + k * 22) + '" stroke="' + it[1] + '" stroke-width="2.4" ' + (it[2] ? 'stroke-dasharray="4 4"' : '') + '/>' +
+        '<text class="lbl" x="' + (x + 30) + '" y="' + (y + k * 22 + 4) + '">' + it[0] + '</text>';
+    }).join('');
+  }
+  function lines(x, y, arr, cls) { return arr.map(function (t, k) { return '<text class="' + (cls || 'lbl') + '" x="' + x + '" y="' + (y + k * 18) + '">' + t + '</text>'; }).join(''); }
+  function area(x0, y0, w, h, lo, hi, color, op) {
+    var top = '', bot = [];
+    for (var k = 0; k <= 60; k++) { var t = k / 60, X = (x0 + t * w).toFixed(1); top += (k ? 'L' : 'M') + X + ' ' + (y0 + h - hi(t) * h).toFixed(1); bot.push(X + ' ' + (y0 + h - lo(t) * h).toFixed(1)); }
+    return '<path d="' + top + ' L' + bot.reverse().join(' L') + ' Z" fill="' + color + '" opacity="' + (op || 0.8) + '"/>';
+  }
+  function giddPath(t) {
+    var p = 0.2, gam = 1, B = Math.pow(2, gam) * p / (1 - p), c = B * Math.pow(t * (1 - t), gam / 2);
+    return { clean: (1 - t) / (1 + c), mask: t / (1 + c), uni: c / (1 + c) };
+  }
+
+  function drawSchedRecipe(kind) {
+    var b = '', p = S.train, X0 = 70, Y0 = 30, W0 = 300, H0 = 140, X1 = 430, cap = 'rsched.' + kind, h = 214;
+    ctrlEls.sched.el.hidden = !(kind === 'gumbel' || kind === 'replaid');
+    if (kind === 'loglinear' || kind === 'discrete' || kind === 'duo') {
+      b += frame(X0, Y0, W0, H0, 'keep rate and corruption vs time');
+      b += plot(X0, Y0, W0, H0, function (t) { return 1 - t; }, 'var(--accent)', 2.4);
+      b += plot(X0, Y0, W0, H0, function (t) { return t; }, 'var(--faint)', 1.4, true);
+      if (kind === 'discrete') for (var k = 0; k <= 10; k++) { var tt = k / 10; b += '<circle cx="' + (X0 + tt * W0) + '" cy="' + (Y0 + tt * H0) + '" r="3.5" fill="var(--accent-2)"/>'; }
+      b += axisT(X0, Y0, W0, H0);
+      b += legend(X1, 40, [['keep rate α(t)', 'var(--accent)'], ['chance a token is corrupted', 'var(--faint)', true]].concat(kind === 'discrete' ? [['discrete training steps', 'var(--accent-2)']] : []));
+      b += lines(X1, kind === 'discrete' ? 124 : 104, ['α(t) = 1 − (1 − ε) t', 'σ(t) = −log α(t)'], 'mono');
+      if (kind === 'duo') b += lines(X1, 150, ['+ curriculum: early training uses a soft', '(Gumbel-softmax) relaxation that anneals', 'to hard tokens.']);
+    } else if (kind === 'gidd') {
+      b += frame(X0, Y0, W0, H0, 'what a token is at time t');
+      b += area(X0, Y0, W0, H0, function () { return 0; }, function (t) { return giddPath(t).clean; }, 'var(--accent)', 0.75);
+      b += area(X0, Y0, W0, H0, function (t) { return giddPath(t).clean; }, function (t) { var g = giddPath(t); return g.clean + g.uni; }, 'var(--rose)', 0.75);
+      b += area(X0, Y0, W0, H0, function (t) { var g = giddPath(t); return g.clean + g.uni; }, function () { return 1; }, 'var(--faint)', 0.6);
+      b += axisT(X0, Y0, W0, H0);
+      b += legend(X1, 40, [['still the clean word', 'var(--accent)'], ['swapped for a random word', 'var(--rose)'], ['masked', 'var(--faint)']]);
+      b += lines(X1, 120, ['uniform share peaks at pᵤ = 0.2 at t = ½;', 'both endpoints are exact (all clean, all masked).']);
+    } else if (kind === 'candi' || kind === 'cadd') {
+      b += frame(X0, Y0, W0, H0, 'two schedules, one per view');
+      b += plot(X0, Y0, W0, H0, function (t) { return t; }, 'var(--accent)', 2.4);
+      b += plot(X0, Y0, W0, H0, function (t) { return 1 / (1 + Math.exp(-10 * (t - (kind === 'candi' ? 0.35 : 0.5)))); }, 'var(--accent-2)', 2.4);
+      b += axisT(X0, Y0, W0, H0);
+      b += legend(X1, 40, [['masking: share of tokens masked', 'var(--accent)'], ['Gaussian: noise on the vector view', 'var(--accent-2)']]);
+      b += lines(X1, 100, kind === 'candi' ? ['CANDI rank: Gaussian noise is calibrated so', 'its corruption rank tracks the masking level,', 'so the two views never fully disagree.'] : ['A gated Gaussian / masked hybrid.', 'Each view keeps its own schedule.']);
+    } else if (kind === 'flm') {
+      b += frame(X0, Y0, W0, H0, 'the clock: argmax error rate');
+      b += plot(X0, Y0, W0, H0, function (t) { return t; }, 'var(--accent)', 2.4);
+      b += axisT(X0, Y0, W0, H0);
+      var x2 = X1, w2 = 260;
+      b += frame(x2, Y0, w2, H0, 'Gaussian noise σ that achieves it (log)');
+      b += plot(x2, Y0, w2, H0, function (t) { return 1 / (1 + Math.exp(-7 * (t - 0.45))); }, 'var(--accent-2)', 2.4);
+      b += '<text class="mono" x="' + (x2 - 6) + '" y="' + (Y0 + H0) + '" text-anchor="end">0.2</text><text class="mono" x="' + (x2 - 6) + '" y="' + (Y0 + 8) + '" text-anchor="end">4</text>';
+      b += axisT(x2, Y0, w2, H0);
+    } else if (kind === 'gumbel') {
+      var loc = 4.723 + 0.6 * p, sc = 0.852 - 0.25 * p, loc0 = 4.723, sc0 = 0.852;
+      var g = function (L, Sc) { return function (t) { var q = clamp(t, 1e-5, Math.exp(-1e-5)); return (L - Sc * Math.log(-Math.log(q))) / 16; }; };
+      b += frame(X0, Y0, W0, H0, 'γ(t) = log(σ²/α²), Gumbel quantiles');
+      b += plot(X0, Y0, W0, H0, g(loc0, sc0), 'var(--faint)', 1.2, true);
+      b += plot(X0, Y0, W0, H0, g(loc, sc), 'var(--accent)', 2.4);
+      b += '<text class="mono" x="' + (X0 - 6) + '" y="' + (Y0 + 8) + '" text-anchor="end">16</text><text class="mono" x="' + (X0 - 6) + '" y="' + (Y0 + H0) + '" text-anchor="end">0</text>';
+      b += axisT(X0, Y0, W0, H0);
+      b += '<text class="head" x="' + X1 + '" y="20">fitted from cross-entropy feedback</text>';
+      [['location', loc, 4, 6], ['scale', sc, 0.4, 1]].forEach(function (k, i) {
+        var y = 44 + i * 54, f = (k[1] - k[2]) / (k[3] - k[2]);
+        b += '<text class="lbl" x="' + X1 + '" y="' + y + '">' + k[0] + '</text><text class="mono" x="' + (X1 + 280) + '" y="' + y + '" text-anchor="end">' + k[1].toFixed(3) + '</text>';
+        b += '<rect x="' + X1 + '" y="' + (y + 10) + '" width="280" height="6" rx="3" fill="var(--surface-2)"/><circle cx="' + (X1 + clamp(f, 0, 1) * 280) + '" cy="' + (y + 13) + '" r="7" fill="var(--accent-2)"/>';
+      });
+      b += lines(X1, 160, ['γ(t) = location − scale · log(−log t)', 'start values from the LangFlow release'], 'mono');
+    } else if (kind === 'replaid') {
+      var lo = -13.3, hi = 5.0;
+      var gfun = function (pp) { return function (t) { var s0 = t, s1 = 0.5 + 0.5 * Math.tanh(4 * (t - 0.45)) / Math.tanh(2.2); var u = (1 - pp) * s0 + pp * s1; return clamp(u, 0, 1); }; };
+      b += frame(X0, Y0, W0, H0, 'learned γ(t) = −log SNR');
+      b += plot(X0, Y0, W0, H0, gfun(0), 'var(--faint)', 1.2, true);
+      b += plot(X0, Y0, W0, H0, gfun(p), 'var(--accent)', 2.4);
+      b += '<text class="mono" x="' + (X0 - 6) + '" y="' + (Y0 + 8) + '" text-anchor="end">' + hi + '</text><text class="mono" x="' + (X0 - 6) + '" y="' + (Y0 + H0) + '" text-anchor="end">' + lo + '</text>';
+      b += axisT(X0, Y0, W0, H0);
+      b += lines(X1, 40, ['a monotone tanh network with learned endpoints', '(initially −13.3 and 5.0)'], 'lbl');
+      b += lines(X1, 92, ['α² = sigmoid(−γ),  σ² = sigmoid(γ)'], 'mono');
+      b += lines(X1, 126, ['Trained to make the ELBO estimate less noisy:', 'the shape moves while the endpoints anchor it.', 'Dashed: at the start of training.']);
+    } else if (kind === 'simplex') {
+      b += frame(X0, Y0, W0, H0, 'probability left on the clean word');
+      b += plot(X0, Y0, W0, H0, function (t) { return 1 - t + t / V; }, 'var(--accent)', 2.4);
+      b += plot(X0, Y0, W0, H0, function () { return 1 / V; }, 'var(--faint)', 1.2, true);
+      b += axisT(X0, Y0, W0, H0);
+      b += lines(X1, 44, ['The Dirichlet concentration on the clean corner', 'falls until the state is a random point on the', 'simplex. Dashed: uniform (1/6).']);
+      b += lines(X1, 112, ['Time sampler: loss derivative, so training', 'steps go where the loss changes fastest.']);
+    } else if (kind === 'spherical' || kind === 'vmf') {
+      b += frame(X0, Y0, W0, H0, kind === 'vmf' ? 'concentration κ(t) around the clean word (log)' : 'angle travelled toward the random point');
+      b += plot(X0, Y0, W0, H0, kind === 'vmf' ? function (t) { return 1 - t; } : function (t) { return t; }, 'var(--accent)', 2.4);
+      b += axisT(X0, Y0, W0, H0);
+      b += lines(X1, 44, kind === 'vmf'
+        ? ['Noise is a von Mises-Fisher spread on the sphere:', 'high κ is tight around the word, κ → 0 is', 'uniform on the sphere. Sampling uses a', 'predictor-corrector.']
+        : ['The state moves along the great circle from', 'the clean embedding toward a random point;', 'the schedule sets the fraction of the angle.']);
+    } else if (kind === 'blurring') {
+      b += frame(X0, Y0, W0, H0, 'how blurred each frequency band is');
+      [0.2, 0.4, 0.6, 0.8].forEach(function (c, k) {
+        b += plot(X0, Y0, W0, H0, function (t) { return 1 / (1 + Math.exp(-12 * (t - c))); }, k === 0 ? 'var(--accent)' : 'var(--accent-2)', 2, k > 0);
+      });
+      b += axisT(X0, Y0, W0, H0);
+      b += lines(X1, 44, ['Each line is a frequency band of the embedding', 'features along the sequence. The highest band', '(solid) blurs first; the lowest blurs last,', 'then Gaussian noise finishes the job.']);
+    } else return false;
+    setSvg('sched', h, b, 'Noise schedule for ' + recipe);
+    capEls.sched.innerHTML = T(cap);
+    return true;
+  }
+
+  function drawOutRecipe(kind) {
+    var b = '', a = S.tOut, h = 180;
+    if (kind === 'mdlm' || kind === 'radd' || kind === 'candi') {
+      SEQ.forEach(function (w, i) {
+        var x = colX(i);
+        if (hitBy(i, a)) b += bars(x, 28, 110, predDist(i, a), { hi: w });
+        else b += tokenBox(x, 70, VOCAB[w], { stroke: 'var(--accent)' }) + '<text class="lbl" x="' + x + '" y="134" text-anchor="middle">copied as is</text>';
+        b += '<text class="tok" x="' + x + '" y="166" text-anchor="middle" style="opacity:.6">' + VOCAB[w] + '</text>';
+      });
+      if (kind === 'radd') b += '<text class="lbl" x="380" y="14" text-anchor="middle">no time input: the prediction depends only on the visible tokens</text>';
+      if (kind === 'candi') b += '<text class="lbl" x="380" y="14" text-anchor="middle">masked positions read both views through mask-dependent fusion</text>';
+    } else if (kind === 'replaid') {
+      var d = predDist(1, a), w = SEQ[1];
+      var f = d.map(function (q, j) { return clamp(0.15 + 0.7 * q + 0.15 * rnd(j, 70), 0, 1); });
+      var prior = VOCAB.map(function (_, j) { return clamp(0.2 + 0.6 * (1 - a) * (EMB[j][0] * EMB[w][0] + EMB[j][1] * EMB[w][1] + 0.6) / 1.6, 0, 1); });
+      var sum = f.map(function (q, j) { return q + prior[j]; }), mx = Math.max.apply(null, sum);
+      var ex = sum.map(function (q) { return Math.exp(5 * q / mx); }), se = ex.reduce(function (p, q) { return p + q; }, 0);
+      b += '<text class="head" x="16" y="14">one position, logits over the six words</text>';
+      b += bars(110, 40, 100, f, { hi: w, bw: 11 }) + '<text class="lbl" x="110" y="160" text-anchor="middle">network f(zₜ, t)</text>';
+      b += '<text style="font:400 26px var(--font-display);fill:var(--muted)" x="205" y="98" text-anchor="middle">+</text>';
+      b += bars(300, 40, 100, prior, { hi: w, bw: 11, color: 'var(--accent-2)', hiColor: 'var(--accent-2)' }) + '<text class="lbl" x="300" y="160" text-anchor="middle">prior: (αₜ/σₜ²) zₜᵀ eᵥ</text>';
+      b += '<text style="font:400 26px var(--font-display);fill:var(--muted)" x="395" y="98" text-anchor="middle">=</text>';
+      b += bars(490, 40, 100, sum.map(function (q) { return q / mx; }), { hi: w, bw: 11 }) + '<text class="lbl" x="490" y="160" text-anchor="middle">corrected logits</text>';
+      b += arrow(560, 90, 600, 90, 'var(--muted)') + '<text class="mono" x="580" y="80" text-anchor="middle">softmax</text>';
+      b += bars(680, 40, 100, ex.map(function (q) { return q / se; }), { hi: w, bw: 11 }) + '<text class="lbl" x="680" y="160" text-anchor="middle">posterior p</text>';
+    } else return false;
+    setSvg('param', h, b, 'Output for ' + recipe);
+    capEls.param.innerHTML = T('rout.' + kind);
+    return true;
+  }
+
+  function drawLossRecipe(kind) {
+    var b = '', h = 200;
+    if (kind === 'replaid') return drawReplaid(true), true;
+    if (kind === 'd3pm') {
+      var steps = 10, x0 = 70, w = 620, y0 = 40;
+      b += '<text class="head" x="16" y="16">discrete-time variational bound, one term per step</text>';
+      for (var k = 0; k <= steps; k++) {
+        var x = x0 + k * w / steps, isRec = k === 0, isPrior = k === steps;
+        var hh = isRec ? 70 : isPrior ? 6 : 20 + 30 * Math.exp(-k / 3.5);
+        b += '<rect x="' + (x - 18) + '" y="' + (y0 + 90 - hh) + '" width="36" height="' + hh + '" rx="4" fill="' + (isRec ? 'var(--accent)' : isPrior ? 'var(--teal)' : 'var(--accent-2)') + '" opacity=".85"/>';
+        b += '<text class="mono" x="' + x + '" y="' + (y0 + 106) + '" text-anchor="middle">' + (isRec ? 'L₀' : isPrior ? 'Lₜ' : 't' + k) + '</text>';
+      }
+      b += legend(70, 172, [['reconstruction CE (t = 0)', 'var(--accent)'], ['KL terms at each step', 'var(--accent-2)']]) + legend(360, 172, [['prior (t = T)', 'var(--teal)']]);
+      h = 220;
+    } else if (kind === 'mdlm' || kind === 'sedd' || kind === 'gidd') {
+      var X0 = 70, Y0 = 30, W0 = 300, H0 = 140, top = 10.5;
+      b += frame(X0, Y0, W0, H0, 'ELBO weight per noise level');
+      if (kind === 'gidd') {
+        b += plot(X0, Y0, W0, H0, function (t) { var g = giddPath(Math.max(t, 0.1)); return (1 / Math.max(t, 0.1)) * (g.mask + g.clean) / top; }, 'var(--accent)', 2.4);
+        b += plot(X0, Y0, W0, H0, function (t) { var g = giddPath(Math.max(t, 0.1)); return (2 + 30 * g.uni) / top; }, 'var(--rose)', 2.4);
+        b += legend(430, 40, [['masking part', 'var(--accent)'], ['uniform part', 'var(--rose)']]);
+        b += lines(430, 100, ['The ELBO is composed term by term from the', 'GIDD path: the mask and uniform pieces each', 'get their own weight (illustrative shapes).']);
+      } else {
+        b += plot(X0, Y0, W0, H0, function () { return 1 / top; }, 'var(--faint)', 1.2, true);
+        b += plot(X0, Y0, W0, H0, function (t) { return 1 / Math.max(t, 0.1) / top; }, 'var(--accent-2)', 2.4);
+        b += lines(430, 44, kind === 'sedd'
+          ? ['score entropy on the ratio outputs:', 'r̂ − r log r̂ summed over words,', 'with the same ELBO weighting.']
+          : ['weight = −α′(t) / (1 − α(t)) = 1/t', 'for the log-linear schedule.', 'Dashed: plain cross-entropy (weight 1).'], 'mono');
+      }
+      b += axisT(X0, Y0, W0, H0, 't = 0 (clean)', 't = 1 (noise)');
+    } else return false;
+    setSvg('loss', h, b, 'Loss for ' + recipe);
+    capEls.loss.innerHTML = T('rloss.' + kind);
+    return true;
+  }
+
+  function drawSched() {
+    var F = recipeFig();
+    if (F.sched && drawSchedRecipe(F.sched)) return;
+    var cat = S.sched, p = S.train, b = '', h = 214;
+    ctrlEls.sched.el.hidden = cat === 'fixed';
+    var x0 = 70, y0 = 24, w = 280, ph = 140;
+    b += '<text class="head" x="' + x0 + '" y="14">noise level vs time</text>';
+    b += '<rect x="' + x0 + '" y="' + y0 + '" width="' + w + '" height="' + ph + '" fill="var(--surface-2)" rx="6"/>';
+    b += '<text class="lbl" x="' + x0 + '" y="' + (y0 + ph + 16) + '">t = 0</text><text class="lbl" x="' + (x0 + w) + '" y="' + (y0 + ph + 16) + '" text-anchor="end">t = 1</text>';
+    b += '<text class="lbl" x="' + (x0 - 8) + '" y="' + (y0 + 8) + '" text-anchor="end">noise</text><text class="lbl" x="' + (x0 - 8) + '" y="' + (y0 + ph) + '" text-anchor="end">clean</text>';
+    var x1 = 420, w1 = 300;
+    if (cat === 'fixed') {
+      Object.keys(FIXED_CURVES).forEach(function (k) { if (k !== fixedName()) b += plot(x0, y0, w, ph, FIXED_CURVES[k], 'var(--faint)', 1.2, true); });
+      b += plot(x0, y0, w, ph, FIXED_CURVES[fixedName()], 'var(--accent)', 2.4);
+      b += '<text class="head" x="' + x1 + '" y="14">predefined</text>';
+      b += '<text class="lbl-b" x="' + x1 + '" y="48">A formula chosen before training.</text>';
+      b += '<text class="lbl" x="' + x1 + '" y="72">Shown: ' + fixedName() + ', a common pick for ' + CORR[S.corr].label.toLowerCase() + ' noise.</text>';
+      b += '<text class="lbl" x="' + x1 + '" y="92">Dashed: other predefined shapes.</text>';
+      b += '<text class="lbl" x="' + x1 + '" y="124">Examples: log-linear, linear, rank-based,</text><text class="lbl" x="' + x1 + '" y="140">exponential VE, discrete-corruption based.</text>';
+      capEls.sched.innerHTML = T('sched.fixed');
+    } else if (cat === 'semi') {
+      b += plot(x0, y0, w, ph, gumbelCurve(0), 'var(--faint)', 1.2, true);
+      b += plot(x0, y0, w, ph, gumbelCurve(p), 'var(--accent)', 2.4);
+      var g = gumbelParams(p);
+      b += '<text class="head" x="' + x1 + '" y="14">the learned knobs</text>';
+      [['location μ', g.mu, 0.2, 0.6], ['scale β', g.beta, 0.05, 0.3]].forEach(function (k, i) {
+        var y = 44 + i * 58, f = (k[1] - k[2]) / (k[3] - k[2]);
+        b += '<text class="lbl" x="' + x1 + '" y="' + y + '">' + k[0] + '</text><text class="mono" x="' + (x1 + w1) + '" y="' + y + '" text-anchor="end">' + k[1].toFixed(2) + '</text>';
+        b += '<rect x="' + x1 + '" y="' + (y + 10) + '" width="' + w1 + '" height="6" rx="3" fill="var(--surface-2)"/>';
+        b += '<circle cx="' + (x1 + clamp(f, 0, 1) * w1) + '" cy="' + (y + 13) + '" r="7" fill="var(--accent-2)"/>';
+      });
+      b += '<text class="lbl" x="' + x1 + '" y="166">Only these two numbers are trained; the curve</text><text class="lbl" x="' + x1 + '" y="182">keeps its overall shape. Dashed: at the start.</text>';
+      capEls.sched.innerHTML = T('sched.semi');
+    } else {
+      b += plot(x0, y0, w, ph, adaptiveCurve(0), 'var(--faint)', 1.2, true);
+      b += plot(x0, y0, w, ph, adaptiveCurve(p), 'var(--accent)', 2.4);
+      b += '<text class="head" x="' + x1 + '" y="14">training loss at each noise level</text>';
+      b += '<rect x="' + x1 + '" y="' + y0 + '" width="' + w1 + '" height="' + ph + '" fill="var(--surface-2)" rx="6"/>';
+      var mx = 0; for (var k = 0; k <= 60; k++) mx = Math.max(mx, lossShape(0, k / 60), lossShape(1, k / 60));
+      b += plot(x1, y0, w1, ph, function (t) { return lossShape(0, t) / mx; }, 'var(--faint)', 1.2, true);
+      b += plot(x1, y0, w1, ph, function (t) { return lossShape(p, t) / mx; }, 'var(--accent-2)', 2.4);
+      b += '<text class="lbl" x="' + x1 + '" y="' + (y0 + ph + 16) + '">low noise</text><text class="lbl" x="' + (x1 + w1) + '" y="' + (y0 + ph + 16) + '" text-anchor="end">high noise</text>';
+      b += '<text class="lbl" x="' + x1 + '" y="' + (y0 + ph + 34) + '">dashed: at the start of training</text>';
+      capEls.sched.innerHTML = T('sched.full') + (DISCRETE.indexOf(S.corr) !== -1 ? ' ' + T('sched.full-discrete') : '');
+    }
+    if (S.combine !== 'none') capEls.sched.innerHTML += ' ' + T('sched.combined');
+    if (F.schedNote) capEls.sched.innerHTML += ' ' + T('rsched.' + F.schedNote);
+    setSvg('sched', h, b, 'Noise schedule: ' + SCHED[cat].label);
+  }
+
+  // ---------- 4 Network (with the self-conditioning chain) ----------
+  function vec(x, y, h, n, salt, color, hi) {
+    var out = '', bw = 8, gap = 2, total = n * bw + (n - 1) * gap, x0 = x - total / 2;
+    for (var j = 0; j < n; j++) {
+      var v = hi === undefined ? 0.25 + 0.75 * rnd(j, salt) : (j === hi ? 0.95 : 0.06 + 0.18 * rnd(j, salt));
+      out += '<rect x="' + (x0 + j * (bw + gap)) + '" y="' + (y + h - v * h) + '" width="' + bw + '" height="' + (v * h) + '" rx="1.5" fill="' + (j === hi ? 'var(--accent)' : color) + '"/>';
+    }
+    return out + '<line x1="' + (x0 - 3) + '" x2="' + (x0 + total + 3) + '" y1="' + (y + h) + '" y2="' + (y + h) + '" stroke="var(--border)"/>';
+  }
+  function drawNet() {
+    var b = '', sc = S.self, discrete = DISCRETE.indexOf(S.corr) !== -1 || DISCRETE.indexOf(S.combine) !== -1;
+    // Inputs
+    b += '<text class="head" x="16" y="14">noisy input</text>';
+    SEQ.forEach(function (w, i) {
+      var x = 50 + i * 58, m = discrete && hitBy(i, 0.45);
+      b += '<rect x="' + (x - 25) + '" y="22" width="50" height="28" rx="6" fill="' + (m ? 'transparent' : 'var(--surface-2)') + '" stroke="var(--faint)" ' + (m ? 'stroke-dasharray="3 3"' : '') + '/>';
+      b += '<text class="lbl" x="' + x + '" y="40" text-anchor="middle">' + (m ? '[M]' : 'xₜ' + (i + 1)) + '</text>';
+    });
+    if (sc !== 'off') {
+      b += '<rect x="330" y="22" width="120" height="28" rx="7" fill="var(--accent-wash)" stroke="var(--accent)" stroke-dasharray="4 4"/>';
+      b += '<text class="lbl-acc" x="390" y="40" text-anchor="middle">' + (sc === 'mean' ? 'previous ē' : 'previous h') + '</text>';
+      b += arrow(390, 52, 300, 74, 'var(--accent)');
+    }
+    b += arrow(166, 52, 166, 72, 'var(--muted)');
+    // Transformer
+    b += '<rect x="30" y="76" width="320" height="70" rx="12" fill="var(--surface-2)" stroke="var(--accent)" stroke-width="1.4"/>';
+    b += '<text style="font:400 20px var(--font-display);fill:var(--fg)" x="190" y="108" text-anchor="middle">Transformer</text>';
+    b += '<text class="lbl" x="190" y="128" text-anchor="middle">' + (S.block === 'on' ? 'Block-causal' : ATTN[S.attn]) + ' attention</text>';
+    // Time conditioning
+    var on = S.tcond !== 'none', tc = on ? 'var(--accent-2)' : 'var(--faint)';
+    b += '<g opacity="' + (on ? 1 : 0.4) + '"><circle cx="420" cy="111" r="20" fill="none" stroke="' + tc + '" stroke-width="1.6"/><line x1="420" y1="111" x2="420" y2="97" stroke="' + tc + '" stroke-width="1.6"/><line x1="420" y1="111" x2="430" y2="117" stroke="' + tc + '" stroke-width="1.6"/></g>';
+    b += arrow(398, 111, 354, 111, tc);
+    if (!on) b += '<line x1="404" y1="95" x2="436" y2="127" stroke="var(--faint)" stroke-width="1.6"/>';
+    b += '<text class="lbl" x="420" y="148" text-anchor="middle">' + (on ? 'noise level t in' : 'no time input') + '</text>';
+    // Attention mask
+    var gx = 560, gy = 30, cs = 20;
+    b += '<text class="head" x="' + gx + '" y="14">who each token can see</text>';
+    for (var r = 0; r < N; r++) for (var c = 0; c < N; c++) {
+      var see = S.block === 'on' ? Math.floor(c / 2) <= Math.floor(r / 2) : (S.attn === 'bi' || c <= r);
+      b += '<rect x="' + (gx + c * (cs + 2)) + '" y="' + (gy + r * (cs + 2)) + '" width="' + cs + '" height="' + cs + '" rx="3" fill="' + (see ? 'var(--accent)' : 'var(--surface-2)') + '" opacity="' + (see ? 0.85 : 1) + '"/>';
+    }
+    b += '<text class="mono" x="' + (gx + 55) + '" y="' + (gy + N * (cs + 2) + 14) + '" text-anchor="middle">keys →</text>';
+    // Output chain: h -> head -> logits -> softmax p -> p x E -> e-bar
+    var cy = 196, ch = 44;
+    b += '<text class="head" x="16" y="' + (cy - 14) + '">inside the output step (one position)</text>';
+    b += arrow(190, 148, 190, 170, 'var(--muted)');
+    var X = { h: 80, head: 190, logits: 300, p: 430, E: 545, ebar: 660 };
+    b += vec(X.h, cy, ch, D, 3, sc === 'hidden' ? 'var(--accent)' : 'var(--faint)');
+    b += '<text class="lbl" x="' + X.h + '" y="' + (cy + ch + 16) + '" text-anchor="middle">hidden state h</text>';
+    b += arrow(X.h + 46, cy + ch / 2, X.head - 34, cy + ch / 2);
+    b += '<rect x="' + (X.head - 32) + '" y="' + (cy + 6) + '" width="64" height="32" rx="7" fill="var(--surface-2)" stroke="var(--border)"/><text class="lbl" x="' + X.head + '" y="' + (cy + 26) + '" text-anchor="middle">output head</text>';
+    b += arrow(X.head + 34, cy + ch / 2, X.logits - 42, cy + ch / 2);
+    b += vec(X.logits, cy, ch, V, 11, 'var(--faint)');
+    b += '<text class="lbl" x="' + X.logits + '" y="' + (cy + ch + 16) + '" text-anchor="middle">logits</text>';
+    b += arrow(X.logits + 40, cy + ch / 2, X.p - 42, cy + ch / 2);
+    b += '<text class="mono" x="' + ((X.logits + X.p) / 2) + '" y="' + (cy + ch / 2 - 6) + '" text-anchor="middle">softmax</text>';
+    b += vec(X.p, cy, ch, V, 13, 'var(--faint)', 1);
+    b += '<text class="lbl" x="' + X.p + '" y="' + (cy + ch + 16) + '" text-anchor="middle">probabilities p</text>';
+    b += arrow(X.p + 40, cy + ch / 2, X.E - 32, cy + ch / 2);
+    b += '<rect x="' + (X.E - 30) + '" y="' + (cy + 6) + '" width="60" height="32" rx="7" fill="var(--surface-2)" stroke="var(--border)"/><text class="lbl" x="' + X.E + '" y="' + (cy + 26) + '" text-anchor="middle">p × E</text>';
+    b += arrow(X.E + 32, cy + ch / 2, X.ebar - 46, cy + ch / 2);
+    b += vec(X.ebar, cy, ch, D, 17, sc === 'mean' ? 'var(--accent)' : 'var(--faint)');
+    b += '<text class="lbl" x="' + X.ebar + '" y="' + (cy + ch + 16) + '" text-anchor="middle">expected embedding ē</text>';
+    // The self-conditioning loop back to the inputs
+    if (sc !== 'off') {
+      var sx = sc === 'mean' ? X.ebar : X.h, by = cy + ch + 34;
+      b += '<path d="M' + sx + ' ' + (cy + ch + 22) + ' L' + sx + ' ' + by + ' L752 ' + by + ' L752 -10 L390 -10 L390 19" fill="none" stroke="var(--accent)" stroke-width="1.6" stroke-dasharray="6 5"/>';
+      b += '<path d="M385 13 L390 20 L395 13" fill="none" stroke="var(--accent)" stroke-width="1.6"/>';
+      b += '<text class="lbl-acc" x="600" y="' + (by - 6) + '" text-anchor="middle">fed back on the next pass</text>';
+    }
+    setSvg('net', (sc !== 'off' ? 290 : 270) + 18, '<g transform="translate(0 18)">' + b + '</g>', 'Network');
+    capEls.net.innerHTML = T('net.self-' + sc) + ' ' + T(S.tcond === 'none' ? 'net.time-off' : 'net.time-on');
+  }
+
+  // ---------- 5 Output ----------
+  function predDist(i, a) {
+    var w = SEQ[i], conf = 0.95 - 0.75 * a * (0.6 + 0.4 * rnd(i, 21));
+    var v = VOCAB.map(function (_, j) { return j === w ? conf : (1 - conf) * (0.3 + rnd(i * 7 + j, 22)); });
+    var s = v.reduce(function (p, q) { return p + q; }, 0);
+    return v.map(function (q) { return q / s; });
+  }
+  function drawParam() {
+    var F = recipeFig();
+    if (F.out && drawOutRecipe(F.out)) return;
+    var b = '', p = S.param, a = S.tOut;
+    SEQ.forEach(function (w, i) {
+      var d = predDist(i, a), x = colX(i);
+      if (p === 'next') {
+        if (i !== 2) b += '<rect x="' + (x - 48) + '" y="28" width="96" height="110" rx="8" fill="var(--surface-2)" opacity=".5"/><text class="lbl" x="' + x + '" y="88" text-anchor="middle">' + (i < 2 ? 'given' : 'later') + '</text>';
+        else b += bars(x, 28, 110, d, { hi: w });
+      } else if (p === 'score') {
+        var cur = hitBy(i, a);
+        var r = d.map(function (q) { return cur ? q * 2.2 : q / Math.max(d[w], 0.05); });
+        b += bars(x, 28, 110, r.map(function (q) { return clamp(q / 2.2, 0, 1); }), { hi: w, hiColor: 'var(--accent-2)', color: 'var(--accent-2)' });
+        b += '<line x1="' + (x - 52) + '" x2="' + (x + 52) + '" y1="' + (138 - 110 / 2.2) + '" y2="' + (138 - 110 / 2.2) + '" stroke="var(--muted)" stroke-dasharray="2 3"/>';
+      } else if (p === 'plugin') {
+        b += bars(x, 28, 110, d.map(function (q) { return (1 - 0.4 * a) * q + 0.4 * a / V; }), { hi: w });
+      } else {
+        b += bars(x, 28, 110, d, { hi: w });
+      }
+      b += '<text class="tok" x="' + x + '" y="166" text-anchor="middle">' + VOCAB[w] + '</text>';
+    });
+    if (p === 'gpost') b += '<text class="lbl" x="380" y="16" text-anchor="middle">bars are combined with the Gaussian prior, then turned into an expected vector</text>';
+    if (p === 'score') b += '<text class="lbl" x="380" y="16" text-anchor="middle">dotted line = ratio 1 (as likely as the current token)</text>';
+    setSvg('param', 180, b, 'Output: ' + PARAM[p].label);
+    capEls.param.innerHTML = T('param.' + p);
+  }
+
+  // ---------- 6 Loss ----------
+  function drawReplaid() {
+    // The Gaussian ELBO, read along time: an endpoint term at each end and an integral in between.
+    var b = '', x0 = 90, x1 = 670, ya = 150, top = 46;
+    b += '<text class="head" x="16" y="14">the Gaussian ELBO, read along time</text>';
+    var curve = function (t) { return 0.12 + 0.88 * Math.exp(-Math.pow((t - 0.3) / 0.2, 2)); };
+    var d = 'M' + x0 + ' ' + ya, k;
+    for (k = 0; k <= 60; k++) { var t = k / 60; d += ' L' + (x0 + t * (x1 - x0)).toFixed(1) + ' ' + (ya - curve(t) * 80).toFixed(1); }
+    d += ' L' + x1 + ' ' + ya + ' Z';
+    b += '<path d="' + d + '" fill="var(--accent-2)" opacity=".28"/>';
+    b += plot(x0, ya - 80, x1 - x0, 80, curve, 'var(--accent-2)', 2.2);
+    b += '<line x1="' + (x0 - 10) + '" x2="' + (x1 + 10) + '" y1="' + ya + '" y2="' + ya + '" stroke="var(--muted)"/>';
+    b += '<text class="mono" x="' + x0 + '" y="' + (ya + 18) + '" text-anchor="middle">t = 0</text><text class="mono" x="' + x1 + '" y="' + (ya + 18) + '" text-anchor="middle">t = 1</text>';
+    // endpoint terms
+    b += '<circle cx="' + x0 + '" cy="' + ya + '" r="7" fill="var(--accent)"/><circle cx="' + x1 + '" cy="' + ya + '" r="7" fill="var(--teal)"/>';
+    b += '<text class="lbl-b" x="' + x0 + '" y="' + (top - 12) + '" text-anchor="middle" style="fill:var(--accent)">reconstruction</text>';
+    b += '<text class="mono" x="' + x0 + '" y="' + (top + 4) + '" text-anchor="middle">−log p(x | z₀)</text>';
+    b += '<line x1="' + x0 + '" x2="' + x0 + '" y1="' + (top + 10) + '" y2="' + (ya - 10) + '" stroke="var(--accent)" stroke-dasharray="3 3"/>';
+    b += '<text class="lbl-b" x="' + x1 + '" y="' + (top - 12) + '" text-anchor="middle" style="fill:var(--teal)">prior</text>';
+    b += '<text class="mono" x="' + x1 + '" y="' + (top + 4) + '" text-anchor="middle">KL(q(z₁|x) ‖ N(0, I))</text>';
+    b += '<line x1="' + x1 + '" x2="' + x1 + '" y1="' + (top + 10) + '" y2="' + (ya - 10) + '" stroke="var(--teal)" stroke-dasharray="3 3"/>';
+    b += '<text class="lbl-b" x="' + ((x0 + x1) / 2 + 60) + '" y="' + (top - 12) + '" text-anchor="middle" style="fill:var(--accent-2)">diffusion: the shaded area</text>';
+    b += '<text class="mono" x="' + ((x0 + x1) / 2 + 60) + '" y="' + (top + 4) + '" text-anchor="middle">½ ∫ γ′(t) e^(−γ(t)) ‖ē(zₜ) − e(x)‖² dt</text>';
+    // the sum
+    var terms = [['reconstruction CE', 0.42, 'var(--accent)'], ['weighted embedding MSE', 1.15, 'var(--accent-2)'], ['prior KL', 0.08, 'var(--teal)']];
+    var bx = 90, by = 196, bw = 580, tot = terms.reduce(function (p, q) { return p + q[1]; }, 0), xx = bx;
+    b += '<text class="lbl" x="16" y="' + (by + 20) + '">loss =</text>';
+    terms.forEach(function (tm) {
+      var ww = tm[1] / tot * bw;
+      b += '<rect x="' + xx + '" y="' + by + '" width="' + Math.max(ww - 3, 2) + '" height="30" rx="5" fill="' + tm[2] + '" opacity=".85"/>';
+      if (ww > 120) b += '<text class="lbl-b" x="' + (xx + 10) + '" y="' + (by + 20) + '" style="fill:var(--bg)">' + tm[0] + '</text>';
+      xx += ww;
+    });
+    b += '<text class="lbl" x="' + (bx + bw + 8) + '" y="' + (by + 20) + '">prior</text>';
+    setSvg('loss', 240, b, 'Loss: the Gaussian ELBO');
+    capEls.loss.innerHTML = T('loss.elbo-gaussian');
+  }
+  function elboWeight(t) {
+    if (S.corr === 'uniform') return 0.4 + 0.6 / Math.max(t, 0.1);
+    return 1 / Math.max(t, 0.1);
+  }
+  function drawLoss() {
+    var F = recipeFig();
+    if (F.loss && drawLossRecipe(F.loss)) return;
+    if (S.loss === 'elbo' && S.corr === 'gaussian') return drawReplaid();
+    var b = '', d = predDist(1, 0.45), w = SEQ[1], elbo = S.loss === 'elbo';
+    b += '<text class="head" x="16" y="14">one position</text>';
+    b += tokenBox(70, 34, VOCAB[w], { w: 72, h: 38, size: 15 });
+    b += '<text class="lbl" x="70" y="88" text-anchor="middle">target</text>';
+    b += arrow(112, 53, 150, 53, 'var(--muted)');
+    b += bars(205, 26, 70, d, { hi: w, ring: w, bw: 10 });
+    b += '<text class="lbl" x="205" y="112" text-anchor="middle">prediction</text>';
+    var nll = -Math.log(d[w]);
+    b += '<text class="mono" x="20" y="140">−log p(' + VOCAB[w] + ') = ' + nll.toFixed(2) + '</text>';
+    b += '<text class="mono" x="20" y="158">loss = ' + (elbo ? 'w(t) × ' : '') + nll.toFixed(2) + '</text>';
+    var x0 = 360, y0 = 26, pw = 360, ph = 130, top = 10.5;
+    b += '<text class="head" x="' + x0 + '" y="14">how much each noise level counts, w(t)</text>';
+    b += '<rect x="' + x0 + '" y="' + y0 + '" width="' + pw + '" height="' + ph + '" fill="var(--surface-2)" rx="6"/>';
+    var ce = function () { return 1 / top; }, el = function (t) { return elboWeight(t) / top; };
+    b += plot(x0, y0, pw, ph, elbo ? ce : el, 'var(--faint)', 1.2, true);
+    b += plot(x0, y0, pw, ph, elbo ? el : ce, 'var(--accent-2)', 2.4);
+    b += '<text class="lbl" x="' + x0 + '" y="' + (y0 + ph + 16) + '">t = 0 (clean)</text><text class="lbl" x="' + (x0 + pw) + '" y="' + (y0 + ph + 16) + '" text-anchor="end">t = 1 (noise)</text>';
+    b += '<text class="lbl" x="' + (x0 + pw - 8) + '" y="' + (y0 + 18) + '" text-anchor="end">dashed: ' + (elbo ? 'cross-entropy' : 'the ELBO') + '</text>';
+    setSvg('loss', 180, b, 'Loss: ' + LOSS[S.loss].label);
+    var which = T(S.param === 'score' ? 'loss.elbo-score' : S.corr === 'uniform' ? 'loss.elbo-uniform' : S.corr === 'gidd' ? 'loss.elbo-gidd' : 'loss.elbo-masked');
+    capEls.loss.innerHTML = elbo ? T('loss.elbo') + ' ' + which : T('loss.ce');
+  }
+
+  // ---------- 7 Sampler ----------
+  function sampRows() {
+    var s = S.samp, rows = [];
+    function grow(order) { var done = []; order.forEach(function (g) { done = done.concat(g); rows.push(SEQ.map(function (_, j) { return done.indexOf(j) !== -1 ? 1 : 0; })); }); }
+    if (s === 'ar') grow([[0], [1], [2], [3], [4]]);
+    else if (s === 'ancestral') grow([[3], [0], [4], [1], [2]]);
+    else if (s === 'eb') grow([[0, 3], [1, 4], [2]]);
+    else if (s === 'analytic') grow([[1, 3], [0], [2, 4]]);
+    else if (s === 'ctmc') {
+      // -1 marks a position currently holding a wrong word; CTMC jumps can still change it.
+      var uni = S.corr !== 'masked';
+      rows.push([0, uni ? -1 : 0, 0, 1, 0]); rows.push([1, 1, 0, 1, uni ? -1 : 0]); rows.push([1, 1, 1, 1, 1]);
+    }
+    else if (s === 'ddpm') [0.15, 0.4, 0.62, 0.85, 1].forEach(function (f, k) { rows.push(SEQ.map(function (_, i) { return clamp(f + (k < 4 ? 0.12 * gauss(i * 5 + k, 61) : 0), 0.05, 1); })); });
+    else if (s === 'hybrid') { [0.3, 0.6, 1].forEach(function (f, k) { rows.push(SEQ.map(function (_, i) { return hitBy(i, 0.5) ? (k >= (i % 2 ? 1 : 2) ? 1 : 0) : f; })); }); }
+    else [0.2, 0.45, 0.7, 0.9, 1].forEach(function (f) { rows.push(SEQ.map(function () { return f; })); });
+    return rows;
+  }
+  function drawSamp() {
+    var rows = sampRows(), b = '', x0 = 150, rowH = 34, shown = Math.min(Math.round(S.step), rows.length);
+    var startLbl = DISCRETE.indexOf(S.corr) !== -1 || S.samp === 'ar' ? '[M]' : 'noise';
+    b += '<text class="lbl" x="20" y="31">start</text>';
+    SEQ.forEach(function (_, i) { b += '<rect x="' + (x0 + i * 112 - 40) + '" y="14" width="80" height="26" rx="6" fill="transparent" stroke="var(--faint)" stroke-dasharray="3 3"/><text class="lbl" x="' + (x0 + i * 112) + '" y="31" text-anchor="middle">' + startLbl + '</text>'; });
+    rows.forEach(function (r, k) {
+      var y = 52 + k * rowH, vis = k < shown;
+      b += '<text class="lbl" x="20" y="' + (y + 17) + '" opacity="' + (vis ? 1 : 0.35) + '">step ' + (k + 1) + '</text>';
+      SEQ.forEach(function (w, i) {
+        var x = x0 + i * 112, f = r[i], prev = k ? rows[k - 1][i] : 0, fresh = vis && f !== prev && f !== 0;
+        b += '<rect x="' + (x - 40) + '" y="' + y + '" width="80" height="26" rx="6" fill="var(--surface-2)" stroke="' + (fresh ? 'var(--accent)' : 'var(--border)') + '" stroke-width="' + (fresh ? 1.6 : 1) + '" opacity="' + (vis ? 1 : 0.35) + '"/>';
+        if (vis && f < 0) b += '<text style="font:italic 400 15px var(--font-display);fill:var(--rose)" x="' + x + '" y="' + (y + 18) + '" text-anchor="middle">' + VOCAB[randomWord(i)] + '</text>';
+        if (vis && f > 0) b += '<text style="font:400 15px var(--font-display);fill:var(--fg)" x="' + x + '" y="' + (y + 18) + '" text-anchor="middle" opacity="' + (0.25 + 0.75 * f).toFixed(2) + '">' + VOCAB[w] + '</text>';
+      });
+    });
+    setSvg('samp', 60 + rows.length * rowH, b, 'Sampler: ' + SAMP[S.samp].label);
+    capEls.samp.innerHTML = T('samp.' + S.samp) + ' ' + T('samp.note');
+  }
+
+  // ---------- 8 Modifiers ----------
+  function drawMods() {
+    var b = '', y = 10, step = Math.round(S.step), cap = [];
+    if (S.block === 'off' && S.varlen === 'off') {
+      SEQ.forEach(function (w, i) { b += tokenBox(colX(i), 30, VOCAB[w]); });
+      b += '<text class="lbl" x="380" y="104" text-anchor="middle">No modifier: the whole fixed-length sequence is generated together.</text>';
+      setSvg('mods', 120, b, 'No sequence modifiers');
+      capEls.mods.innerHTML = T('mods.none');
+      return;
+    }
+    if (S.block === 'on') {
+      b += '<text class="head" x="16" y="' + (y + 4) + '">block diffusion</text>';
+      var blocks = [[0, 1], [2, 3], [4]], active = Math.min(blocks.length - 1, Math.floor(step / 2));
+      blocks.forEach(function (bl, k) {
+        var xs = bl.map(colX), xl = Math.min.apply(null, xs) - 56, xr = Math.max.apply(null, xs) + 56;
+        var state = k < active ? 'done' : k === active ? 'now' : 'later';
+        b += '<rect x="' + xl + '" y="' + (y + 16) + '" width="' + (xr - xl) + '" height="66" rx="12" fill="' + (state === 'now' ? 'var(--accent-wash)' : 'transparent') + '" stroke="' + (state === 'now' ? 'var(--accent)' : 'var(--border)') + '" stroke-dasharray="' + (state === 'later' ? '4 4' : '0') + '"/>';
+        bl.forEach(function (i) {
+          var shown = state === 'done' || (state === 'now' && (step % 2 === 1 || bl.length === 1));
+          b += tokenBox(colX(i), y + 27, shown ? VOCAB[SEQ[i]] : '[M]', shown ? {} : { fill: 'transparent', stroke: 'var(--faint)', color: 'var(--muted)', dash: true });
+        });
+        b += '<text class="lbl" x="' + ((xl + xr) / 2) + '" y="' + (y + 98) + '" text-anchor="middle">block ' + (k + 1) + ' · ' + (state === 'done' ? 'finished, kept fixed' : state === 'now' ? 'being denoised' : 'waits') + '</text>';
+      });
+      y += 116;
+      cap.push(T('mods.block'));
+    }
+    if (S.varlen === 'insert') {
+      b += '<text class="head" x="16" y="' + (y + 4) + '">insertion</text>';
+      var stages = [[0, 4], [0, 1, 4], [0, 1, 2, 4], [0, 1, 2, 3, 4]], st = stages[Math.min(stages.length - 1, Math.floor(step * 0.75))];
+      var prev = stages[Math.max(0, stages.indexOf(st) - 1)];
+      st.forEach(function (i, k) {
+        var x = 70 + k * 140 + (5 - st.length) * 70, fresh = prev.indexOf(i) === -1 && st !== stages[0];
+        b += tokenBox(x, y + 20, VOCAB[SEQ[i]], fresh ? { stroke: 'var(--accent)', fill: 'var(--accent-wash)' } : {});
+        if (k < st.length - 1) b += '<text class="lbl-acc" x="' + (x + 70) + '" y="' + (y + 47) + '" text-anchor="middle">+</text>';
+      });
+      b += '<text class="lbl" x="380" y="' + (y + 88) + '" text-anchor="middle">' + st.length + ' tokens so far: the model also predicts where new tokens go</text>';
+      y += 100;
+      cap.push(T('mods.insert'));
+    }
+    setSvg('mods', y + 6, b, 'Sequence modifiers');
+    capEls.mods.innerHTML = cap.join(' ');
+  }
+
+  // ---------- Render ----------
+  var DRAW = { tCorr: [drawCorr], tOut: [drawParam], train: [drawSched], step: [drawSamp, drawMods] };
+  function redrawFor(key) {
+    (DRAW[key] || []).forEach(function (f) { f(); });
+    Object.keys(ctrlEls).forEach(function (id) { if (ctrlEls[id].key === key) ctrlEls[id].sync(); });
+  }
+  function render() {
+    Object.keys(btnEls).forEach(function (key) {
+      Object.keys(btnEls[key]).forEach(function (k) {
+        var b = btnEls[key][k], ok = allowed(key, k);
+        b.disabled = !ok;
+        b.title = mode === 'recipes' ? (ok ? '' : 'Switch to Explore parts to swap this part.') : ok ? '' : reason(key, k);
+        b.setAttribute('aria-pressed', S[key] === k ? 'true' : 'false');
+      });
+    });
+    var crossed = Object.keys(CORR).filter(function (k) { return !allowed('corr', k); }).map(function (k) { return CORR[k].label; });
+    whyEls.corr.textContent = crossed.length ? 'Crossed out for ' + REP[S.rep].toLowerCase() + ': ' + crossed.join(', ') + '. The second corruption brings its own representation, so any can be combined.' : '';
+    ['sched', 'param', 'loss', 'samp'].forEach(function (key) {
+      var n = Object.keys(btnEls[key]).filter(function (k) { return !allowed(key, k); }).length;
+      whyEls[key].textContent = n ? n + ' option' + (n > 1 ? 's' : '') + ' crossed out by earlier choices. Hover for the reason.' : '';
+    });
+    Object.keys(ctrlEls).forEach(function (id) { ctrlEls[id].sync(); });
+    drawTokens(); drawRep(); drawCorr(); drawSched(); drawNet(); drawParam(); drawLoss(); drawSamp(); drawMods();
+  }
+  // ---------- Modes ----------
+  var DEFAULTS = { combine: 'none', attn: 'bi', self: 'off', block: 'off', varlen: 'off' };
+  var explored = null;
+  var groupsEl = document.getElementById('recipe-groups'), famBtns = {};
+  var groupNames = [];
+  function rec(id) { return RECIPES.filter(function (x) { return x.id === id; })[0]; }
+  function fam(id) { return FAMILIES.filter(function (x) { return x.id === id; })[0]; }
+  FAMILIES.forEach(function (f) { if (groupNames.indexOf(f.group) === -1) groupNames.push(f.group); });
+  groupNames.forEach(function (g) {
+    var box = document.createElement('div');
+    box.className = 'rgroup';
+    box.innerHTML = '<h4>' + g + '</h4>';
+    var opts = document.createElement('div');
+    opts.className = 'opts';
+    opts.setAttribute('role', 'group');
+    opts.setAttribute('aria-label', g + ' families');
+    FAMILIES.filter(function (f) { return f.group === g; }).forEach(function (f) {
+      var b = document.createElement('button');
+      b.type = 'button';
+      b.textContent = f.name + (f.variants.length > 1 ? ' · ' + f.variants.length : '');
+      b.addEventListener('click', function () { loadVariant(f.id, f.variants[0]); });
+      opts.appendChild(b);
+      famBtns[f.id] = b;
+    });
+    box.appendChild(opts);
+    groupsEl.appendChild(box);
+  });
+
+  // Which state keys (and recipe-specific pictures) each layer shows.
+  var LAYER_KEYS = { rep: ['rep'], corr: ['corr', 'combine'], sched: ['sched', 'f:sched', 'f:schedNote'], net: ['attn', 'tcond', 'self'],
+    param: ['param', 'f:out'], loss: ['loss', 'f:loss'], samp: ['samp'], mods: ['block', 'varlen'] };
+  var FIGNAME = { loglinear: 'log-linear', discrete: 'discrete time steps', duo: 'log-linear + curriculum', gidd: 'GIDD mixture', candi: 'CANDI rank', cadd: 'per-view schedules',
+    cdcd: 'adaptive on exponential VE', flm: 'error clock', gumbel: 'Gumbel clock', replaid: 'learned −log SNR', simplex: 'simplex', spherical: 'geodesic', vmf: 'vMF concentration',
+    blurring: 'frequency blur', mdlm: 'masked positions only', radd: 'no time input', replaid_out: 'prior-corrected logits', d3pm: 'D3PM bound', sedd: 'score entropy' };
+  var TABLES = { rep: REP, corr: CORR, combine: COMBINE, sched: SCHED, attn: ATTN, tcond: TCOND, self: SELF, param: PARAM, loss: LOSS, samp: SAMP, block: BLOCK, varlen: VARLEN };
+  var KEYNAME = { combine: 'combined with', tcond: 'time', self: 'self-cond.', attn: 'attention', block: 'blocks', varlen: 'length' };
+  function stateOf(id) {
+    var st = {}, r = rec(id), f = FIGS[id] || {};
+    Object.keys(DEFAULTS).forEach(function (k) { st[k] = DEFAULTS[k]; });
+    Object.keys(r.set).forEach(function (k) { st[k] = r.set[k]; });
+    Object.keys(f).forEach(function (k) { st['f:' + k] = f[k]; });
+    return st;
+  }
+  function labelOf(k, v) {
+    if (v === undefined) return k.indexOf('f:') === 0 ? '' : '—';
+    if (k === 'f:loss') return { mdlm: '1/t-weighted ELBO', d3pm: 'per-step D3PM bound', sedd: 'score entropy', gidd: 'composed GIDD ELBO', replaid: 'ELBO as three terms' }[v] || v;
+    if (k === 'f:out') return { mdlm: 'predicts masked positions only', radd: 'no time input', candi: 'fused views', replaid: 'prior-corrected logits' }[v] || v;
+    if (k.indexOf('f:') === 0) return FIGNAME[v] || v;
+    var o = TABLES[k] && TABLES[k][v];
+    var txt = typeof o === 'string' ? o : (o && o.label) || v;
+    return KEYNAME[k] ? KEYNAME[k] + ' ' + txt.toLowerCase() : txt;
+  }
+  function clearVaries() {
+    Object.keys(variesEls).forEach(function (id) { variesEls[id].hidden = true; layerRows[id].classList.remove('varies'); });
+  }
+  function markVaries(f) {
+    clearVaries();
+    if (f.variants.length < 2) return;
+    var states = {};
+    f.variants.forEach(function (v) { states[v] = stateOf(v); });
+    Object.keys(LAYER_KEYS).forEach(function (layer) {
+      var keys = LAYER_KEYS[layer].filter(function (k) {
+        var vals = f.variants.map(function (v) { return JSON.stringify(states[v][k]); });
+        return vals.some(function (x) { return x !== vals[0]; });
+      });
+      if (!keys.length) return;
+      // Picture-only differences only matter when the underlying choice is the same.
+      var el = variesEls[layer];
+      el.hidden = false;
+      layerRows[layer].classList.add('varies');
+      el.innerHTML = '<strong>Differs across this family</strong>' + f.variants.map(function (v) {
+        // A specific picture name says more than its broad category, so show it instead when there is one.
+        var ks = keys.filter(function (k) { return !(k === 'sched' && (states[v]['f:sched'] || states[v]['f:schedNote'])); });
+        var parts = ks.map(function (k) { return labelOf(k, states[v][k]); }).filter(function (x) { return x; });
+        if (!parts.length) parts = ['standard'];
+        return '<button type="button" data-v="' + v + '"' + (v === recipe ? ' aria-current="true"' : '') + '><span>' + rec(v).name + ':</span> <span>' + parts.join(', ') + '</span></button>';
+      }).join('');
+      el.querySelectorAll('button').forEach(function (b) { b.addEventListener('click', function () { loadVariant(f.id, b.dataset.v); }); });
+    });
+  }
+  function loadVariant(fid, id) {
+    family = fid; recipe = id;
+    var f = fam(fid), r = rec(id);
+    Object.keys(DEFAULTS).forEach(function (k) { S[k] = DEFAULTS[k]; });
+    Object.keys(r.set).forEach(function (k) { S[k] = r.set[k]; });
+    Object.keys(famBtns).forEach(function (k) { famBtns[k].setAttribute('aria-pressed', k === fid ? 'true' : 'false'); });
+    document.getElementById('family-name').textContent = f.name;
+    document.getElementById('family-note').innerHTML = T('family.' + fid);
+    var vbox = document.getElementById('variants');
+    vbox.hidden = f.variants.length < 2;
+    vbox.innerHTML = '';
+    f.variants.forEach(function (v) {
+      var b = document.createElement('button');
+      b.type = 'button';
+      b.textContent = rec(v).name;
+      b.setAttribute('aria-pressed', v === id ? 'true' : 'false');
+      b.addEventListener('click', function () { loadVariant(fid, v); });
+      vbox.appendChild(b);
+    });
+    document.getElementById('recipe-name').textContent = f.variants.length > 1 ? rec(id).name : '';
+    var list = document.getElementById('recipe-members'), meta = document.querySelector('.recipe-meta');
+    if (r.members) {
+      document.getElementById('recipe-note').innerHTML = T('recipe.group-' + id);
+      meta.hidden = true;
+      list.hidden = false;
+      list.innerHTML = r.members.map(function (m) {
+        return '<li><span class="m-name">' + m.name + '</span> <code>+experiment=' + m.id + '</code>' +
+          (m.url ? ' <a href="' + m.url + '" target="_blank" rel="noopener">Paper</a>' : '') +
+          '<span class="m-note">' + T('recipe.' + m.id) + '</span></li>';
+      }).join('');
+    } else {
+      document.getElementById('recipe-note').innerHTML = T('recipe.' + id);
+      meta.hidden = false;
+      list.hidden = true;
+      document.getElementById('recipe-cmd').textContent = '+experiment=' + id;
+      var link = document.getElementById('recipe-link');
+      link.hidden = !r.url;
+      if (r.url) link.href = r.url;
+    }
+    render();
+    markVaries(f);
+  }
+  document.getElementById('recipe-intro').innerHTML = T('recipe.intro');
+  function setMode(m) {
+    if (m === mode) return;
+    if (m === 'recipes') explored = JSON.parse(JSON.stringify(S));
+    mode = m;
+    document.body.classList.toggle('recipe-mode', m === 'recipes');
+    document.getElementById('recipes').hidden = m !== 'recipes';
+    document.getElementById('mode-explore').setAttribute('aria-selected', m === 'explore' ? 'true' : 'false');
+    document.getElementById('mode-recipes').setAttribute('aria-selected', m === 'recipes' ? 'true' : 'false');
+    if (m === 'recipes') loadVariant(family, recipe);
+    else { if (explored) S = Object.assign(S, explored); clearVaries(); repair(); render(); }
+  }
+  document.getElementById('mode-explore').addEventListener('click', function () { setMode('explore'); });
+  document.getElementById('mode-recipes').addEventListener('click', function () { setMode('recipes'); });
+
+  render();
+})();
+</script>
