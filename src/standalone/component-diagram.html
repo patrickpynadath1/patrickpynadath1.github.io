@@ -83,7 +83,7 @@
   <h1>One map of every design choice</h1>
   <p class="lede">The whole pipeline in one picture. Click any part of the map, then step through its options with the arrows. The part redraws itself in place, and anything that no longer fits is flagged.</p>
 
-  <div class="map-wrap"><svg id="map" viewBox="0 44 1200 506" role="group" aria-label="Diffusion pipeline map"></svg></div>
+  <div class="map-wrap"><svg id="map" viewBox="0 10 1200 570" role="group" aria-label="Diffusion pipeline map"></svg></div>
 
   <div class="stepper">
     <section class="panel" aria-live="polite">
@@ -137,8 +137,8 @@
       { k: 'on', n: 'On', d: 'The noise level t is given to the network.' }] },
     self: { title: 'Self-cond.', opts: [
       { k: 'off', n: 'Off', d: 'Each pass starts fresh.' },
-      { k: 'mean', n: 'Expected embedding', d: 'The previous probabilities p are averaged over the embedding table (p × E) and fed back.' },
-      { k: 'hidden', n: 'Hidden state', d: 'The previous last hidden vector h is fed back before it becomes probabilities.' }] },
+      { k: 'mean', n: 'Expected embedding', d: 'Take the previous pass’s logits, turn them into probabilities, average the embedding table with them (softmax · E) and feed that vector ē back in.' },
+      { k: 'hidden', n: 'Hidden state', d: 'Intercept the previous pass’s hidden state h before the LM head and feed it back directly. It never becomes logits.' }] },
     out: { title: 'Output', opts: [
       { k: 'post', n: 'Clean-token posterior', d: 'A probability over words for each position.' },
       { k: 'score', n: 'Score ratio', needsCorr: ['masked'], d: 'How much more likely each word is than the current token (SEDD).' },
@@ -160,7 +160,7 @@
       { k: 'ar', n: 'Autoregressive', needsOut: 'next', d: 'One token per step, left to right.' }] },
     mods: { title: 'Sequence modifiers', opts: [
       { k: 'none', n: 'None', d: 'The whole fixed-length sequence is generated together.' },
-      { k: 'block', n: 'Block diffusion', d: 'Blocks are generated left to right; tokens inside a block in parallel.' },
+      { k: 'block', n: 'Block diffusion', d: 'In training the network sees the noisy sequence and a clean copy side by side (length 2L). Noisy blocks see themselves and earlier clean blocks. Clean tokens see clean tokens up to themselves. At generation, blocks are finished left to right.' },
       { k: 'insert', n: 'Insertion', d: 'New tokens can be inserted, so the model decides the length.' }] }
   };
   var S = { tokens: 0, rep: 0, corr: 0, sched: 0, attn: 0, time: 0, self: 0, out: 0, loss: 1, samp: 1, mods: 0 };
@@ -207,6 +207,13 @@
       if (k === 'fixed') o += curve(function (t) { return t; });
       else if (k === 'semi') { o += curve(function (t) { return 1 / (1 + Math.exp(-9 * (t - 0.5))); }, 'var(--faint)', true) + curve(function (t) { return 1 / (1 + Math.exp(-9 * (t - 0.38))); }); o += '<circle cx="' + (x + 0.38 * w) + '" cy="' + (y + h / 2) + '" r="4" fill="var(--accent-2)"/>'; }
       else o += curve(function (t) { return t; }, 'var(--faint)', true) + curve(function (t) { return Math.min(1, t + 0.18 * Math.sin(Math.PI * t * 2) * (1 - t)); });
+    } else if (id === 'attn' && cur('mods').k === 'block') {
+      var cs8 = Math.min(w, h) / 8 - 1.4, gx8 = cx - 4 * (cs8 + 1.4), gy8 = cy - 4 * (cs8 + 1.4);
+      for (var r8 = 0; r8 < 8; r8++) for (var c8 = 0; c8 < 8; c8++) {
+        var qn = r8 < 4, kn = c8 < 4, qb = Math.floor((r8 % 4) / 2), kb = Math.floor((c8 % 4) / 2);
+        var see = qn ? (kn ? qb === kb : kb < qb) : (!kn && (c8 % 4) <= (r8 % 4));
+        o += '<rect x="' + (gx8 + c8 * (cs8 + 1.4)) + '" y="' + (gy8 + r8 * (cs8 + 1.4)) + '" width="' + cs8 + '" height="' + cs8 + '" rx="1" fill="' + (see ? (qn ? 'var(--accent)' : 'var(--teal)') : 'var(--surface)') + '"/>';
+      }
     } else if (id === 'attn') {
       var n = 4, cs = Math.min(w, h) / n - 2, gx = cx - n * (cs + 2) / 2, gy = cy - n * (cs + 2) / 2;
       for (var a = 0; a < n; a++) for (var b2 = 0; b2 < n; b2++) o += '<rect x="' + (gx + b2 * (cs + 2)) + '" y="' + (gy + a * (cs + 2)) + '" width="' + cs + '" height="' + cs + '" rx="1.5" fill="' + (k === 'bi' || b2 <= a ? 'var(--accent)' : 'var(--surface)') + '"/>';
@@ -237,59 +244,79 @@
       if (k === 'ar') o += '<path d="M' + (x + 6) + ' ' + (y + h - 2) + ' L' + (x + w - 6) + ' ' + (y + h - 2) + '" stroke="var(--teal)" stroke-width="1.4"/><path d="M' + (x + w - 11) + ' ' + (y + h - 6) + ' L' + (x + w - 6) + ' ' + (y + h - 2) + ' L' + (x + w - 11) + ' ' + (y + h + 2) + '" fill="none" stroke="var(--teal)" stroke-width="1.4"/>';
     } else if (id === 'mods') {
       if (k === 'none') o += '<text x="' + cx + '" y="' + (cy + 4) + '" text-anchor="middle" style="font:12px var(--font-body);fill:var(--muted)">—</text>';
-      else if (k === 'block') { o += '<rect x="' + x + '" y="' + (cy - 10) + '" width="' + (w * 0.45) + '" height="20" rx="5" fill="var(--accent-wash)" stroke="var(--accent)"/><rect x="' + (x + w * 0.55) + '" y="' + (cy - 10) + '" width="' + (w * 0.45) + '" height="20" rx="5" fill="none" stroke="var(--faint)" stroke-dasharray="3 3"/>'; }
+      else if (k === 'block') { var cw8 = (w - 10) / 8; for (var i8 = 0; i8 < 8; i8++) o += '<rect x="' + (x + i8 * cw8 + (i8 >= 4 ? 10 : 0)) + '" y="' + (cy - 12) + '" width="' + (cw8 - 3) + '" height="16" rx="3" fill="' + (i8 < 4 ? 'var(--accent-wash)' : 'transparent') + '" stroke="' + (i8 < 4 ? 'var(--accent)' : 'var(--teal)') + '"/>'; o += '<text x="' + (x + w * 0.22) + '" y="' + (cy + 16) + '" text-anchor="middle" style="font:9px var(--font-body);fill:var(--muted)">noisy xₜ</text><text x="' + (x + w * 0.76) + '" y="' + (cy + 16) + '" text-anchor="middle" style="font:9px var(--font-body);fill:var(--muted)">clean x₀</text>'; }
       else { o += box(x, cy - 10, w * 0.3, 20, 'the') + '<text x="' + (x + w * 0.42) + '" y="' + (cy + 5) + '" style="font:700 14px var(--font-body);fill:var(--accent)">+</text>' + box(x + w * 0.55, cy - 10, w * 0.4, 20, 'mat'); }
     }
     return o;
   }
 
   // ---------- The map ----------
-  // Node positions (x, y, w, h) on a 1200 x 560 canvas.
+  // Node positions (x, y, w, h) on a 1200 x 600 canvas.
   var N = {
-    tokens: [40, 196, 120, 110], rep: [195, 196, 140, 110], corr: [375, 160, 170, 110], sched: [375, 300, 170, 84],
-    attn: [608, 190, 112, 96], time: [608, 300, 104, 84], self: [722, 300, 136, 84],
-    out: [880, 196, 140, 110], loss: [1050, 90, 120, 100], samp: [1050, 330, 120, 110], mods: [40, 470, 220, 66]
+    tokens: [30, 200, 118, 104], rep: [170, 200, 130, 104], corr: [330, 180, 160, 110], sched: [330, 340, 160, 84],
+    time: [580, 312, 96, 86], attn: [612, 168, 124, 104], self: [690, 312, 118, 86],
+    out: [1012, 180, 150, 110], loss: [1012, 44, 150, 96], samp: [1012, 378, 150, 116], mods: [30, 470, 260, 96]
   };
   var map = document.getElementById('map');
-  function wire(d, cls) { return '<path class="wire ' + (cls || '') + '" d="' + d + '"/>'; }
-  function head(x, y, dir, cls) { var s = 6; var p = dir === 'r' ? [[x - s, y - s], [x, y], [x - s, y + s]] : dir === 'u' ? [[x - s, y + s], [x, y], [x + s, y + s]] : dir === 'l' ? [[x + s, y - s], [x, y], [x + s, y + s]] : [[x - s, y - s], [x, y], [x + s, y - s]]; return '<path class="wire ' + (cls || '') + '" style="stroke-dasharray:none" d="M' + p.map(function (q) { return q.join(' '); }).join(' L') + '"/>'; }
+  function wire(d, cls, style) { return '<path class="wire ' + (cls || '') + '" d="' + d + '"' + (style ? ' style="' + style + '"' : '') + '/>'; }
+  function head(x, y, dir, cls, style) { var s = 6; var p = dir === 'r' ? [[x - s, y - s], [x, y], [x - s, y + s]] : dir === 'u' ? [[x - s, y + s], [x, y], [x + s, y + s]] : dir === 'l' ? [[x + s, y - s], [x, y], [x + s, y + s]] : [[x - s, y - s], [x, y], [x + s, y - s]]; return '<path class="wire ' + (cls || '') + '" style="stroke-dasharray:none;' + (style || '') + '" d="M' + p.map(function (q) { return q.join(' '); }).join(' L') + '"/>'; }
+  function lbl(x, y, t, cls, anchor, style) { return '<text class="wlabel ' + (cls || '') + '" x="' + x + '" y="' + y + '"' + (anchor ? ' text-anchor="' + anchor + '"' : '') + (style ? ' style="' + style + '"' : '') + '>' + t + '</text>'; }
   function drawMap() {
-    var b = '';
-    // Frame for the network
-    b += '<rect x="592" y="150" width="276" height="250" rx="18" fill="none" stroke="var(--accent)" stroke-opacity=".5" stroke-width="1.4"/>';
-    b += '<text x="604" y="172" style="font:400 18px var(--font-display);fill:var(--fg)">Network</text>';
-    // Modifier frame around the whole pipeline
-    b += '<rect x="22" y="56" width="1160" height="400" rx="22" fill="none" stroke="var(--faint)" stroke-dasharray="2 6"/>';
-    b += '<text x="40" y="80" class="wlabel">everything here can be wrapped by a sequence modifier ↓</text>';
-    // Wires
-    var y = 251;
-    b += wire('M160 ' + y + ' L195 ' + y) + head(195, y, 'r');
-    b += wire('M335 ' + y + ' L375 ' + (y - 36)) + head(375, y - 36, 'r');
-    b += wire('M460 270 L460 300') + '<text x="468" y="290" class="wlabel">how much</text>';
-    b += wire('M545 215 L610 238') + head(610, 238, 'r');
-    b += '<text x="548" y="206" class="wlabel">noisy xₜ</text>';
-    b += wire('M545 342 L610 342') + head(610, 342, 'r') + '<text x="550" y="336" class="wlabel">t</text>';
-    b += wire('M720 238 L880 251') + head(880, 251, 'r');
-    // train / generate split
-    b += wire('M1020 236 C1035 236 1035 140 1050 140', 'train') + head(1050, 140, 'r', 'train') + '<text x="1050" y="80" class="wlabel train">train</text>';
-    b += wire('M1020 266 C1035 266 1035 385 1050 385', 'gen') + head(1050, 385, 'r', 'gen') + '<text x="1050" y="460" class="wlabel gen">generate</text>';
-    // generation loop back into the network
-    b += wire('M1110 440 L1110 430 M1110 440 L1110 488 L680 488 L680 400', 'gen loop') + head(680, 402, 'u', 'gen');
-    b += '<text x="890" y="482" class="wlabel gen" text-anchor="middle">next noisy state, repeat until clean</text>';
-    // self-conditioning loop from output back to network input
-    if (cur('self').k !== 'off') {
-      b += wire('M950 196 L950 118 L665 118 L665 188', 'loop') + head(665, 188, 'd');
-      b += '<text x="808" y="110" class="wlabel" text-anchor="middle" style="fill:var(--accent)">self-conditioning: last ' + (cur('self').k === 'mean' ? 'ē' : 'h') + ' fed back</text>';
+    var b = '', sc = cur('self').k, block = cur('mods').k === 'block', adapt = cur('sched').k !== 'fixed';
+    var acc = 'stroke:var(--accent)';
+    // Frames: the network, and the modifier band around everything
+    b += '<rect x="22" y="22" width="1160" height="438" rx="22" fill="none" stroke="var(--faint)" stroke-dasharray="2 6"/>';
+    b += lbl(36, 456, 'everything above can be wrapped by a sequence modifier ↓');
+    b += '<rect x="566" y="140" width="420" height="300" rx="18" fill="none" stroke="var(--accent)" stroke-opacity=".5" stroke-width="1.4"/>';
+    b += '<text x="580" y="160" style="font:400 18px var(--font-display);fill:var(--fg)">Network</text>';
+    // Inside the network: hidden state h -> LM head -> logits, and the p x E -> e-bar branch
+    var hx = 772, hy = 220;
+    b += wire('M736 ' + hy + ' L' + (hx - 7) + ' ' + hy);
+    b += '<circle cx="' + hx + '" cy="' + hy + '" r="7" fill="' + (sc === 'hidden' ? 'var(--accent)' : 'var(--surface-2)') + '" stroke="var(--accent)"/>';
+    b += lbl(hx, hy - 14, 'h', '', 'middle', 'font-size:13px;fill:var(--fg)');
+    b += wire('M' + (hx + 7) + ' ' + hy + ' L806 ' + hy) + head(806, hy, 'r');
+    b += '<rect x="806" y="198" width="72" height="44" rx="9" fill="var(--surface-2)" stroke="var(--border)"/>';
+    b += lbl(842, 225, 'LM head', '', 'middle', 'fill:var(--fg)');
+    b += wire('M878 ' + hy + ' L1012 ' + (hy + 15)) + head(1012, hy + 15, 'r');
+    b += lbl(945, 212, 'logits', '', 'middle');
+    var ebOn = sc === 'mean';
+    b += '<g opacity="' + (ebOn ? 1 : 0.35) + '">' + wire('M912 ' + (hy + 4) + ' L912 320', '', ebOn ? acc : '') + head(912, 320, 'd', '', ebOn ? acc : '');
+    b += '<rect x="852" y="322" width="120" height="50" rx="9" fill="var(--surface-2)" stroke="' + (ebOn ? 'var(--accent)' : 'var(--border)') + '"/>';
+    b += lbl(912, 342, 'softmax(logits) · E', '', 'middle', 'fill:var(--fg)') + lbl(912, 362, '= ē', '', 'middle') + '</g>';
+    // Inputs into the backbone: self-cond block and time
+    b += wire('M628 312 L644 274') + head(644, 274, 'u');
+    b += wire('M749 312 L716 274') + head(716, 274, 'u');
+    // Self-conditioning loops (inside the network frame)
+    if (sc === 'hidden') b += wire('M' + hx + ' 227 L' + hx + ' 256 L830 256 L830 345 L814 345', 'loop', acc) + head(812, 345, 'l', '', 'stroke:var(--accent)') + lbl(838, 296, 'previous h,', '', '', 'fill:var(--accent)') + lbl(838, 310, 'before the head', '', '', 'fill:var(--accent)');
+    if (sc === 'mean') b += wire('M852 347 L814 347', 'loop', acc) + head(812, 347, 'l', '', 'stroke:var(--accent)') + lbl(912, 390, 'previous ē fed back', '', 'middle', 'fill:var(--accent)');
+    // Pipeline into the network
+    var y = 252;
+    b += wire('M148 ' + y + ' L170 ' + y) + head(170, y, 'r');
+    b += wire('M300 ' + y + ' L330 ' + (y - 17)) + head(330, y - 17, 'r');
+    b += wire('M410 290 L410 340') + lbl(418, 320, 'how much noise');
+    b += wire('M490 235 L548 235') + '<circle cx="552" cy="235" r="4" fill="var(--muted)"/>' + wire('M556 235 L612 222') + head(612, 222, 'r');
+    b += lbl(552, block ? 192 : 204, block ? 'xₜ ⊕ x₀ (2L)' : 'xₜ', '', 'middle', 'fill:var(--fg)');
+    if (block) b += lbl(552, 208, 'noisy + clean copy', '', 'middle');
+    b += wire('M490 382 L580 382') + head(580, 382, 'r') + lbl(536, 376, 't');
+    // Training branch: output -> loss, and loss -> schedule when the schedule adapts
+    b += wire('M1087 180 L1087 140', 'train') + head(1087, 140, 'u', 'train') + lbl(1100, 165, 'train', 'train');
+    if (adapt) {
+      b += wire('M1012 92 L315 92 L315 400 L330 400', 'train loop') + head(330, 400, 'r', 'train');
+      b += lbl(760, 84, 'loss per noise level refits the schedule (' + cur('sched').n.toLowerCase() + ')', 'train', 'middle');
     }
+    // Generation branch: output -> sampler -> next input, back into the network
+    b += wire('M1087 290 L1087 378', 'gen') + head(1087, 378, 'd', 'gen') + lbl(1100, 340, 'generate', 'gen');
+    b += wire('M1012 450 L552 450 L552 239', 'gen loop') + head(552, 241, 'u', 'gen');
+    b += lbl(800, 470, 'the sampler picks the next input xₛ; repeat until clean', 'gen', 'middle');
     // Nodes
     Object.keys(N).forEach(function (id) {
       var p = N[id], o = cur(id), bad = clash(id);
       b += '<g class="node' + (id === active ? ' on' : '') + '" data-id="' + id + '" tabindex="0" role="button" aria-label="' + C[id].title + ': ' + esc(o.n) + '">';
       b += '<rect class="box" x="' + p[0] + '" y="' + p[1] + '" width="' + p[2] + '" height="' + p[3] + '" rx="12"' + (bad ? ' style="stroke:var(--rose)"' : '') + '/>';
       b += '<text class="ntitle" x="' + (p[0] + 10) + '" y="' + (p[1] + 17) + '">' + C[id].title + '</text>';
-      var gh = p[3] - 46;
-      b += g(id, o.k, p[0] + 10, p[1] + 24, p[2] - 20, gh);
-      b += '<text class="nval" x="' + (p[0] + 10) + '" y="' + (p[1] + p[3] - 9) + '">' + esc(o.n.length > 20 ? o.n.slice(0, 19) + '…' : o.n) + (bad ? ' ⚠' : '') + '</text>';
+      b += g(id, o.k, p[0] + 10, p[1] + 24, p[2] - 20, p[3] - 46);
+      var nm = o.n.length > 19 ? o.n.slice(0, 18) + '…' : o.n;
+      b += '<text class="nval" x="' + (p[0] + 10) + '" y="' + (p[1] + p[3] - 9) + '">' + esc(nm) + (bad ? ' ⚠' : '') + '</text>';
       b += '</g>';
     });
     map.innerHTML = b;
@@ -297,6 +324,61 @@
       el.addEventListener('click', function () { select(el.dataset.id); });
       el.addEventListener('keydown', function (e) { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); select(el.dataset.id); } });
     });
+  }
+
+  // ---------- Large pictures for the panel ----------
+  function bigPic(id, k) {
+    var b = '';
+    function box(x, y, w, h, t, st) { st = st || {}; return '<rect x="' + x + '" y="' + y + '" width="' + w + '" height="' + h + '" rx="5" fill="' + (st.fill || 'var(--surface)') + '" stroke="' + (st.stroke || 'var(--faint)') + '"' + (st.dash ? ' stroke-dasharray="3 3"' : '') + '/>' + (t ? '<text x="' + (x + w / 2) + '" y="' + (y + h / 2 + 4) + '" text-anchor="middle" style="font:' + (st.size || 11) + 'px var(--font-display);fill:' + (st.color || 'var(--fg)') + '">' + t + '</text>' : ''); }
+    function t(x, y, s, st) { return '<text x="' + x + '" y="' + y + '" style="font:11px var(--font-body);fill:var(--muted);' + (st || '') + '">' + s + '</text>'; }
+    function arr(x1, y1, x2, y2, c) { c = c || 'var(--faint)'; var a = Math.atan2(y2 - y1, x2 - x1); return '<line x1="' + x1 + '" y1="' + y1 + '" x2="' + x2 + '" y2="' + y2 + '" stroke="' + c + '" stroke-width="1.5"/><path d="M' + (x2 - 6 * Math.cos(a - 0.5)) + ' ' + (y2 - 6 * Math.sin(a - 0.5)) + ' L' + x2 + ' ' + y2 + ' L' + (x2 - 6 * Math.cos(a + 0.5)) + ' ' + (y2 - 6 * Math.sin(a + 0.5)) + '" fill="none" stroke="' + c + '" stroke-width="1.5"/>'; }
+    if ((id === 'mods' && k === 'block') || (id === 'attn' && cur('mods').k === 'block')) {
+      // Training sequence: noisy copy then clean copy, 2 blocks of 2 tokens each (L = 4).
+      var lab = ['[M]', 'cat', 'sat', '[M]', 'the', 'cat', 'sat', 'on'];
+      b += t(14, 18, 'training input: noisy copy xₜ, then clean copy x₀');
+      lab.forEach(function (w, i) { var noisy = i < 4; b += box(14 + i * 46 + (noisy ? 0 : 10), 26, 40, 24, w, noisy ? { dash: w === '[M]', color: w === '[M]' ? 'var(--muted)' : 'var(--fg)' } : { stroke: 'var(--teal)' }); });
+      b += '<line x1="203" x2="203" y1="22" y2="56" stroke="var(--muted)"/>';
+      [0, 2].forEach(function (s, k2) { b += '<path d="M' + (14 + s * 46) + ' 58 L' + (14 + s * 46) + ' 62 L' + (14 + s * 46 + 86) + ' 62 L' + (14 + s * 46 + 86) + ' 58" fill="none" stroke="var(--accent)"/>' + t(14 + s * 46 + 30, 74, 'block ' + (k2 + 1), 'fill:var(--accent)'); });
+      // Mask
+      var gx = 84, gy = 96, cs = 12;
+      b += t(14, gy + 50, 'queries ↓', '') + t(gx, gy - 6, 'keys →  (noisy | clean)');
+      for (var r = 0; r < 8; r++) for (var c = 0; c < 8; c++) {
+        var qn = r < 4, kn = c < 4, qb = Math.floor((r % 4) / 2), kb = Math.floor((c % 4) / 2), see;
+        if (qn && kn) see = qb === kb; else if (qn && !kn) see = kb < qb; else if (!qn && kn) see = false; else see = (c % 4) <= (r % 4);
+        b += '<rect x="' + (gx + c * (cs + 2) + (c >= 4 ? 4 : 0)) + '" y="' + (gy + r * (cs + 2) + (r >= 4 ? 4 : 0)) + '" width="' + cs + '" height="' + cs + '" rx="2" fill="' + (see ? (qn ? 'var(--accent)' : 'var(--teal)') : 'var(--surface)') + '"/>';
+      }
+      b += t(236, 110, 'noisy tokens see their own', 'fill:var(--accent)') + t(236, 124, 'block + earlier clean blocks') + t(236, 150, 'clean tokens see clean', 'fill:var(--teal)') + t(236, 164, 'tokens up to themselves') + t(236, 196, 'same network, ~2× length', 'fill:var(--fg)');
+      return b;
+    }
+    if (id === 'self') {
+      var on = function (x) { return x ? 'var(--accent)' : 'var(--faint)'; };
+      b += box(14, 30, 92, 40, 'Transformer', { size: 12 });
+      b += arr(106, 50, 140, 50) + '<circle cx="148" cy="50" r="8" fill="' + (k === 'hidden' ? 'var(--accent)' : 'var(--surface)') + '" stroke="var(--accent)"/>' + t(143, 30, 'h', 'fill:var(--fg);font-size:13px');
+      b += arr(156, 50, 186, 50) + box(186, 32, 62, 36, 'LM head', { size: 11 });
+      b += arr(248, 50, 278, 50) + t(282, 54, 'logits', 'fill:var(--fg)');
+      b += arr(300, 60, 300, 104, on(k === 'mean')) + box(240, 106, 120, 40, 'softmax · E', { stroke: on(k === 'mean'), size: 12 });
+      b += arr(300, 146, 300, 168, on(k === 'mean')) + t(250, 184, 'ē (expected embedding)', 'fill:' + on(k === 'mean'));
+      b += box(14, 150, 120, 40, 'self-cond block', { stroke: on(k !== 'off'), size: 11 });
+      b += arr(74, 150, 60, 72, on(k !== 'off'));
+      if (k === 'hidden') b += '<path d="M148 58 L148 120 L100 120 L100 148" fill="none" stroke="var(--accent)" stroke-width="1.6" stroke-dasharray="5 4"/>' + t(156, 112, 'tap h before the head', 'fill:var(--accent)');
+      if (k === 'mean') b += '<path d="M240 186 L200 186 L200 170 L136 170" fill="none" stroke="var(--accent)" stroke-width="1.6" stroke-dasharray="5 4"/>' + t(150, 212, 'feed back the averaged embedding', 'fill:var(--accent)');
+      if (k === 'off') b += t(14, 212, 'off: nothing is fed back', '');
+      return b;
+    }
+    if (id === 'samp') {
+      b += t(14, 18, 'the sampler decides what the network sees next');
+      b += box(14, 40, 100, 80, '', { stroke: 'var(--border)' }) + g('out', cur('out').k, 22, 50, 84, 50) + t(30, 136, 'prediction');
+      b += arr(116, 80, 150, 80, 'var(--teal)');
+      b += box(152, 40, 100, 80, '', { stroke: 'var(--teal)' }) + g('samp', k, 160, 50, 84, 60) + t(170, 136, cur('samp').n.slice(0, 16), 'fill:var(--teal)');
+      b += arr(254, 80, 288, 80, 'var(--teal)');
+      b += box(290, 40, 96, 80, '', { stroke: 'var(--border)' }) + t(300, 136, 'next input xₛ');
+      var nxt = { ancestral: ['the', '[M]', 'sat'], eb: ['the', 'cat', 'sat'], analytic: ['the', 'cat', '[M]'], ctmc: ['the', 'dog', 'sat'], ar: ['the', 'cat', '—'], hybrid: ['the', '[M]', 'sat~'] }[k];
+      if (nxt) nxt.forEach(function (w, i) { b += box(296, 50 + i * 22, 84, 18, w, { size: 10, dash: w === '[M]', color: w === 'dog' ? 'var(--rose)' : 'var(--fg)' }); });
+      else b += '<circle cx="338" cy="80" r="26" fill="var(--teal)" opacity=".2"/><circle cx="338" cy="80" r="12" fill="var(--teal)" opacity=".4"/>' + t(304, 114, 'slightly less noisy');
+      b += '<path d="M380 122 L380 170 L108 170 L108 122" fill="none" stroke="var(--teal)" stroke-width="1.6" stroke-dasharray="5 4"/>' + t(120, 190, 'xₛ goes back into the network for the next step', 'fill:var(--teal)');
+      return b;
+    }
+    return null;
   }
 
   // ---------- Stepper panel ----------
@@ -324,7 +406,7 @@
     });
     var big = document.getElementById('big');
     big.setAttribute('aria-label', c.title + ': ' + o.n);
-    big.innerHTML = '<rect x="0" y="0" width="400" height="220" rx="12" fill="var(--surface-2)"/>' + g(active, o.k, 40, 30, 320, 160);
+    big.innerHTML = '<rect x="0" y="0" width="400" height="220" rx="12" fill="var(--surface-2)"/>' + (bigPic(active, o.k) || g(active, o.k, 40, 30, 320, 160));
   }
   function update() { drawMap(); drawPanel(); }
   function select(id) { active = id; update(); }
