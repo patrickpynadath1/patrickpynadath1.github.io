@@ -169,10 +169,19 @@
   .pipe.focused .layer { border-top: 0; }
   .pipe.focused .layer:not(.picked) { display: none; }
   .top-controls { margin: 4px 0 8px; }
-  .recipe-members[hidden] { display: none; }
+  .recipe-members[hidden], .members[hidden] { display: none; }
+  .recipes .rgroup { display: flex; align-items: baseline; gap: 6px 12px; margin-bottom: 8px; }
+  .recipes .rgroup h4 { flex: 0 0 132px; margin: 0; }
+  .recipes .rgroup .opts { flex: 1; min-width: 0; }
+  .recipe-card { padding: 16px 18px; }
+  .recipe-card h3 { font-size: 22px; margin: 2px 0 6px; }
+  .recipe-card #family-note { color: var(--muted); font-size: 13.5px; }
+  .members summary { cursor: pointer; font-size: 13px; color: var(--accent); margin: 2px 0 8px; }
+  .members[open] summary { margin-bottom: 10px; }
+  @media (max-width: 600px) { .recipes .rgroup { display: block; } .recipes .rgroup h4 { margin-bottom: 6px; } }
   .recipe-card a { color: var(--accent); }
   .top-controls .modes { margin-bottom: 14px; }
-  .part:first-of-type { margin-top: 36px; }
+  .part:first-of-type { margin-top: 28px; }
   .jump { color: var(--accent); text-decoration: none; border-bottom: 1px solid currentColor; }
 </style>
 
@@ -188,7 +197,7 @@
     <button type="button" role="tab" id="mode-recipes" aria-selected="false">Paper recipes</button>
   </div>
   <section class="recipes" id="recipes" hidden>
-    <div id="recipe-groups"></div>
+    <div><div id="recipe-groups"></div><p class="recipe-intro" id="recipe-intro"></p></div>
     <div class="recipe-card" id="recipe-card">
       <span class="recipe-tag">Recipe</span>
       <h3 id="family-name"></h3>
@@ -197,8 +206,7 @@
       <h4 class="variant-name" id="recipe-name"></h4>
       <p id="recipe-note"></p>
       <p class="recipe-meta"><code id="recipe-cmd"></code> <a id="recipe-link" target="_blank" rel="noopener">Paper</a></p>
-      <ul class="recipe-members" id="recipe-members" hidden></ul>
-      <p class="recipe-intro" id="recipe-intro"></p>
+      <details class="members" id="members-box" hidden><summary id="members-sum"></summary><ul class="recipe-members" id="recipe-members" hidden></ul></details>
     </div>
   </section>
 </div>
@@ -1796,6 +1804,8 @@
       document.getElementById('recipe-note').innerHTML = T('recipe.group-' + id);
       meta.hidden = true;
       list.hidden = false;
+      document.getElementById('members-box').hidden = false;
+      document.getElementById('members-sum').textContent = 'The ' + r.members.length + ' configs in this group';
       list.innerHTML = r.members.map(function (m) {
         return '<li><span class="m-name">' + m.name + '</span> <code>+experiment=' + m.id + '</code>' +
           (m.url ? ' <a href="' + m.url + '" target="_blank" rel="noopener">Paper</a>' : '') +
@@ -1805,6 +1815,7 @@
       document.getElementById('recipe-note').innerHTML = T('recipe.' + id);
       meta.hidden = false;
       list.hidden = true;
+      document.getElementById('members-box').hidden = true;
       document.getElementById('recipe-cmd').textContent = '+experiment=' + id;
       var link = document.getElementById('recipe-link');
       link.hidden = !r.url;
