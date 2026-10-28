@@ -161,6 +161,13 @@
   .part-num { font: 400 clamp(26px, 3vw, 34px)/1 var(--font-display); color: var(--accent); }
   .part-title { font: 400 clamp(26px, 3vw, 34px)/1.15 var(--font-display); letter-spacing: -.6px; margin: 0; }
   .part .lede { margin-bottom: 20px; }
+  .focus-bar { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 14px; padding: 10px 14px; border-radius: 12px; background: var(--accent-wash); font-size: 14px; margin-bottom: 4px; }
+  .focus-bar strong { color: var(--accent); font-weight: 600; }
+  .focus-bar button { margin-left: auto; min-height: 34px; padding: 4px 14px; border-radius: 8px; border: 1px solid var(--accent); background: transparent; color: var(--accent); font-size: 13px; }
+  .focus-bar button:hover { background: var(--accent); color: var(--bg); }
+  .focus-bar[hidden] { display: none; }
+  .pipe.focused .layer { border-top: 0; }
+  .pipe.focused .layer:not(.picked) { display: none; }
   .jump { color: var(--accent); text-decoration: none; border-bottom: 1px solid currentColor; }
 </style>
 
@@ -216,6 +223,10 @@
       <p class="recipe-intro" id="recipe-intro"></p>
     </div>
   </section>
+  <div class="focus-bar" id="focus-bar">
+    <span>Showing <strong id="focus-name"></strong>. Pick a part on the map above to switch.</span>
+    <button type="button" id="show-all" aria-pressed="false">Show all parts</button>
+  </div>
   <div class="pipe" id="pipe"></div>
 </section>
 
@@ -669,7 +680,7 @@
     big.innerHTML = '<rect x="0" y="0" width="400" height="220" rx="12" fill="var(--surface-2)"/>' + (bigPic(active, o.k) || g(active, o.k, 40, 30, 320, 160));
   }
   function update() { drawMap(); drawPanel(); }
-  function select(id) { active = id; update(); }
+  function select(id) { active = id; update(); document.dispatchEvent(new CustomEvent('mapselect', { detail: id })); }
   function step(d) { var n = C[active].opts.length; S[active] = (S[active] + d + n) % n; update(); }
   document.getElementById('prev').addEventListener('click', function () { step(-1); });
   document.getElementById('next').addEventListener('click', function () { step(1); });
@@ -1817,5 +1828,35 @@
   document.getElementById('mode-recipes').addEventListener('click', function () { setMode('recipes'); });
 
   render();
+})();
+</script>
+
+<script>
+// Part 2 shows only the layer picked on the map, unless "Show all parts" is on.
+(function () {
+  var IDS = ['tokens', 'rep', 'corr', 'sched', 'net', 'param', 'loss', 'samp', 'mods'];
+  var TO_LAYER = { attn: 'net', time: 'net', self: 'net', out: 'param' };
+  var pipe = document.getElementById('pipe'), bar = document.getElementById('focus-bar');
+  var btn = document.getElementById('show-all'), nameEl = document.getElementById('focus-name');
+  var all = false, current = 'corr';
+  function rows() { return pipe.querySelectorAll(':scope > .layer'); }
+  function apply() {
+    var recipes = document.body.classList.contains('recipe-mode');
+    var showAll = all || recipes, want = TO_LAYER[current] || current;
+    pipe.classList.toggle('focused', !showAll);
+    rows().forEach(function (r, i) {
+      var on = IDS[i] === want;
+      r.classList.toggle('picked', on);
+      if (on) nameEl.textContent = r.querySelector('h2').textContent;
+    });
+    bar.hidden = recipes;
+    btn.setAttribute('aria-pressed', String(all));
+    btn.textContent = all ? 'Show only the picked part' : 'Show all parts';
+    bar.querySelector('span').style.visibility = all ? 'hidden' : '';
+  }
+  document.addEventListener('mapselect', function (e) { current = e.detail; apply(); });
+  btn.addEventListener('click', function () { all = !all; apply(); });
+  ['mode-explore', 'mode-recipes'].forEach(function (id) { document.getElementById(id).addEventListener('click', function () { setTimeout(apply, 0); }); });
+  apply();
 })();
 </script>
