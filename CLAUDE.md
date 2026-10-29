@@ -36,12 +36,12 @@ and render through `src/layouts/BlogLayout.astro` and `src/styles/post.css`.
 
 - `static/images/Revolution Labs PoC 2: B300 cluster on SkyPilot.pdf`
 
-## Design map figure (the draft post)
+## Design map figure (the diffusion design choices post)
 
 An interactive figure of every design choice in a diffusion language model, built on the
 `candi` codebase. It has two linked parts:
 
-- **Part 1, "How the parts fit together":** a clickable SVG map of the pipeline. Tokens → representation → corruption + schedule → network (attention, time input, self-cond, LM head) → output → loss / sampler, plus a "sequence modifiers" band.
+- **Part 1, "How the parts fit together":** a clickable SVG map of the pipeline in three zones: information path (representation, corruption, schedule), denoising task (train times, time input, attention, self-cond, LM head, output, loss) and inference (sampler), plus a row of modifier chips.
 - **Part 2, "Follow five tokens through every part":** a layer-by-layer walkthrough. Each layer has option buttons, a picture, a caption and a "See it in the code" popup.
 
 A toggle at the top switches between "Explore parts" and "Paper recipes". The recipes are presets
@@ -53,7 +53,7 @@ taken from candi's experiment configs, grouped into families.
 - `public/figures/design-map/index.html` is **generated**. Never edit it by hand. Rebuild it with:
   `python3 scripts/component-figures/build_embed.py src/standalone/component-figures.html public/figures/design-map/index.html`
   The embed version drops the page header, follows the post's theme, sizes its iframe to fit, and places popups where the reader is looking.
-- `src/content/blog/untitled-draft.mdx` is the draft post (`draft: true`: off the blog list, but live at `/blog/untitled-draft/`). It embeds the figure as an iframe pointing at `/figures/design-map/`, inside `<div className="fig-bleed">`.
+- `src/content/blog/diffusion-lm-design-choices.mdx` is the post, live at `/blog/diffusion-lm-design-choices/` with the work-in-progress badge (`wip: true`). It embeds the figure as an iframe pointing at `/figures/design-map/`, inside `<div className="fig-bleed">`.
 - `src/styles/post.css`: `.post-grid:has(.fig-bleed)` widens the reading column to the figure's width on screens wider than 1300px.
 - Code popup snippets come from candi at a pinned commit:
   1. `python3 scripts/component-figures/code_refs.py /Users/patrickpynadath/candi > code_refs.json`
@@ -101,7 +101,7 @@ Three main scripts, in this order:
 
 1. Rebuild the embed (command above). Refresh code snippets only if candi changed.
 2. Run `npm run build` (CI uses bun; both work).
-3. Check it in a browser with Playwright: serve `dist/` and open `/blog/untitled-draft/`.
+3. Check it in a browser with Playwright: serve `dist/` and open `/blog/diffusion-lm-design-choices/`.
    - Take screenshots at 1440, 1280, 1024 and 390 wide, in light and dark.
    - Click through the map, the recipe families and a code popup.
    - Check for console errors and for sideways scroll on the page.
