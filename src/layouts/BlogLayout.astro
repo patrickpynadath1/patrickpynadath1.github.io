@@ -9,10 +9,11 @@ interface Props {
   description?: string;
   publishDate?: Date;
   tags?: string[];
+  wip?: boolean;
   headings?: Heading[];
 }
 
-const { title, description, publishDate, tags = [], headings = [] } = Astro.props as Props;
+const { title, description, publishDate, tags = [], headings = [], wip = false } = Astro.props as Props;
 const sections = headings.filter((h) => h.depth === 2);
 const formattedDate = publishDate
   ? new Intl.DateTimeFormat('en', { dateStyle: 'long' }).format(publishDate)
@@ -53,6 +54,7 @@ const formattedDate = publishDate
 
       <div class="post-meta">
         <span class="eyebrow">Research note</span>
+        {wip && <span class="wip-badge">Work in progress</span>}
         {formattedDate && publishDate && <time datetime={publishDate.toISOString()}>{formattedDate}</time>}
         {tags.length > 0 && <div class="tags">{tags.map((tag) => <span>{tag}</span>)}</div>}
       </div>

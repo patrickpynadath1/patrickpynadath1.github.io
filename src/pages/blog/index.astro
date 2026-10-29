@@ -42,7 +42,7 @@ const dateFormat = new Intl.DateTimeFormat('en', { dateStyle: 'medium' });
           {posts.length === 0 ? <p>No posts yet. Check back soon.</p> : posts.map(post => (
             <article class="post-card">
               <a href={`/blog/${post.slug}/`}>
-                <div class="post-meta"><time datetime={post.data.pubDate.toISOString()}>{dateFormat.format(post.data.pubDate)}</time><span aria-hidden="true">↗</span></div>
+                <div class="post-meta"><div class="post-when"><time datetime={post.data.pubDate.toISOString()}>{dateFormat.format(post.data.pubDate)}</time>{post.data.wip && <span class="wip-badge">Work in progress</span>}</div><span aria-hidden="true">↗</span></div>
                 <h2>{post.data.title}</h2>
                 <p>{post.data.description}</p>
                 <div class="tag-list">{(post.data.tags ?? []).map(tag => <span>{tag}</span>)}</div>
