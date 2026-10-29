@@ -1,0 +1,429 @@
+{
+  "dictionary-coding-gap": {
+    "sources": [
+      {
+        "path": ".cache/analysis/bidirectional-savings/dd9d3ca581adc948cb9e/dictionary-coding-gap/f36375059689dfdb1c11/analysis.json",
+        "sha256": "3bc6c47576b0d5ef17451c53feeea83760786b342016e13fb055b7565e0f4bf1"
+      },
+      {
+        "path": ".cache/analysis/bidirectional-savings/dd9d3ca581adc948cb9e/dictionary-coding-gap/f36375059689dfdb1c11/paired.json",
+        "sha256": "5ae1bc0aaec29b4ea3e868d00c54955d54b9067169df03bf36528bb2436e33b9"
+      },
+      {
+        "path": ".cache/analysis/bidirectional-savings/dd9d3ca581adc948cb9e/dictionary-coding-gap/f36375059689dfdb1c11/protocol.json",
+        "sha256": "3227dd9ce42a2940fe444d70f7d409e3737eb975a359c5899c30a1d8f243a016"
+      }
+    ],
+    "analysis": {
+      "families": {
+        "bank": {
+          "above_control": 5,
+          "count": 5,
+          "maximum": 3.3669284537420503,
+          "median": 2.0840873246309797,
+          "minimum": 0.2877082217677487
+        },
+        "collapse": {
+          "above_control": 4,
+          "count": 7,
+          "maximum": 3.0340164800338054,
+          "median": 0.7493119886238115,
+          "minimum": 0.00746506393832893
+        },
+        "mirror": {
+          "above_control": 18,
+          "count": 18,
+          "maximum": 0.3309484134290473,
+          "median": 0.20060144776730804,
+          "minimum": 0.019270399284561514
+        },
+        "periodic": {
+          "above_control": 10,
+          "count": 10,
+          "maximum": 1.6175373134328366,
+          "median": 0.7569003668549467,
+          "minimum": 0.07142857142857142
+        },
+        "phrase_bank": {
+          "above_control": 27,
+          "count": 27,
+          "maximum": 1.71348916418108,
+          "median": 0.9212393909032948,
+          "minimum": 0.40639334963798657
+        },
+        "pollute": {
+          "above_control": 6,
+          "count": 10,
+          "maximum": 0.08623104739736627,
+          "median": 0.01632503941878513,
+          "minimum": -0.04046309020352684
+        },
+        "repeat": {
+          "above_control": 0,
+          "count": 7,
+          "maximum": 0.007239783742885631,
+          "median": -0.03657350133741287,
+          "minimum": -0.12223722313711712
+        },
+        "shuffle": {
+          "above_control": 8,
+          "count": 10,
+          "maximum": 0.0739281507443289,
+          "median": 0.011000594345409492,
+          "minimum": 0.0037785109659370826
+        },
+        "topk_iid": {
+          "above_control": 18,
+          "count": 18,
+          "maximum": 0.597633913993693,
+          "median": 0.5007335115685202,
+          "minimum": 0.337327975161577
+        }
+      },
+      "franca": {
+        "above_control": 73,
+        "control": 0.008515675001848723,
+        "count": 73
+      },
+      "gpt2_best": {
+        "large": {
+          "label": {
+            "kind": "gpt2",
+            "name": "t07",
+            "phase": "heldout",
+            "size": "large",
+            "temperature": 0.7,
+            "top_k": -1,
+            "top_p": 1
+          },
+          "score": 0.004073960744983618
+        },
+        "medium": {
+          "label": {
+            "kind": "gpt2",
+            "name": "t07",
+            "phase": "heldout",
+            "size": "medium",
+            "temperature": 0.7,
+            "top_k": -1,
+            "top_p": 1
+          },
+          "score": 0.0229212277954678
+        },
+        "small": {
+          "label": {
+            "kind": "gpt2",
+            "name": "t07",
+            "phase": "heldout",
+            "size": "small",
+            "temperature": 0.7,
+            "top_k": -1,
+            "top_p": 1
+          },
+          "score": -0.03140841906636741
+        },
+        "xl": {
+          "label": {
+            "kind": "gpt2",
+            "name": "t07",
+            "phase": "heldout",
+            "size": "xl",
+            "temperature": 0.7,
+            "top_k": -1,
+            "top_p": 1
+          },
+          "score": 0.03425173707687379
+        }
+      },
+      "gregor": {
+        "add": [
+          {
+            "above_control": 5,
+            "count": 5,
+            "lambda": 0.5
+          },
+          {
+            "above_control": 5,
+            "count": 5,
+            "lambda": 1
+          }
+        ],
+        "remove": [
+          {
+            "above_control": 4,
+            "count": 5,
+            "lambda": 0.5
+          },
+          {
+            "above_control": 5,
+            "count": 5,
+            "lambda": 1
+          }
+        ]
+      },
+      "pythia": {
+        "t07": {
+          "count": 24,
+          "spearman": -0.6452173913043477
+        },
+        "t10": {
+          "count": 24,
+          "spearman": 0.468695652173913
+        },
+        "t10-k20": {
+          "count": 24,
+          "spearman": -0.1878260869565217
+        },
+        "t10-p095": {
+          "count": 24,
+          "spearman": 0.40956521739130425
+        },
+        "t13": {
+          "count": 24,
+          "spearman": 0.26086956521739124
+        }
+      }
+    },
+    "paired": [
+      {
+        "condition": "digit_substitution-0.25",
+        "before": 0.0035627244720771193,
+        "after": 0.00416557449375298,
+        "delta": 0.000602850021675861
+      },
+      {
+        "condition": "digit_substitution-1.0",
+        "before": 0.0035627244720771193,
+        "after": 0.006178022660114532,
+        "delta": 0.0026152981880374123
+      },
+      {
+        "condition": "sentence_shuffle-0.25",
+        "before": 0.0035627244720771193,
+        "after": 0.0042544359576163985,
+        "delta": 0.0006917114855392792
+      },
+      {
+        "condition": "sentence_shuffle-0.5",
+        "before": 0.0035627244720771193,
+        "after": 0.006290480575195031,
+        "delta": 0.0027277561031179114
+      },
+      {
+        "condition": "sentence_shuffle-1.0",
+        "before": 0.0035627244720771193,
+        "after": 0.0036177763772016055,
+        "delta": 0.000055051905124486183
+      }
+    ],
+    "protocol": {
+      "aggregation": "Equal document weights; signed differences; no clipping or absolute value.",
+      "forward": "mean_G[(L(G|real_dictionary)-L(G|generated_dictionary))/bytes(G)]",
+      "implementation": "d8b1f623e12bf39e8e7d6c4137e474399b098d1c8d2b9ee0cbcc09b308c30ea7",
+      "notes": "Same 64KiB-budget raw dictionaries, level10/window23 Zstd, independent frames and fit/test splits as current conditional W1. No new fitting or compression. Within-document adaptation remains enabled. Inherits source overlap caveats. Not an exact KL estimate; negative scores are retained. Standalone in the analysis is the existing standalone-rate W1 comparator, not a coding difference.",
+      "reverse": "mean_D[(L(D|generated_dictionary)-L(D|real_dictionary))/bytes(D)]",
+      "source": ".cache/analysis/bidirectional-savings/dd9d3ca581adc948cb9e",
+      "source_protocol_hash": "3721ea185dbff2ee5590d2b45e30bdb17331b8580c55978d6f556f22a4e7dc8b",
+      "units": "bits per raw UTF-8 byte"
+    }
+  },
+  "dictionary-contrast-wasserstein": {
+    "sources": [
+      {
+        "path": ".cache/analysis/bidirectional-savings/dd9d3ca581adc948cb9e/dictionary-contrast-wasserstein/bfbd70f46bd9034c72a4/analysis.json",
+        "sha256": "7c8e192ca1e0187507d57bf553ffd3f9c1c09d65ac09e0d1e82711726b3a1860"
+      },
+      {
+        "path": ".cache/analysis/bidirectional-savings/dd9d3ca581adc948cb9e/dictionary-contrast-wasserstein/bfbd70f46bd9034c72a4/paired.json",
+        "sha256": "683a9d0c7ee45982df85316651ff723a51e1d11768e9567f283a21ec901cc55b"
+      },
+      {
+        "path": ".cache/analysis/bidirectional-savings/dd9d3ca581adc948cb9e/dictionary-contrast-wasserstein/bfbd70f46bd9034c72a4/protocol.json",
+        "sha256": "268cda34995c037c43620d63416a40dcce9ca11fd6e7dc141b9982e4318039c2"
+      }
+    ],
+    "analysis": {
+      "families": {
+        "bank": {
+          "above_control": 5,
+          "count": 5
+        },
+        "collapse": {
+          "above_control": 6,
+          "count": 7
+        },
+        "mirror": {
+          "above_control": 18,
+          "count": 18
+        },
+        "periodic": {
+          "above_control": 10,
+          "count": 10
+        },
+        "phrase_bank": {
+          "above_control": 27,
+          "count": 27
+        },
+        "pollute": {
+          "above_control": 10,
+          "count": 10
+        },
+        "repeat": {
+          "above_control": 7,
+          "count": 7
+        },
+        "shuffle": {
+          "above_control": 10,
+          "count": 10
+        },
+        "topk_iid": {
+          "above_control": 18,
+          "count": 18
+        }
+      },
+      "franca": {
+        "above_control": 73,
+        "control": 0.004687097738523012,
+        "count": 73
+      },
+      "gpt2_best": {
+        "large": {
+          "label": {
+            "kind": "gpt2",
+            "name": "t09",
+            "phase": "heldout",
+            "size": "large",
+            "temperature": 0.9,
+            "top_k": -1,
+            "top_p": 1
+          },
+          "score": 0.054188739022386426
+        },
+        "medium": {
+          "label": {
+            "kind": "gpt2",
+            "name": "t09",
+            "phase": "heldout",
+            "size": "medium",
+            "temperature": 0.9,
+            "top_k": -1,
+            "top_p": 1
+          },
+          "score": 0.04480820573560977
+        },
+        "small": {
+          "label": {
+            "kind": "gpt2",
+            "name": "t09",
+            "phase": "heldout",
+            "size": "small",
+            "temperature": 0.9,
+            "top_k": -1,
+            "top_p": 1
+          },
+          "score": 0.05857256326238057
+        },
+        "xl": {
+          "label": {
+            "kind": "gpt2",
+            "name": "t09",
+            "phase": "heldout",
+            "size": "xl",
+            "temperature": 0.9,
+            "top_k": -1,
+            "top_p": 1
+          },
+          "score": 0.04746897565642946
+        }
+      },
+      "gregor": {
+        "add": [
+          {
+            "above_control": 5,
+            "count": 5,
+            "lambda": 0.5
+          },
+          {
+            "above_control": 5,
+            "count": 5,
+            "lambda": 1
+          }
+        ],
+        "remove": [
+          {
+            "above_control": 4,
+            "count": 5,
+            "lambda": 0.5
+          },
+          {
+            "above_control": 5,
+            "count": 5,
+            "lambda": 1
+          }
+        ]
+      },
+      "pythia": {
+        "t07": {
+          "count": 24,
+          "spearman": 0.6347826086956522
+        },
+        "t10": {
+          "count": 24,
+          "spearman": 0.6878260869565217
+        },
+        "t10-k20": {
+          "count": 24,
+          "spearman": 0.728695652173913
+        },
+        "t10-p095": {
+          "count": 24,
+          "spearman": 0.4539130434782608
+        },
+        "t13": {
+          "count": 24,
+          "spearman": 0.09739130434782609
+        }
+      }
+    },
+    "paired": [
+      {
+        "after": 0.004026244774362915,
+        "before": 0.004819696697400909,
+        "condition": "digit_substitution-0.25",
+        "delta": -0.0007934519230379938
+      },
+      {
+        "after": 0.00498966046190057,
+        "before": 0.004819696697400909,
+        "condition": "digit_substitution-1.0",
+        "delta": 0.00016996376449966103
+      },
+      {
+        "after": 0.005316368964796534,
+        "before": 0.004819696697400909,
+        "condition": "sentence_shuffle-0.25",
+        "delta": 0.0004966722673956248
+      },
+      {
+        "after": 0.004171116457585665,
+        "before": 0.004819696697400909,
+        "condition": "sentence_shuffle-0.5",
+        "delta": -0.0006485802398152433
+      },
+      {
+        "after": 0.004687088760783884,
+        "before": 0.004819696697400909,
+        "condition": "sentence_shuffle-1.0",
+        "delta": -0.00013260793661702512
+      }
+    ],
+    "protocol": {
+      "formula": "W1(delta(D_test),delta(G_test)); delta(x)=(L(x|d_D)-L(x|d_G))/bytes(x)",
+      "gap_implementation": "d8b1f623e12bf39e8e7d6c4137e474399b098d1c8d2b9ee0cbcc09b308c30ea7",
+      "implementation": "7ddb85211886e775213b9b17b0f2a0bf1d2c4771b526dd726d83274781eedb58",
+      "notes": "Same subtraction orientation for BOTH banks. Signed contrasts are retained; no absolute value before transport. Same fixed raw dictionaries, held-out banks and independent frames as the current conditional W1; cached lengths reused. Inherits overlap and sampling caveats. Not KL. No new generation or compression.",
+      "source": ".cache/analysis/bidirectional-savings/dd9d3ca581adc948cb9e",
+      "units": "bits per raw UTF-8 byte; equal document weights"
+    }
+  }
+}

@@ -1,0 +1,2152 @@
+{
+  "residual_baseline": [
+    {
+      "parameters": {
+        "kind": "real",
+        "seed": 0
+      },
+      "source_tokens": 1048576,
+      "nll": 3.687758232887552,
+      "compression_rate": 12.125656127929688,
+      "residual": -8.437897895042136,
+      "residual_margin": 0.0,
+      "nll_reference_gap": 0.0,
+      "compression_reference_gap": 0.0,
+      "joint_reference_gap": 0.0
+    },
+    {
+      "parameters": {
+        "kind": "topk_iid",
+        "seed": 0,
+        "size": 32
+      },
+      "source_tokens": 1048576,
+      "nll": 5.176024878654853,
+      "compression_rate": 6.2717742919921875,
+      "residual": -1.0957494133373347,
+      "residual_margin": 7.342148481704801,
+      "nll_reference_gap": 1.4882666457673008,
+      "compression_reference_gap": 5.8538818359375,
+      "joint_reference_gap": 7.3421484817048
+    },
+    {
+      "parameters": {
+        "kind": "topk_iid",
+        "seed": 1,
+        "size": 32
+      },
+      "source_tokens": 1048576,
+      "nll": 5.173376391178554,
+      "compression_rate": 6.265472412109375,
+      "residual": -1.0920960209308213,
+      "residual_margin": 7.345801874111315,
+      "nll_reference_gap": 1.4856181582910017,
+      "compression_reference_gap": 5.8601837158203125,
+      "joint_reference_gap": 7.345801874111315
+    },
+    {
+      "parameters": {
+        "kind": "topk_iid",
+        "seed": 2,
+        "size": 32
+      },
+      "source_tokens": 1048576,
+      "nll": 5.17418837266653,
+      "compression_rate": 6.269378662109375,
+      "residual": -1.0951902894428454,
+      "residual_margin": 7.342707605599291,
+      "nll_reference_gap": 1.4864301397789776,
+      "compression_reference_gap": 5.8562774658203125,
+      "joint_reference_gap": 7.342707605599291
+    },
+    {
+      "parameters": {
+        "kind": "topk_iid",
+        "seed": 0,
+        "size": 64
+      },
+      "source_tokens": 1048576,
+      "nll": 6.031237355357923,
+      "compression_rate": 7.356376647949219,
+      "residual": -1.3251392925912961,
+      "residual_margin": 7.11275860245084,
+      "nll_reference_gap": 2.3434791224703706,
+      "compression_reference_gap": 4.769279479980469,
+      "joint_reference_gap": 7.112758602450839
+    },
+    {
+      "parameters": {
+        "kind": "topk_iid",
+        "seed": 1,
+        "size": 64
+      },
+      "source_tokens": 1048576,
+      "nll": 6.027541774689195,
+      "compression_rate": 7.35369873046875,
+      "residual": -1.3261569557795552,
+      "residual_margin": 7.111740939262581,
+      "nll_reference_gap": 2.339783541801643,
+      "compression_reference_gap": 4.7719573974609375,
+      "joint_reference_gap": 7.11174093926258
+    },
+    {
+      "parameters": {
+        "kind": "topk_iid",
+        "seed": 2,
+        "size": 64
+      },
+      "source_tokens": 1048576,
+      "nll": 6.02882817435042,
+      "compression_rate": 7.354606628417969,
+      "residual": -1.3257784540675486,
+      "residual_margin": 7.112119440974587,
+      "nll_reference_gap": 2.341069941462868,
+      "compression_reference_gap": 4.771049499511719,
+      "joint_reference_gap": 7.1121194409745865
+    },
+    {
+      "parameters": {
+        "kind": "topk_iid",
+        "seed": 0,
+        "size": 128
+      },
+      "source_tokens": 1048576,
+      "nll": 6.722318141175855,
+      "compression_rate": 8.318412780761719,
+      "residual": -1.5960946395858642,
+      "residual_margin": 6.841803255456272,
+      "nll_reference_gap": 3.0345599082883026,
+      "compression_reference_gap": 3.8072433471679688,
+      "joint_reference_gap": 6.841803255456272
+    },
+    {
+      "parameters": {
+        "kind": "topk_iid",
+        "seed": 1,
+        "size": 128
+      },
+      "source_tokens": 1048576,
+      "nll": 6.715288003669307,
+      "compression_rate": 8.3126220703125,
+      "residual": -1.5973340666431932,
+      "residual_margin": 6.840563828398943,
+      "nll_reference_gap": 3.027529770781755,
+      "compression_reference_gap": 3.8130340576171875,
+      "joint_reference_gap": 6.840563828398942
+    },
+    {
+      "parameters": {
+        "kind": "topk_iid",
+        "seed": 2,
+        "size": 128
+      },
+      "source_tokens": 1048576,
+      "nll": 6.720400360620662,
+      "compression_rate": 8.319122314453125,
+      "residual": -1.598721953832463,
+      "residual_margin": 6.839175941209673,
+      "nll_reference_gap": 3.03264212773311,
+      "compression_reference_gap": 3.8065338134765625,
+      "joint_reference_gap": 6.839175941209673
+    },
+    {
+      "parameters": {
+        "kind": "topk_iid",
+        "seed": 0,
+        "size": 256
+      },
+      "source_tokens": 1048576,
+      "nll": 7.364314635380673,
+      "compression_rate": 9.195503234863281,
+      "residual": -1.8311885994826085,
+      "residual_margin": 6.6067092955595275,
+      "nll_reference_gap": 3.6765564024931208,
+      "compression_reference_gap": 2.9301528930664062,
+      "joint_reference_gap": 6.6067092955595275
+    },
+    {
+      "parameters": {
+        "kind": "topk_iid",
+        "seed": 1,
+        "size": 256
+      },
+      "source_tokens": 1048576,
+      "nll": 7.366113553082674,
+      "compression_rate": 9.189117431640625,
+      "residual": -1.8230038785579508,
+      "residual_margin": 6.614894016484185,
+      "nll_reference_gap": 3.6783553201951222,
+      "compression_reference_gap": 2.9365386962890625,
+      "joint_reference_gap": 6.614894016484184
+    },
+    {
+      "parameters": {
+        "kind": "topk_iid",
+        "seed": 2,
+        "size": 256
+      },
+      "source_tokens": 1048576,
+      "nll": 7.364704144509938,
+      "compression_rate": 9.187461853027344,
+      "residual": -1.8227577085174058,
+      "residual_margin": 6.61514018652473,
+      "nll_reference_gap": 3.676945911622386,
+      "compression_reference_gap": 2.9381942749023438,
+      "joint_reference_gap": 6.61514018652473
+    },
+    {
+      "parameters": {
+        "kind": "topk_iid",
+        "seed": 0,
+        "size": 512
+      },
+      "source_tokens": 1048576,
+      "nll": 8.040643870989763,
+      "compression_rate": 10.098503112792969,
+      "residual": -2.0578592418032056,
+      "residual_margin": 6.38003865323893,
+      "nll_reference_gap": 4.352885638102212,
+      "compression_reference_gap": 2.0271530151367188,
+      "joint_reference_gap": 6.38003865323893
+    },
+    {
+      "parameters": {
+        "kind": "topk_iid",
+        "seed": 1,
+        "size": 512
+      },
+      "source_tokens": 1048576,
+      "nll": 8.035643511693518,
+      "compression_rate": 10.094459533691406,
+      "residual": -2.058816021997888,
+      "residual_margin": 6.379081873044248,
+      "nll_reference_gap": 4.3478852788059665,
+      "compression_reference_gap": 2.0311965942382812,
+      "joint_reference_gap": 6.379081873044248
+    },
+    {
+      "parameters": {
+        "kind": "topk_iid",
+        "seed": 2,
+        "size": 512
+      },
+      "source_tokens": 1048576,
+      "nll": 8.039062873445202,
+      "compression_rate": 10.089508056640625,
+      "residual": -2.050445183195423,
+      "residual_margin": 6.387452711846713,
+      "nll_reference_gap": 4.35130464055765,
+      "compression_reference_gap": 2.0361480712890625,
+      "joint_reference_gap": 6.387452711846713
+    },
+    {
+      "parameters": {
+        "kind": "topk_iid",
+        "seed": 0,
+        "size": 1024
+      },
+      "source_tokens": 1048576,
+      "nll": 8.758577918072932,
+      "compression_rate": 11.093093872070312,
+      "residual": -2.3345159539973803,
+      "residual_margin": 6.103381941044756,
+      "nll_reference_gap": 5.070819685185381,
+      "compression_reference_gap": 1.032562255859375,
+      "joint_reference_gap": 6.103381941044756
+    },
+    {
+      "parameters": {
+        "kind": "topk_iid",
+        "seed": 1,
+        "size": 1024
+      },
+      "source_tokens": 1048576,
+      "nll": 8.755994474636731,
+      "compression_rate": 11.089576721191406,
+      "residual": -2.333582246554675,
+      "residual_margin": 6.104315648487461,
+      "nll_reference_gap": 5.0682362417491795,
+      "compression_reference_gap": 1.0360794067382812,
+      "joint_reference_gap": 6.104315648487461
+    },
+    {
+      "parameters": {
+        "kind": "topk_iid",
+        "seed": 2,
+        "size": 1024
+      },
+      "source_tokens": 1048576,
+      "nll": 8.75354998310532,
+      "compression_rate": 11.090614318847656,
+      "residual": -2.337064335742337,
+      "residual_margin": 6.100833559299799,
+      "nll_reference_gap": 5.065791750217768,
+      "compression_reference_gap": 1.0350418090820312,
+      "joint_reference_gap": 6.100833559299799
+    },
+    {
+      "parameters": {
+        "kind": "mirror",
+        "seed": 0,
+        "size": 10
+      },
+      "source_tokens": 1048576,
+      "nll": 2.2227392397519563,
+      "compression_rate": 2.5322036743164062,
+      "residual": -0.30946443456444994,
+      "residual_margin": 8.128433460477686,
+      "nll_reference_gap": 1.4650189931355957,
+      "compression_reference_gap": 9.593452453613281,
+      "joint_reference_gap": 11.058471446748877
+    },
+    {
+      "parameters": {
+        "kind": "mirror",
+        "seed": 1,
+        "size": 10
+      },
+      "source_tokens": 1048576,
+      "nll": 2.2132615984983293,
+      "compression_rate": 2.5311355590820312,
+      "residual": -0.317873960583702,
+      "residual_margin": 8.120023934458434,
+      "nll_reference_gap": 1.4744966343892227,
+      "compression_reference_gap": 9.594520568847656,
+      "joint_reference_gap": 11.069017203236879
+    },
+    {
+      "parameters": {
+        "kind": "mirror",
+        "seed": 2,
+        "size": 10
+      },
+      "source_tokens": 1048576,
+      "nll": 2.2187113362007973,
+      "compression_rate": 2.5328826904296875,
+      "residual": -0.3141713542288902,
+      "residual_margin": 8.123726540813246,
+      "nll_reference_gap": 1.4690468966867547,
+      "compression_reference_gap": 9.5927734375,
+      "joint_reference_gap": 11.061820334186756
+    },
+    {
+      "parameters": {
+        "kind": "mirror",
+        "seed": 0,
+        "size": 50
+      },
+      "source_tokens": 1048576,
+      "nll": 3.0978924484669057,
+      "compression_rate": 3.703582763671875,
+      "residual": -0.6056903152049693,
+      "residual_margin": 7.832207579837167,
+      "nll_reference_gap": 0.5898657844206463,
+      "compression_reference_gap": 8.422073364257812,
+      "joint_reference_gap": 9.011939148678458
+    },
+    {
+      "parameters": {
+        "kind": "mirror",
+        "seed": 1,
+        "size": 50
+      },
+      "source_tokens": 1048576,
+      "nll": 3.1091718133933814,
+      "compression_rate": 3.7013397216796875,
+      "residual": -0.592167908286306,
+      "residual_margin": 7.845729986755829,
+      "nll_reference_gap": 0.5785864194941706,
+      "compression_reference_gap": 8.42431640625,
+      "joint_reference_gap": 9.00290282574417
+    },
+    {
+      "parameters": {
+        "kind": "mirror",
+        "seed": 2,
+        "size": 50
+      },
+      "source_tokens": 1048576,
+      "nll": 3.10810396622815,
+      "compression_rate": 3.7041549682617188,
+      "residual": -0.5960510020335685,
+      "residual_margin": 7.841846893008567,
+      "nll_reference_gap": 0.5796542666594018,
+      "compression_reference_gap": 8.421501159667969,
+      "joint_reference_gap": 9.00115542632737
+    },
+    {
+      "parameters": {
+        "kind": "mirror",
+        "seed": 0,
+        "size": 100
+      },
+      "source_tokens": 1048576,
+      "nll": 3.462158797614586,
+      "compression_rate": 4.2199249267578125,
+      "residual": -0.7577661291432265,
+      "residual_margin": 7.68013176589891,
+      "nll_reference_gap": 0.225599435272966,
+      "compression_reference_gap": 7.905731201171875,
+      "joint_reference_gap": 8.13133063644484
+    },
+    {
+      "parameters": {
+        "kind": "mirror",
+        "seed": 1,
+        "size": 100
+      },
+      "source_tokens": 1048576,
+      "nll": 3.4533704435111594,
+      "compression_rate": 4.219635009765625,
+      "residual": -0.7662645662544656,
+      "residual_margin": 7.671633328787671,
+      "nll_reference_gap": 0.2343877893763926,
+      "compression_reference_gap": 7.9060211181640625,
+      "joint_reference_gap": 8.140408907540454
+    },
+    {
+      "parameters": {
+        "kind": "mirror",
+        "seed": 2,
+        "size": 100
+      },
+      "source_tokens": 1048576,
+      "nll": 3.456751521320134,
+      "compression_rate": 4.220756530761719,
+      "residual": -0.7640050094415849,
+      "residual_margin": 7.6738928856005515,
+      "nll_reference_gap": 0.23100671156741814,
+      "compression_reference_gap": 7.904899597167969,
+      "joint_reference_gap": 8.135906308735386
+    },
+    {
+      "parameters": {
+        "kind": "mirror",
+        "seed": 0,
+        "size": 500
+      },
+      "source_tokens": 1048576,
+      "nll": 4.211344729874712,
+      "compression_rate": 5.308258056640625,
+      "residual": -1.0969133267659128,
+      "residual_margin": 7.340984568276223,
+      "nll_reference_gap": 0.5235864969871602,
+      "compression_reference_gap": 6.8173980712890625,
+      "joint_reference_gap": 7.340984568276223
+    },
+    {
+      "parameters": {
+        "kind": "mirror",
+        "seed": 1,
+        "size": 500
+      },
+      "source_tokens": 1048576,
+      "nll": 4.208395454819162,
+      "compression_rate": 5.303794860839844,
+      "residual": -1.0953994060206815,
+      "residual_margin": 7.342498489021454,
+      "nll_reference_gap": 0.5206372219316102,
+      "compression_reference_gap": 6.821861267089844,
+      "joint_reference_gap": 7.3424984890214535
+    },
+    {
+      "parameters": {
+        "kind": "mirror",
+        "seed": 2,
+        "size": 500
+      },
+      "source_tokens": 1048576,
+      "nll": 4.20996460739455,
+      "compression_rate": 5.30914306640625,
+      "residual": -1.0991784590117,
+      "residual_margin": 7.338719436030436,
+      "nll_reference_gap": 0.522206374506998,
+      "compression_reference_gap": 6.8165130615234375,
+      "joint_reference_gap": 7.338719436030436
+    },
+    {
+      "parameters": {
+        "kind": "mirror",
+        "seed": 0,
+        "size": 1000
+      },
+      "source_tokens": 1048576,
+      "nll": 4.557818133871114,
+      "compression_rate": 5.824310302734375,
+      "residual": -1.2664921688632607,
+      "residual_margin": 7.171405726178875,
+      "nll_reference_gap": 0.8700599009835623,
+      "compression_reference_gap": 6.3013458251953125,
+      "joint_reference_gap": 7.171405726178875
+    },
+    {
+      "parameters": {
+        "kind": "mirror",
+        "seed": 1,
+        "size": 1000
+      },
+      "source_tokens": 1048576,
+      "nll": 4.557505301460039,
+      "compression_rate": 5.8237152099609375,
+      "residual": -1.2662099085008984,
+      "residual_margin": 7.1716879865412375,
+      "nll_reference_gap": 0.8697470685724871,
+      "compression_reference_gap": 6.30194091796875,
+      "joint_reference_gap": 7.171687986541237
+    },
+    {
+      "parameters": {
+        "kind": "mirror",
+        "seed": 2,
+        "size": 1000
+      },
+      "source_tokens": 1048576,
+      "nll": 4.557376623167314,
+      "compression_rate": 5.824607849121094,
+      "residual": -1.26723122595378,
+      "residual_margin": 7.170666669088356,
+      "nll_reference_gap": 0.8696183902797618,
+      "compression_reference_gap": 6.301048278808594,
+      "joint_reference_gap": 7.170666669088355
+    },
+    {
+      "parameters": {
+        "kind": "mirror",
+        "seed": 0,
+        "size": 5000
+      },
+      "source_tokens": 1048576,
+      "nll": 5.341559979881875,
+      "compression_rate": 6.992431640625,
+      "residual": -1.6508716607431246,
+      "residual_margin": 6.787026234299011,
+      "nll_reference_gap": 1.6538017469943234,
+      "compression_reference_gap": 5.1332244873046875,
+      "joint_reference_gap": 6.787026234299011
+    },
+    {
+      "parameters": {
+        "kind": "mirror",
+        "seed": 1,
+        "size": 5000
+      },
+      "source_tokens": 1048576,
+      "nll": 5.336541743123433,
+      "compression_rate": 6.9926910400390625,
+      "residual": -1.656149296915629,
+      "residual_margin": 6.781748598126507,
+      "nll_reference_gap": 1.6487835102358814,
+      "compression_reference_gap": 5.132965087890625,
+      "joint_reference_gap": 6.781748598126507
+    },
+    {
+      "parameters": {
+        "kind": "mirror",
+        "seed": 2,
+        "size": 5000
+      },
+      "source_tokens": 1048576,
+      "nll": 5.3423693063876785,
+      "compression_rate": 6.99639892578125,
+      "residual": -1.6540296193935715,
+      "residual_margin": 6.783868275648564,
+      "nll_reference_gap": 1.6546110735001265,
+      "compression_reference_gap": 5.1292572021484375,
+      "joint_reference_gap": 6.7838682756485635
+    },
+    {
+      "parameters": {
+        "kind": "periodic",
+        "seed": 0,
+        "size": 16
+      },
+      "source_tokens": 1048576,
+      "nll": 0.20049948116333538,
+      "compression_rate": 0.00244903564453125,
+      "residual": 0.19805044551880413,
+      "residual_margin": 8.63594834056094,
+      "nll_reference_gap": 3.487258751724217,
+      "compression_reference_gap": 12.123207092285156,
+      "joint_reference_gap": 15.610465844009372
+    },
+    {
+      "parameters": {
+        "kind": "periodic",
+        "seed": 0,
+        "size": 32
+      },
+      "source_tokens": 1048576,
+      "nll": 0.346523027709249,
+      "compression_rate": 0.002960205078125,
+      "residual": 0.343562822631124,
+      "residual_margin": 8.78146071767326,
+      "nll_reference_gap": 3.341235205178303,
+      "compression_reference_gap": 12.122695922851562,
+      "joint_reference_gap": 15.463931128029866
+    },
+    {
+      "parameters": {
+        "kind": "periodic",
+        "seed": 0,
+        "size": 64
+      },
+      "source_tokens": 1048576,
+      "nll": 0.6348118269274339,
+      "compression_rate": 0.00390625,
+      "residual": 0.6309055769274339,
+      "residual_margin": 9.06880347196957,
+      "nll_reference_gap": 3.0529464059601183,
+      "compression_reference_gap": 12.121749877929688,
+      "joint_reference_gap": 15.174696283889805
+    },
+    {
+      "parameters": {
+        "kind": "periodic",
+        "seed": 0,
+        "size": 100
+      },
+      "source_tokens": 1048576,
+      "nll": 1.0035856690356741,
+      "compression_rate": 0.0048065185546875,
+      "residual": 0.9987791504809866,
+      "residual_margin": 9.436677045523123,
+      "nll_reference_gap": 2.684172563851878,
+      "compression_reference_gap": 12.120849609375,
+      "joint_reference_gap": 14.805022173226877
+    },
+    {
+      "parameters": {
+        "kind": "periodic",
+        "seed": 0,
+        "size": 150
+      },
+      "source_tokens": 1048576,
+      "nll": 1.5217867663330535,
+      "compression_rate": 0.00588226318359375,
+      "residual": 1.5159045031494598,
+      "residual_margin": 9.953802398191595,
+      "nll_reference_gap": 2.1659714665544985,
+      "compression_reference_gap": 12.119773864746094,
+      "joint_reference_gap": 14.285745331300593
+    },
+    {
+      "parameters": {
+        "kind": "periodic",
+        "seed": 0,
+        "size": 200
+      },
+      "source_tokens": 1048576,
+      "nll": 2.0383445694014393,
+      "compression_rate": 0.0069122314453125,
+      "residual": 2.0314323379561268,
+      "residual_margin": 10.469330232998264,
+      "nll_reference_gap": 1.6494136634861127,
+      "compression_reference_gap": 12.118743896484375,
+      "joint_reference_gap": 13.768157559970488
+    },
+    {
+      "parameters": {
+        "kind": "periodic",
+        "seed": 0,
+        "size": 225
+      },
+      "source_tokens": 1048576,
+      "nll": 2.3179023683789346,
+      "compression_rate": 0.00745391845703125,
+      "residual": 2.3104484499219033,
+      "residual_margin": 10.74834634496404,
+      "nll_reference_gap": 1.3698558645086174,
+      "compression_reference_gap": 12.118202209472656,
+      "joint_reference_gap": 13.488058073981273
+    },
+    {
+      "parameters": {
+        "kind": "periodic",
+        "seed": 0,
+        "size": 256
+      },
+      "source_tokens": 1048576,
+      "nll": 2.6830174085770566,
+      "compression_rate": 0.00818634033203125,
+      "residual": 2.6748310682450254,
+      "residual_margin": 11.11272896328716,
+      "nll_reference_gap": 1.0047408243104954,
+      "compression_reference_gap": 12.117469787597656,
+      "joint_reference_gap": 13.122210611908152
+    },
+    {
+      "parameters": {
+        "kind": "periodic",
+        "seed": 0,
+        "size": 300
+      },
+      "source_tokens": 1048576,
+      "nll": 3.1692450392698803,
+      "compression_rate": 0.00911712646484375,
+      "residual": 3.1601279128050366,
+      "residual_margin": 11.598025807847172,
+      "nll_reference_gap": 0.5185131936176717,
+      "compression_reference_gap": 12.116539001464844,
+      "joint_reference_gap": 12.635052195082515
+    },
+    {
+      "parameters": {
+        "kind": "periodic",
+        "seed": 0,
+        "size": 400
+      },
+      "source_tokens": 1048576,
+      "nll": 4.292812856836135,
+      "compression_rate": 0.0112762451171875,
+      "residual": 4.2815366117189475,
+      "residual_margin": 12.719434506761083,
+      "nll_reference_gap": 0.605054623948583,
+      "compression_reference_gap": 12.1143798828125,
+      "joint_reference_gap": 12.719434506761083
+    },
+    {
+      "parameters": {
+        "kind": "phrase_bank",
+        "seed": 0,
+        "size": 10
+      },
+      "source_tokens": 1048576,
+      "nll": 1.3422441782697623,
+      "compression_rate": 1.440704345703125,
+      "residual": -0.09846016743336272,
+      "residual_margin": 8.339437727608773,
+      "nll_reference_gap": 2.34551405461779,
+      "compression_reference_gap": 10.684951782226562,
+      "joint_reference_gap": 13.030465836844353
+    },
+    {
+      "parameters": {
+        "kind": "phrase_bank",
+        "seed": 1,
+        "size": 10
+      },
+      "source_tokens": 1048576,
+      "nll": 1.3394321476369504,
+      "compression_rate": 1.4390487670898438,
+      "residual": -0.09961661945289335,
+      "residual_margin": 8.338281275589242,
+      "nll_reference_gap": 2.3483260852506014,
+      "compression_reference_gap": 10.686607360839844,
+      "joint_reference_gap": 13.034933446090445
+    },
+    {
+      "parameters": {
+        "kind": "phrase_bank",
+        "seed": 2,
+        "size": 10
+      },
+      "source_tokens": 1048576,
+      "nll": 1.3415760694226062,
+      "compression_rate": 1.4389114379882812,
+      "residual": -0.09733536856567504,
+      "residual_margin": 8.340562526476461,
+      "nll_reference_gap": 2.346182163464946,
+      "compression_reference_gap": 10.686744689941406,
+      "joint_reference_gap": 13.032926853406352
+    },
+    {
+      "parameters": {
+        "kind": "phrase_bank",
+        "seed": 0,
+        "size": 25
+      },
+      "source_tokens": 1048576,
+      "nll": 1.989501058202184,
+      "compression_rate": 1.9805908203125,
+      "residual": 0.008910237889683925,
+      "residual_margin": 8.44680813293182,
+      "nll_reference_gap": 1.698257174685368,
+      "compression_reference_gap": 10.145065307617188,
+      "joint_reference_gap": 11.843322482302556
+    },
+    {
+      "parameters": {
+        "kind": "phrase_bank",
+        "seed": 1,
+        "size": 25
+      },
+      "source_tokens": 1048576,
+      "nll": 1.9889432894097732,
+      "compression_rate": 1.9800796508789062,
+      "residual": 0.008863638530866913,
+      "residual_margin": 8.446761533573003,
+      "nll_reference_gap": 1.6988149434777788,
+      "compression_reference_gap": 10.145576477050781,
+      "joint_reference_gap": 11.84439142052856
+    },
+    {
+      "parameters": {
+        "kind": "phrase_bank",
+        "seed": 2,
+        "size": 25
+      },
+      "source_tokens": 1048576,
+      "nll": 1.9906616397899652,
+      "compression_rate": 1.977020263671875,
+      "residual": 0.013641376118090243,
+      "residual_margin": 8.451539271160225,
+      "nll_reference_gap": 1.6970965930975868,
+      "compression_reference_gap": 10.148635864257812,
+      "joint_reference_gap": 11.8457324573554
+    },
+    {
+      "parameters": {
+        "kind": "phrase_bank",
+        "seed": 0,
+        "size": 50
+      },
+      "source_tokens": 1048576,
+      "nll": 2.419682660332317,
+      "compression_rate": 2.4481582641601562,
+      "residual": -0.02847560382783909,
+      "residual_margin": 8.409422291214296,
+      "nll_reference_gap": 1.2680755725552348,
+      "compression_reference_gap": 9.677497863769531,
+      "joint_reference_gap": 10.945573436324766
+    },
+    {
+      "parameters": {
+        "kind": "phrase_bank",
+        "seed": 1,
+        "size": 50
+      },
+      "source_tokens": 1048576,
+      "nll": 2.414329684032887,
+      "compression_rate": 2.448760986328125,
+      "residual": -0.03443130229523783,
+      "residual_margin": 8.403466592746899,
+      "nll_reference_gap": 1.2734285488546648,
+      "compression_reference_gap": 9.676895141601562,
+      "joint_reference_gap": 10.950323690456226
+    },
+    {
+      "parameters": {
+        "kind": "phrase_bank",
+        "seed": 2,
+        "size": 50
+      },
+      "source_tokens": 1048576,
+      "nll": 2.4205567161365322,
+      "compression_rate": 2.4482803344726562,
+      "residual": -0.027723618336124023,
+      "residual_margin": 8.410174276706012,
+      "nll_reference_gap": 1.2672015167510198,
+      "compression_reference_gap": 9.677375793457031,
+      "joint_reference_gap": 10.94457731020805
+    },
+    {
+      "parameters": {
+        "kind": "phrase_bank",
+        "seed": 0,
+        "size": 100
+      },
+      "source_tokens": 1048576,
+      "nll": 2.793355707890144,
+      "compression_rate": 2.8985519409179688,
+      "residual": -0.10519623302782488,
+      "residual_margin": 8.332701662014312,
+      "nll_reference_gap": 0.8944025249974081,
+      "compression_reference_gap": 9.227104187011719,
+      "joint_reference_gap": 10.121506712009127
+    },
+    {
+      "parameters": {
+        "kind": "phrase_bank",
+        "seed": 1,
+        "size": 100
+      },
+      "source_tokens": 1048576,
+      "nll": 2.7953243496271005,
+      "compression_rate": 2.8994293212890625,
+      "residual": -0.10410497166196198,
+      "residual_margin": 8.333792923380173,
+      "nll_reference_gap": 0.8924338832604515,
+      "compression_reference_gap": 9.226226806640625,
+      "joint_reference_gap": 10.118660689901077
+    },
+    {
+      "parameters": {
+        "kind": "phrase_bank",
+        "seed": 2,
+        "size": 100
+      },
+      "source_tokens": 1048576,
+      "nll": 2.7930193138558996,
+      "compression_rate": 2.9006423950195312,
+      "residual": -0.10762308116363162,
+      "residual_margin": 8.330274813878503,
+      "nll_reference_gap": 0.8947389190316524,
+      "compression_reference_gap": 9.225013732910156,
+      "joint_reference_gap": 10.119752651941809
+    },
+    {
+      "parameters": {
+        "kind": "phrase_bank",
+        "seed": 0,
+        "size": 200
+      },
+      "source_tokens": 1048576,
+      "nll": 3.2294606745070773,
+      "compression_rate": 3.3020553588867188,
+      "residual": -0.07259468437964145,
+      "residual_margin": 8.365303210662494,
+      "nll_reference_gap": 0.4582975583804747,
+      "compression_reference_gap": 8.823600769042969,
+      "joint_reference_gap": 9.281898327423443
+    },
+    {
+      "parameters": {
+        "kind": "phrase_bank",
+        "seed": 1,
+        "size": 200
+      },
+      "source_tokens": 1048576,
+      "nll": 3.2341327602389702,
+      "compression_rate": 3.296966552734375,
+      "residual": -0.06283379249540477,
+      "residual_margin": 8.37506410254673,
+      "nll_reference_gap": 0.4536254726485818,
+      "compression_reference_gap": 8.828689575195312,
+      "joint_reference_gap": 9.282315047843895
+    },
+    {
+      "parameters": {
+        "kind": "phrase_bank",
+        "seed": 2,
+        "size": 200
+      },
+      "source_tokens": 1048576,
+      "nll": 3.232215239337272,
+      "compression_rate": 3.3004302978515625,
+      "residual": -0.06821505851429066,
+      "residual_margin": 8.369682836527845,
+      "nll_reference_gap": 0.45554299355028016,
+      "compression_reference_gap": 8.825225830078125,
+      "joint_reference_gap": 9.280768823628405
+    },
+    {
+      "parameters": {
+        "kind": "phrase_bank",
+        "seed": 0,
+        "size": 500
+      },
+      "source_tokens": 1048576,
+      "nll": 3.7825721495243023,
+      "compression_rate": 3.8529586791992188,
+      "residual": -0.07038652967491643,
+      "residual_margin": 8.36751136536722,
+      "nll_reference_gap": 0.09481391663675032,
+      "compression_reference_gap": 8.272697448730469,
+      "joint_reference_gap": 8.36751136536722
+    },
+    {
+      "parameters": {
+        "kind": "phrase_bank",
+        "seed": 1,
+        "size": 500
+      },
+      "source_tokens": 1048576,
+      "nll": 3.7825239423170007,
+      "compression_rate": 3.85430908203125,
+      "residual": -0.07178513971424927,
+      "residual_margin": 8.366112755327887,
+      "nll_reference_gap": 0.09476570942944873,
+      "compression_reference_gap": 8.271347045898438,
+      "joint_reference_gap": 8.366112755327887
+    },
+    {
+      "parameters": {
+        "kind": "phrase_bank",
+        "seed": 2,
+        "size": 500
+      },
+      "source_tokens": 1048576,
+      "nll": 3.786055212709335,
+      "compression_rate": 3.8533401489257812,
+      "residual": -0.06728493621644605,
+      "residual_margin": 8.37061295882569,
+      "nll_reference_gap": 0.0982969798217832,
+      "compression_reference_gap": 8.272315979003906,
+      "joint_reference_gap": 8.370612958825689
+    },
+    {
+      "parameters": {
+        "kind": "phrase_bank",
+        "seed": 0,
+        "size": 1000
+      },
+      "source_tokens": 1048576,
+      "nll": 4.64635789318445,
+      "compression_rate": 4.263267517089844,
+      "residual": 0.3830903760946063,
+      "residual_margin": 8.820988271136741,
+      "nll_reference_gap": 0.958599660296898,
+      "compression_reference_gap": 7.862388610839844,
+      "joint_reference_gap": 8.820988271136741
+    },
+    {
+      "parameters": {
+        "kind": "phrase_bank",
+        "seed": 1,
+        "size": 1000
+      },
+      "source_tokens": 1048576,
+      "nll": 4.651656684703799,
+      "compression_rate": 4.2694244384765625,
+      "residual": 0.38223224622723606,
+      "residual_margin": 8.820130141269372,
+      "nll_reference_gap": 0.9638984518162466,
+      "compression_reference_gap": 7.856231689453125,
+      "joint_reference_gap": 8.820130141269372
+    },
+    {
+      "parameters": {
+        "kind": "phrase_bank",
+        "seed": 2,
+        "size": 1000
+      },
+      "source_tokens": 1048576,
+      "nll": 4.649603686484304,
+      "compression_rate": 4.267234802246094,
+      "residual": 0.38236888423821025,
+      "residual_margin": 8.820266779280345,
+      "nll_reference_gap": 0.961845453596752,
+      "compression_reference_gap": 7.858421325683594,
+      "joint_reference_gap": 8.820266779280345
+    },
+    {
+      "parameters": {
+        "kind": "phrase_bank",
+        "seed": 0,
+        "size": 2000
+      },
+      "source_tokens": 1048576,
+      "nll": 5.024749255377132,
+      "compression_rate": 4.555259704589844,
+      "residual": 0.46948955078728805,
+      "residual_margin": 8.907387445829425,
+      "nll_reference_gap": 1.3369910224895798,
+      "compression_reference_gap": 7.570396423339844,
+      "joint_reference_gap": 8.907387445829423
+    },
+    {
+      "parameters": {
+        "kind": "phrase_bank",
+        "seed": 1,
+        "size": 2000
+      },
+      "source_tokens": 1048576,
+      "nll": 5.026706776689011,
+      "compression_rate": 4.551963806152344,
+      "residual": 0.47474297053666703,
+      "residual_margin": 8.912640865578803,
+      "nll_reference_gap": 1.3389485438014588,
+      "compression_reference_gap": 7.573692321777344,
+      "joint_reference_gap": 8.912640865578803
+    },
+    {
+      "parameters": {
+        "kind": "phrase_bank",
+        "seed": 2,
+        "size": 2000
+      },
+      "source_tokens": 1048576,
+      "nll": 5.019925925683563,
+      "compression_rate": 4.5505523681640625,
+      "residual": 0.46937355751950083,
+      "residual_margin": 8.907271452561638,
+      "nll_reference_gap": 1.3321676927960113,
+      "compression_reference_gap": 7.575103759765625,
+      "joint_reference_gap": 8.907271452561636
+    },
+    {
+      "parameters": {
+        "kind": "phrase_bank",
+        "seed": 0,
+        "size": 5000
+      },
+      "source_tokens": 1048576,
+      "nll": 5.62397378053502,
+      "compression_rate": 4.96514892578125,
+      "residual": 0.6588248547537701,
+      "residual_margin": 9.096722749795905,
+      "nll_reference_gap": 1.936215547647468,
+      "compression_reference_gap": 7.1605072021484375,
+      "joint_reference_gap": 9.096722749795905
+    },
+    {
+      "parameters": {
+        "kind": "phrase_bank",
+        "seed": 1,
+        "size": 5000
+      },
+      "source_tokens": 1048576,
+      "nll": 5.627722984185034,
+      "compression_rate": 4.965354919433594,
+      "residual": 0.6623680647514405,
+      "residual_margin": 9.100265959793576,
+      "nll_reference_gap": 1.9399647512974822,
+      "compression_reference_gap": 7.160301208496094,
+      "joint_reference_gap": 9.100265959793576
+    },
+    {
+      "parameters": {
+        "kind": "phrase_bank",
+        "seed": 2,
+        "size": 5000
+      },
+      "source_tokens": 1048576,
+      "nll": 5.6157147907104665,
+      "compression_rate": 4.970611572265625,
+      "residual": 0.6451032184448415,
+      "residual_margin": 9.083001113486977,
+      "nll_reference_gap": 1.9279565578229145,
+      "compression_reference_gap": 7.1550445556640625,
+      "joint_reference_gap": 9.083001113486977
+    },
+    {
+      "parameters": {
+        "kind": "collapse",
+        "seed": 0,
+        "severity": 0.01
+      },
+      "source_tokens": 1048576,
+      "nll": 3.685726259211222,
+      "compression_rate": 12.012428283691406,
+      "residual": -8.326702024480184,
+      "residual_margin": 0.11119587056195179,
+      "nll_reference_gap": 0.0020319736763299012,
+      "compression_reference_gap": 0.11322784423828125,
+      "joint_reference_gap": 0.11525981791461115
+    },
+    {
+      "parameters": {
+        "kind": "collapse",
+        "seed": 0,
+        "severity": 0.05
+      },
+      "source_tokens": 1048576,
+      "nll": 3.6898944018498225,
+      "compression_rate": 11.604949951171875,
+      "residual": -7.9150555493220525,
+      "residual_margin": 0.5228423457200835,
+      "nll_reference_gap": 0.002136168962270535,
+      "compression_reference_gap": 0.5207061767578125,
+      "joint_reference_gap": 0.522842345720083
+    },
+    {
+      "parameters": {
+        "kind": "collapse",
+        "seed": 0,
+        "severity": 0.1
+      },
+      "source_tokens": 1048576,
+      "nll": 3.6918395684587915,
+      "compression_rate": 11.071067810058594,
+      "residual": -7.379228241599803,
+      "residual_margin": 1.0586696534423332,
+      "nll_reference_gap": 0.004081335571239464,
+      "compression_reference_gap": 1.0545883178710938,
+      "joint_reference_gap": 1.0586696534423332
+    },
+    {
+      "parameters": {
+        "kind": "collapse",
+        "seed": 0,
+        "severity": 0.25
+      },
+      "source_tokens": 1048576,
+      "nll": 3.688260545168794,
+      "compression_rate": 9.464096069335938,
+      "residual": -5.775835524167143,
+      "residual_margin": 2.6620623708749926,
+      "nll_reference_gap": 0.000502312281242201,
+      "compression_reference_gap": 2.66156005859375,
+      "joint_reference_gap": 2.662062370874992
+    },
+    {
+      "parameters": {
+        "kind": "collapse",
+        "seed": 0,
+        "severity": 0.5
+      },
+      "source_tokens": 1048576,
+      "nll": 3.690812374406453,
+      "compression_rate": 6.66033935546875,
+      "residual": -2.969526981062297,
+      "residual_margin": 5.4683709139798395,
+      "nll_reference_gap": 0.0030541415189011545,
+      "compression_reference_gap": 5.4653167724609375,
+      "joint_reference_gap": 5.468370913979839
+    },
+    {
+      "parameters": {
+        "kind": "collapse",
+        "seed": 0,
+        "severity": 0.75
+      },
+      "source_tokens": 1048576,
+      "nll": 3.7151997722727756,
+      "compression_rate": 3.5311508178710938,
+      "residual": 0.1840489544016819,
+      "residual_margin": 8.621946849443818,
+      "nll_reference_gap": 0.027441539385223646,
+      "compression_reference_gap": 8.594505310058594,
+      "joint_reference_gap": 8.621946849443818
+    },
+    {
+      "parameters": {
+        "kind": "collapse",
+        "seed": 0,
+        "severity": 1.0
+      },
+      "source_tokens": 1048576,
+      "nll": 3.723330144687134,
+      "compression_rate": 0.0197906494140625,
+      "residual": 3.7035394952730716,
+      "residual_margin": 12.141437390315208,
+      "nll_reference_gap": 0.03557191179958208,
+      "compression_reference_gap": 12.105865478515625,
+      "joint_reference_gap": 12.141437390315208
+    },
+    {
+      "parameters": {
+        "kind": "shuffle",
+        "seed": 0,
+        "severity": 0.01
+      },
+      "source_tokens": 1048576,
+      "nll": 3.9457908529143837,
+      "compression_rate": 12.2276611328125,
+      "residual": -8.281870279898117,
+      "residual_margin": 0.1560276151440192,
+      "nll_reference_gap": 0.2580326200268317,
+      "compression_reference_gap": 0.1020050048828125,
+      "joint_reference_gap": 0.3600376249096442
+    },
+    {
+      "parameters": {
+        "kind": "shuffle",
+        "seed": 0,
+        "severity": 0.05
+      },
+      "source_tokens": 1048576,
+      "nll": 4.8977859538282695,
+      "compression_rate": 12.62774658203125,
+      "residual": -7.7299606282029805,
+      "residual_margin": 0.7079372668391555,
+      "nll_reference_gap": 1.2100277209407175,
+      "compression_reference_gap": 0.5020904541015625,
+      "joint_reference_gap": 1.71211817504228
+    },
+    {
+      "parameters": {
+        "kind": "shuffle",
+        "seed": 0,
+        "severity": 0.1
+      },
+      "source_tokens": 1048576,
+      "nll": 5.884175426272124,
+      "compression_rate": 13.056678771972656,
+      "residual": -7.172503345700532,
+      "residual_margin": 1.265394549341604,
+      "nll_reference_gap": 2.196417193384572,
+      "compression_reference_gap": 0.9310226440429688,
+      "joint_reference_gap": 3.127439837427541
+    },
+    {
+      "parameters": {
+        "kind": "shuffle",
+        "seed": 0,
+        "severity": 0.25
+      },
+      "source_tokens": 1048576,
+      "nll": 8.075083368273233,
+      "compression_rate": 13.973106384277344,
+      "residual": -5.89802301600411,
+      "residual_margin": 2.5398748790380257,
+      "nll_reference_gap": 4.387325135385682,
+      "compression_reference_gap": 1.8474502563476562,
+      "joint_reference_gap": 6.234775391733338
+    },
+    {
+      "parameters": {
+        "kind": "shuffle",
+        "seed": 0,
+        "severity": 0.5
+      },
+      "source_tokens": 1048576,
+      "nll": 9.935337778787677,
+      "compression_rate": 14.7666015625,
+      "residual": -4.831263783712323,
+      "residual_margin": 3.6066341113298126,
+      "nll_reference_gap": 6.247579545900125,
+      "compression_reference_gap": 2.6409454345703125,
+      "joint_reference_gap": 8.888524980470438
+    },
+    {
+      "parameters": {
+        "kind": "shuffle",
+        "seed": 0,
+        "severity": 0.75
+      },
+      "source_tokens": 1048576,
+      "nll": 10.555734795521238,
+      "compression_rate": 15.00433349609375,
+      "residual": -4.4485987005725125,
+      "residual_margin": 3.9892991944696234,
+      "nll_reference_gap": 6.867976562633686,
+      "compression_reference_gap": 2.8786773681640625,
+      "joint_reference_gap": 9.746653930797748
+    },
+    {
+      "parameters": {
+        "kind": "shuffle",
+        "seed": 0,
+        "severity": 1.0
+      },
+      "source_tokens": 1048576,
+      "nll": 10.686496225081633,
+      "compression_rate": 15.034278869628906,
+      "residual": -4.347782644547273,
+      "residual_margin": 4.090115250494863,
+      "nll_reference_gap": 6.998737992194082,
+      "compression_reference_gap": 2.9086227416992188,
+      "joint_reference_gap": 9.9073607338933
+    },
+    {
+      "parameters": {
+        "kind": "pollute",
+        "seed": 0,
+        "severity": 0.01
+      },
+      "source_tokens": 1048576,
+      "nll": 3.8808873017736434,
+      "compression_rate": 12.163681030273438,
+      "residual": -8.282793728499794,
+      "residual_margin": 0.15510416654234227,
+      "nll_reference_gap": 0.19312906888609138,
+      "compression_reference_gap": 0.03802490234375,
+      "joint_reference_gap": 0.23115397122984138
+    },
+    {
+      "parameters": {
+        "kind": "pollute",
+        "seed": 0,
+        "severity": 0.05
+      },
+      "source_tokens": 1048576,
+      "nll": 4.334895969277323,
+      "compression_rate": 12.19256591796875,
+      "residual": -7.857669948691427,
+      "residual_margin": 0.5802279463507087,
+      "nll_reference_gap": 0.6471377363897708,
+      "compression_reference_gap": 0.0669097900390625,
+      "joint_reference_gap": 0.7140475264288333
+    },
+    {
+      "parameters": {
+        "kind": "pollute",
+        "seed": 0,
+        "severity": 0.1
+      },
+      "source_tokens": 1048576,
+      "nll": 4.719605066535112,
+      "compression_rate": 12.081886291503906,
+      "residual": -7.362281224968794,
+      "residual_margin": 1.0756166700733418,
+      "nll_reference_gap": 1.0318468336475601,
+      "compression_reference_gap": 0.04376983642578125,
+      "joint_reference_gap": 1.0756166700733414
+    },
+    {
+      "parameters": {
+        "kind": "pollute",
+        "seed": 0,
+        "severity": 0.25
+      },
+      "source_tokens": 1048576,
+      "nll": 5.36461275777943,
+      "compression_rate": 11.323127746582031,
+      "residual": -5.958514988802602,
+      "residual_margin": 2.4793829062395343,
+      "nll_reference_gap": 1.6768545248918776,
+      "compression_reference_gap": 0.8025283813476562,
+      "joint_reference_gap": 2.479382906239534
+    },
+    {
+      "parameters": {
+        "kind": "pollute",
+        "seed": 0,
+        "severity": 0.5
+      },
+      "source_tokens": 1048576,
+      "nll": 5.149614954737275,
+      "compression_rate": 9.053054809570312,
+      "residual": -3.903439854833038,
+      "residual_margin": 4.534458040209098,
+      "nll_reference_gap": 1.4618567218497227,
+      "compression_reference_gap": 3.072601318359375,
+      "joint_reference_gap": 4.534458040209097
+    },
+    {
+      "parameters": {
+        "kind": "pollute",
+        "seed": 0,
+        "severity": 0.75
+      },
+      "source_tokens": 1048576,
+      "nll": 3.4607158114446905,
+      "compression_rate": 5.576652526855469,
+      "residual": -2.115936715410778,
+      "residual_margin": 6.321961179631358,
+      "nll_reference_gap": 0.22704242144286146,
+      "compression_reference_gap": 6.549003601074219,
+      "joint_reference_gap": 6.776046022517081
+    },
+    {
+      "parameters": {
+        "kind": "pollute",
+        "seed": 0,
+        "severity": 1.0
+      },
+      "source_tokens": 1048576,
+      "nll": 15.147344457517733,
+      "compression_rate": 0.00318145751953125,
+      "residual": 15.144162999998201,
+      "residual_margin": 23.582060895040335,
+      "nll_reference_gap": 11.459586224630181,
+      "compression_reference_gap": 12.122474670410156,
+      "joint_reference_gap": 23.582060895040335
+    },
+    {
+      "parameters": {
+        "kind": "repeat",
+        "seed": 0,
+        "severity": 0.01
+      },
+      "source_tokens": 1048576,
+      "nll": 3.699454913695352,
+      "compression_rate": 12.051628112792969,
+      "residual": -8.352173199097617,
+      "residual_margin": 0.08572469594451881,
+      "nll_reference_gap": 0.011696680807800064,
+      "compression_reference_gap": 0.07402801513671875,
+      "joint_reference_gap": 0.08572469594451881
+    },
+    {
+      "parameters": {
+        "kind": "repeat",
+        "seed": 0,
+        "severity": 0.05
+      },
+      "source_tokens": 1048576,
+      "nll": 3.5934197072848946,
+      "compression_rate": 11.65234375,
+      "residual": -8.058924042715105,
+      "residual_margin": 0.3789738523270305,
+      "nll_reference_gap": 0.09433852560265743,
+      "compression_reference_gap": 0.4733123779296875,
+      "joint_reference_gap": 0.5676509035323449
+    },
+    {
+      "parameters": {
+        "kind": "repeat",
+        "seed": 0,
+        "severity": 0.1
+      },
+      "source_tokens": 1048576,
+      "nll": 3.4286627506310987,
+      "compression_rate": 11.11212158203125,
+      "residual": -7.683458831400151,
+      "residual_margin": 0.7544390636419847,
+      "nll_reference_gap": 0.2590954822564533,
+      "compression_reference_gap": 1.0135345458984375,
+      "joint_reference_gap": 1.2726300281548908
+    },
+    {
+      "parameters": {
+        "kind": "repeat",
+        "seed": 0,
+        "severity": 0.25
+      },
+      "source_tokens": 1048576,
+      "nll": 2.9206886185464325,
+      "compression_rate": 9.44085693359375,
+      "residual": -6.520168315047318,
+      "residual_margin": 1.917729579994818,
+      "nll_reference_gap": 0.7670696143411195,
+      "compression_reference_gap": 2.6847991943359375,
+      "joint_reference_gap": 3.451868808677057
+    },
+    {
+      "parameters": {
+        "kind": "repeat",
+        "seed": 0,
+        "severity": 0.5
+      },
+      "source_tokens": 1048576,
+      "nll": 2.06355099765111,
+      "compression_rate": 6.61859130859375,
+      "residual": -4.5550403109426405,
+      "residual_margin": 3.8828575840994954,
+      "nll_reference_gap": 1.624207235236442,
+      "compression_reference_gap": 5.5070648193359375,
+      "joint_reference_gap": 7.13127205457238
+    },
+    {
+      "parameters": {
+        "kind": "repeat",
+        "seed": 0,
+        "severity": 0.75
+      },
+      "source_tokens": 1048576,
+      "nll": 1.1744376498977949,
+      "compression_rate": 3.7616043090820312,
+      "residual": -2.5871666591842364,
+      "residual_margin": 5.8507312358579,
+      "nll_reference_gap": 2.513320582989757,
+      "compression_reference_gap": 8.364051818847656,
+      "joint_reference_gap": 10.877372401837412
+    },
+    {
+      "parameters": {
+        "kind": "repeat",
+        "seed": 0,
+        "severity": 1.0
+      },
+      "source_tokens": 1048576,
+      "nll": 0.16800801006255117,
+      "compression_rate": 0.47699737548828125,
+      "residual": -0.3089893654257301,
+      "residual_margin": 8.128908529616407,
+      "nll_reference_gap": 3.519750222825001,
+      "compression_reference_gap": 11.648658752441406,
+      "joint_reference_gap": 15.168408975266408
+    },
+    {
+      "parameters": {
+        "kind": "shuffle",
+        "region": "prefix",
+        "seed": 0,
+        "severity": 1.0
+      },
+      "source_tokens": 1048576,
+      "nll": 5.152287149954815,
+      "compression_rate": 12.954353332519531,
+      "residual": -7.802066182564716,
+      "residual_margin": 0.6358317124774198,
+      "nll_reference_gap": 1.464528917067263,
+      "compression_reference_gap": 0.8286972045898438,
+      "joint_reference_gap": 2.293226121657107
+    },
+    {
+      "parameters": {
+        "kind": "pollute",
+        "region": "prefix",
+        "seed": 0,
+        "severity": 1.0
+      },
+      "source_tokens": 1048576,
+      "nll": 5.894481001580258,
+      "compression_rate": 9.931190490722656,
+      "residual": -4.036709489142399,
+      "residual_margin": 4.401188405899737,
+      "nll_reference_gap": 2.2067227686927056,
+      "compression_reference_gap": 2.1944656372070312,
+      "joint_reference_gap": 4.401188405899736
+    },
+    {
+      "parameters": {
+        "kind": "shuffle",
+        "region": "middle",
+        "seed": 0,
+        "severity": 1.0
+      },
+      "source_tokens": 1048576,
+      "nll": 5.246655065066372,
+      "compression_rate": 12.974586486816406,
+      "residual": -7.727931421750034,
+      "residual_margin": 0.709966473292102,
+      "nll_reference_gap": 1.5588968321788204,
+      "compression_reference_gap": 0.8489303588867188,
+      "joint_reference_gap": 2.407827191065539
+    },
+    {
+      "parameters": {
+        "kind": "pollute",
+        "region": "middle",
+        "seed": 0,
+        "severity": 1.0
+      },
+      "source_tokens": 1048576,
+      "nll": 3.1234307904474106,
+      "compression_rate": 10.004234313964844,
+      "residual": -6.880803523517433,
+      "residual_margin": 1.5570943715247028,
+      "nll_reference_gap": 0.5643274424401414,
+      "compression_reference_gap": 2.1214218139648438,
+      "joint_reference_gap": 2.685749256404985
+    },
+    {
+      "parameters": {
+        "kind": "shuffle",
+        "region": "suffix",
+        "seed": 0,
+        "severity": 1.0
+      },
+      "source_tokens": 1048576,
+      "nll": 5.176490013291943,
+      "compression_rate": 12.928375244140625,
+      "residual": -7.751885230848682,
+      "residual_margin": 0.6860126641934539,
+      "nll_reference_gap": 1.488731780404391,
+      "compression_reference_gap": 0.8027191162109375,
+      "joint_reference_gap": 2.2914508966153284
+    },
+    {
+      "parameters": {
+        "kind": "pollute",
+        "region": "suffix",
+        "seed": 0,
+        "severity": 1.0
+      },
+      "source_tokens": 1048576,
+      "nll": 3.056077033529918,
+      "compression_rate": 9.964492797851562,
+      "residual": -6.908415764321644,
+      "residual_margin": 1.529482130720492,
+      "nll_reference_gap": 0.6316811993576339,
+      "compression_reference_gap": 2.161163330078125,
+      "joint_reference_gap": 2.792844529435759
+    },
+    {
+      "parameters": {
+        "bank_size": 1,
+        "kind": "bank",
+        "seed": 0,
+        "severity": 1.0
+      },
+      "source_tokens": 1048576,
+      "nll": 3.723330144687134,
+      "compression_rate": 0.0197906494140625,
+      "residual": 3.7035394952730716,
+      "residual_margin": 12.141437390315208,
+      "nll_reference_gap": 0.03557191179958208,
+      "compression_reference_gap": 12.105865478515625,
+      "joint_reference_gap": 12.141437390315208
+    },
+    {
+      "parameters": {
+        "bank_size": 4,
+        "kind": "bank",
+        "seed": 0,
+        "severity": 1.0
+      },
+      "source_tokens": 1048576,
+      "nll": 4.209008239081295,
+      "compression_rate": 0.0786285400390625,
+      "residual": 4.130379699042233,
+      "residual_margin": 12.568277594084368,
+      "nll_reference_gap": 0.5212500061937431,
+      "compression_reference_gap": 12.047027587890625,
+      "joint_reference_gap": 12.568277594084368
+    },
+    {
+      "parameters": {
+        "bank_size": 16,
+        "kind": "bank",
+        "seed": 0,
+        "severity": 1.0
+      },
+      "source_tokens": 1048576,
+      "nll": 3.8106632713706907,
+      "compression_rate": 0.260009765625,
+      "residual": 3.5506535057456907,
+      "residual_margin": 11.988551400787827,
+      "nll_reference_gap": 0.12290503848313872,
+      "compression_reference_gap": 11.865646362304688,
+      "joint_reference_gap": 11.988551400787827
+    },
+    {
+      "parameters": {
+        "bank_size": 64,
+        "kind": "bank",
+        "seed": 0,
+        "severity": 1.0
+      },
+      "source_tokens": 1048576,
+      "nll": 3.6330191599017194,
+      "compression_rate": 0.8709793090820312,
+      "residual": 2.762039850819688,
+      "residual_margin": 11.199937745861824,
+      "nll_reference_gap": 0.05473907298583258,
+      "compression_reference_gap": 11.254676818847656,
+      "joint_reference_gap": 11.309415891833488
+    },
+    {
+      "parameters": {
+        "bank_size": 256,
+        "kind": "bank",
+        "seed": 0,
+        "severity": 1.0
+      },
+      "source_tokens": 1048576,
+      "nll": 3.6650079071815997,
+      "compression_rate": 3.1954193115234375,
+      "residual": 0.46958859565816224,
+      "residual_margin": 8.907486490700299,
+      "nll_reference_gap": 0.022750325705952257,
+      "compression_reference_gap": 8.93023681640625,
+      "joint_reference_gap": 8.952987142112203
+    }
+  ],
+  "historical_counts": [
+    [
+      "Qwen NLL",
+      "3.71061",
+      "9/18",
+      "1/10",
+      "12/27",
+      "18/18"
+    ],
+    [
+      "Absolute compression gap",
+      "0.03131",
+      "18/18",
+      "10/10",
+      "27/27",
+      "18/18"
+    ],
+    [
+      "NLL + gap",
+      "3.74192",
+      "18/18",
+      "10/10",
+      "27/27",
+      "18/18"
+    ],
+    [
+      "VCDIFF coding difference",
+      "0.00656",
+      "0/18",
+      "10/10",
+      "27/27",
+      "0/18"
+    ],
+    [
+      "Concatenation coding difference",
+      "-0.00382",
+      "18/18",
+      "10/10",
+      "27/27",
+      "18/18"
+    ],
+    [
+      "NLL + max(VCDIFF, gap)",
+      "3.74192",
+      "18/18",
+      "10/10",
+      "27/27",
+      "18/18"
+    ],
+    [
+      "NLL + max(concatenation, gap)",
+      "3.74192",
+      "18/18",
+      "10/10",
+      "27/27",
+      "18/18"
+    ]
+  ],
+  "historical_vcdiff": [
+    {
+      "label": "Real OWT",
+      "mean": -0.005383809407552083,
+      "reference_order_std": 0.02109309302639328,
+      "reverse_mean": 0.005383809407552083,
+      "reverse_reference_order_std": 0.02109309302639328,
+      "reverse_scores": [
+        -0.0111083984375,
+        -0.00789642333984375,
+        0.03515625
+      ],
+      "scores": [
+        0.0111083984375,
+        0.00789642333984375,
+        -0.03515625
+      ]
+    },
+    {
+      "label": "GPT-2",
+      "mean": 0.03790717861269018,
+      "reference_order_std": 0.003534834413461982,
+      "reverse_mean": 0.04341888427734375,
+      "reverse_reference_order_std": 0.0042871676233226024,
+      "reverse_scores": [
+        0.03824615478515625,
+        0.04326629638671875,
+        0.04874420166015625
+      ],
+      "scores": [
+        0.04125605692334605,
+        0.033018498949682916,
+        0.03944697996504158
+      ]
+    },
+    {
+      "label": "Periodic",
+      "mean": 29.421844482421875,
+      "reference_order_std": 0.0,
+      "reverse_mean": 0.062174479166666664,
+      "reverse_reference_order_std": 0.00551621697852432,
+      "reverse_scores": [
+        0.05576324462890625,
+        0.06153106689453125,
+        0.0692291259765625
+      ],
+      "scores": [
+        29.421844482421875,
+        29.421844482421875,
+        29.421844482421875
+      ]
+    },
+    {
+      "label": "Mirror",
+      "mean": 0.0,
+      "reference_order_std": 0.0,
+      "reverse_mean": 0.062174479166666664,
+      "reverse_reference_order_std": 0.00551621697852432,
+      "reverse_scores": [
+        0.05576324462890625,
+        0.06153106689453125,
+        0.0692291259765625
+      ],
+      "scores": [
+        0.0,
+        0.0,
+        0.0
+      ]
+    },
+    {
+      "label": "Phrase bank",
+      "mean": 2.3613357543945312,
+      "reference_order_std": 0.006817144720086239,
+      "reverse_mean": 0.062174479166666664,
+      "reverse_reference_order_std": 0.00551621697852432,
+      "reverse_scores": [
+        0.05576324462890625,
+        0.06153106689453125,
+        0.0692291259765625
+      ],
+      "scores": [
+        2.3650894165039062,
+        2.3517684936523438,
+        2.3671493530273438
+      ]
+    },
+    {
+      "label": "Top-k IID",
+      "mean": 0.0,
+      "reference_order_std": 0.0,
+      "reverse_mean": 0.062174479166666664,
+      "reverse_reference_order_std": 0.00551621697852432,
+      "reverse_scores": [
+        0.05576324462890625,
+        0.06153106689453125,
+        0.0692291259765625
+      ],
+      "scores": [
+        0.0,
+        0.0,
+        0.0
+      ]
+    },
+    {
+      "label": "Collapsed documents",
+      "mean": 37.038978576660156,
+      "reference_order_std": 0.0,
+      "reverse_mean": 0.062174479166666664,
+      "reverse_reference_order_std": 0.00551621697852432,
+      "reverse_scores": [
+        0.05576324462890625,
+        0.06153106689453125,
+        0.0692291259765625
+      ],
+      "scores": [
+        37.038978576660156,
+        37.038978576660156,
+        37.038978576660156
+      ]
+    }
+  ],
+  "historical_correlations": [
+    {
+      "shots": "0",
+      "setting": "t07",
+      "metric": "nll",
+      "spearman": "-0.9043478260869565"
+    },
+    {
+      "shots": "0",
+      "setting": "t07",
+      "metric": "nll_plus_gap",
+      "spearman": "0.9634782608695651"
+    },
+    {
+      "shots": "0",
+      "setting": "t07",
+      "metric": "vcdiff_max_score",
+      "spearman": "0.9634782608695651"
+    },
+    {
+      "shots": "0",
+      "setting": "t07",
+      "metric": "concatenation_max_score",
+      "spearman": "0.9634782608695651"
+    },
+    {
+      "shots": "0",
+      "setting": "t10",
+      "metric": "nll",
+      "spearman": "0.9382608695652173"
+    },
+    {
+      "shots": "0",
+      "setting": "t10",
+      "metric": "nll_plus_gap",
+      "spearman": "0.8626086956521738"
+    },
+    {
+      "shots": "0",
+      "setting": "t10",
+      "metric": "vcdiff_max_score",
+      "spearman": "0.8626086956521738"
+    },
+    {
+      "shots": "0",
+      "setting": "t10",
+      "metric": "concatenation_max_score",
+      "spearman": "0.8626086956521738"
+    },
+    {
+      "shots": "0",
+      "setting": "t10-k20",
+      "metric": "nll",
+      "spearman": "0.07043478260869565"
+    },
+    {
+      "shots": "0",
+      "setting": "t10-k20",
+      "metric": "nll_plus_gap",
+      "spearman": "0.9608695652173912"
+    },
+    {
+      "shots": "0",
+      "setting": "t10-k20",
+      "metric": "vcdiff_max_score",
+      "spearman": "0.9608695652173912"
+    },
+    {
+      "shots": "0",
+      "setting": "t10-k20",
+      "metric": "concatenation_max_score",
+      "spearman": "0.9608695652173912"
+    },
+    {
+      "shots": "0",
+      "setting": "t10-p095",
+      "metric": "nll",
+      "spearman": "0.9356521739130433"
+    },
+    {
+      "shots": "0",
+      "setting": "t10-p095",
+      "metric": "nll_plus_gap",
+      "spearman": "0.8086956521739129"
+    },
+    {
+      "shots": "0",
+      "setting": "t10-p095",
+      "metric": "vcdiff_max_score",
+      "spearman": "0.8086956521739129"
+    },
+    {
+      "shots": "0",
+      "setting": "t10-p095",
+      "metric": "concatenation_max_score",
+      "spearman": "0.8086956521739129"
+    },
+    {
+      "shots": "0",
+      "setting": "t13",
+      "metric": "nll",
+      "spearman": "-0.3313043478260869"
+    },
+    {
+      "shots": "0",
+      "setting": "t13",
+      "metric": "nll_plus_gap",
+      "spearman": "-0.3739130434782608"
+    },
+    {
+      "shots": "0",
+      "setting": "t13",
+      "metric": "vcdiff_max_score",
+      "spearman": "-0.3739130434782608"
+    },
+    {
+      "shots": "0",
+      "setting": "t13",
+      "metric": "concatenation_max_score",
+      "spearman": "-0.3739130434782608"
+    },
+    {
+      "shots": "5",
+      "setting": "t07",
+      "metric": "nll",
+      "spearman": "-0.9139130434782607"
+    },
+    {
+      "shots": "5",
+      "setting": "t07",
+      "metric": "nll_plus_gap",
+      "spearman": "0.9704347826086955"
+    },
+    {
+      "shots": "5",
+      "setting": "t07",
+      "metric": "vcdiff_max_score",
+      "spearman": "0.9704347826086955"
+    },
+    {
+      "shots": "5",
+      "setting": "t07",
+      "metric": "concatenation_max_score",
+      "spearman": "0.9704347826086955"
+    },
+    {
+      "shots": "5",
+      "setting": "t10",
+      "metric": "nll",
+      "spearman": "0.9417391304347826"
+    },
+    {
+      "shots": "5",
+      "setting": "t10",
+      "metric": "nll_plus_gap",
+      "spearman": "0.868695652173913"
+    },
+    {
+      "shots": "5",
+      "setting": "t10",
+      "metric": "vcdiff_max_score",
+      "spearman": "0.868695652173913"
+    },
+    {
+      "shots": "5",
+      "setting": "t10",
+      "metric": "concatenation_max_score",
+      "spearman": "0.868695652173913"
+    },
+    {
+      "shots": "5",
+      "setting": "t10-k20",
+      "metric": "nll",
+      "spearman": "0.05130434782608695"
+    },
+    {
+      "shots": "5",
+      "setting": "t10-k20",
+      "metric": "nll_plus_gap",
+      "spearman": "0.9730434782608696"
+    },
+    {
+      "shots": "5",
+      "setting": "t10-k20",
+      "metric": "vcdiff_max_score",
+      "spearman": "0.9730434782608696"
+    },
+    {
+      "shots": "5",
+      "setting": "t10-k20",
+      "metric": "concatenation_max_score",
+      "spearman": "0.9730434782608696"
+    },
+    {
+      "shots": "5",
+      "setting": "t10-p095",
+      "metric": "nll",
+      "spearman": "0.937391304347826"
+    },
+    {
+      "shots": "5",
+      "setting": "t10-p095",
+      "metric": "nll_plus_gap",
+      "spearman": "0.8104347826086956"
+    },
+    {
+      "shots": "5",
+      "setting": "t10-p095",
+      "metric": "vcdiff_max_score",
+      "spearman": "0.8104347826086956"
+    },
+    {
+      "shots": "5",
+      "setting": "t10-p095",
+      "metric": "concatenation_max_score",
+      "spearman": "0.8104347826086956"
+    },
+    {
+      "shots": "5",
+      "setting": "t13",
+      "metric": "nll",
+      "spearman": "-0.33391304347826084"
+    },
+    {
+      "shots": "5",
+      "setting": "t13",
+      "metric": "nll_plus_gap",
+      "spearman": "-0.38260869565217387"
+    },
+    {
+      "shots": "5",
+      "setting": "t13",
+      "metric": "vcdiff_max_score",
+      "spearman": "-0.38260869565217387"
+    },
+    {
+      "shots": "5",
+      "setting": "t13",
+      "metric": "concatenation_max_score",
+      "spearman": "-0.38260869565217387"
+    }
+  ],
+  "sources": [
+    {
+      "path": ".cache/analysis/max-penalty/adversarial.csv",
+      "sha256": "5981dfc26ba1785fcc4101a4027e3e45daeaba24ab94b8bf1a9f644055a830f9"
+    },
+    {
+      "path": ".cache/adversarial-suite/likelihood/ba55935c20c03815e18a/summary.json",
+      "sha256": "f744c714a57e4c0151182f8b7b078216dc6bf74b13f79db2518d3cb385031552"
+    },
+    {
+      "path": "outputs/vcdiff-bidirectional/summary.json",
+      "sha256": "ba6c13ec7dd134670f8f7b93d96b67e95272994a3403ef3b509144961817580f"
+    },
+    {
+      "path": "outputs/combined/summary.json",
+      "sha256": "8760fb58f75561806f420c6feca909e5bcb9d8af3d8bfebdf9b24b83b0c5bc6a"
+    },
+    {
+      "path": ".cache/analysis/max-penalty/correlations.csv",
+      "sha256": "264ac9c03728e570f30ed2dbd5f1ac3ea9d8dfaf40b69e4dc2928f03a9ce517f"
+    }
+  ]
+}

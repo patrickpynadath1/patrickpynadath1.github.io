@@ -1,0 +1,83 @@
+/* Compression-as-evaluation post: result panels, setup boxes and the candidate picker.
+   Ported from the standalone article; colors come only from the post.css theme tokens. */
+.prose { --positive: var(--viz-duo); --negative: var(--viz-orange2); }
+
+/* Definition and algorithm boxes. */
+.prose .metric-algorithm { margin: 24px 0; padding: 18px 22px; border-radius: 12px; background: var(--accent-wash); box-shadow: inset 3px 0 0 var(--accent); }
+.prose .metric-algorithm > p:first-child { margin-top: 0; color: var(--accent); }
+.prose .metric-algorithm li { margin: 10px 0; }
+
+/* Collapsed setup notes and raw data. */
+.prose :is(.experiment-setup, .stress-raw) { margin: 24px 0; padding: 0 20px; border-radius: 12px; background: var(--surface); box-shadow: inset 0 0 0 1px var(--border); }
+.prose :is(.experiment-setup, .stress-raw) > summary { cursor: pointer; padding: 14px 0; min-height: 44px; color: var(--accent); font-size: 14px; font-weight: 600; }
+.prose :is(.experiment-setup, .stress-raw)[open] { padding-bottom: 6px; }
+.prose :is(.experiment-setup, .stress-raw)[open] > summary { margin-bottom: 12px; border-bottom: 1px solid var(--border); }
+.prose .experiment-data:not(.stress-raw) > summary { cursor: pointer; font-size: 14px; color: var(--accent); margin: 12px 0; }
+
+/* Result panels. */
+.prose :is(.downstream-results, .adversarial-results, .stress-suite) { margin: 28px 0; padding: 20px; border-radius: 12px; background: var(--viz-inset); box-shadow: inset 0 0 0 1px var(--border); }
+.prose .downstream-results h4 { font-size: 14px; margin: 24px 0 10px; }
+.prose .experiment-toolbar { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 12px; font-size: 14px; color: var(--muted); }
+.prose .experiment-toolbar + .experiment-toolbar { margin-top: 12px; }
+.prose .experiment-toolbar label { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+.prose .experiment-toolbar label[hidden] { display: none; }
+.prose .experiment-toolbar select { max-width: 100%; min-height: 40px; padding: 8px 10px; border: 1px solid var(--border); border-radius: 8px; background: var(--surface); color: var(--fg); font: inherit; }
+.prose #downstream-status, .prose .stress-status, .prose .stress-chart-hint, .prose #adversarial-status, .prose .adversarial-key, .prose .adversarial-meta { font-size: 13px; line-height: 1.7; color: var(--muted); }
+.prose #downstream-status { margin: 16px 0; }
+.prose .experiment-legend { display: flex; gap: 20px; flex-wrap: wrap; font-size: 13px; }
+.prose .experiment-legend span { display: flex; align-items: center; gap: 6px; }
+.prose .experiment-legend svg { width: 18px; height: 18px; }
+.prose .experiment-plot { min-width: 0; }
+.prose .experiment-plot > svg { width: 100%; height: auto; display: block; overflow: visible; }
+.prose .experiment-pair { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+.prose .chart-grid { stroke: var(--viz-grid); stroke-width: 1; }
+.prose .chart-label { font: 10px var(--font-body); fill: var(--muted); }
+.prose .experiment-plot g:focus { outline: 2px solid var(--accent); outline-offset: 3px; }
+
+/* Tables built by the scripts. */
+.prose .experiment-table { max-width: 100%; overflow-x: auto; margin: 16px 0; }
+.prose .experiment-table table { display: table; width: 100%; margin: 0; font-size: 12px; line-height: 1.6; }
+.prose .experiment-table :is(td, th) { padding: 8px 12px; text-align: left; }
+.prose .experiment-table td:first-child { white-space: nowrap; }
+
+/* Adversarial and stress-test margins. */
+.prose .adversarial-key { display: flex; flex-wrap: wrap; gap: 18px; margin: 12px 0 18px; }
+.prose .positive-key { color: var(--positive); }
+.prose .negative-key { color: var(--negative); }
+.prose .adversarial-panels { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+.prose .adversarial-panel { min-width: 0; padding: 14px 12px 10px; border-radius: 10px; background: var(--surface); box-shadow: inset 0 0 0 1px var(--border); }
+.prose .adversarial-panel h4 { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; font-size: 14px; margin: 0 0 4px; }
+.prose .adversarial-panel h4 span { white-space: nowrap; font-size: 11px; font-weight: 400; color: var(--muted); }
+.prose .adversarial-plot svg { width: 100%; display: block; margin-top: 12px; }
+.prose .adversarial-zero { stroke: var(--muted); stroke-width: 1.2; stroke-dasharray: 4 3; }
+.prose .adversarial-point { stroke: var(--viz-inset); stroke-width: .7; cursor: pointer; }
+.prose .adversarial-point.positive { fill: var(--positive); }
+.prose .adversarial-point.negative { fill: var(--negative); }
+.prose .adversarial-point:is(:focus, :hover) { stroke: var(--fg); stroke-width: 2; outline: none; }
+.prose .adversarial-median { stroke: var(--fg); stroke-width: 2; pointer-events: none; }
+.prose .adversarial-detail { display: block; min-height: 64px; margin: 16px 0; padding: 10px 14px; border-radius: 0 8px 8px 0; background: var(--accent-wash); box-shadow: inset 2px 0 0 var(--accent); font-size: 13px; line-height: 1.7; }
+.prose .adversarial-results > a { display: inline-block; font-size: 14px; margin-top: 12px; }
+.prose .stress-chart { max-height: 530px; overflow: auto; padding: 10px; border-radius: 10px; box-shadow: inset 0 0 0 1px var(--border); }
+.prose .stress-chart svg { width: 100%; min-width: 740px; display: block; }
+.prose .stress-chart:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
+.prose .stress-raw .stress-table { max-height: 420px; overflow: auto; margin-bottom: 0; }
+.prose .stress-raw th { position: sticky; top: 0; background: var(--surface); }
+
+/* Earlier-candidate picker. */
+.prose .candidate-picker { margin: 20px 0 8px; padding: 14px 16px; border-radius: 12px; background: var(--surface); box-shadow: inset 0 0 0 1px var(--border); }
+.prose .candidate-picker[hidden], .prose .candidate-view[hidden] { display: none; }
+.prose .candidate-picker select { flex: 1; min-width: 0; }
+.prose .candidate-selection-status { font-size: 13px; color: var(--muted); }
+.prose .candidate-view { margin: 16px 0; padding: 4px 20px 12px; border-radius: 12px; box-shadow: inset 0 0 0 1px var(--border); }
+.prose .candidate-view > h4 { color: var(--accent); font: 400 21px/1.35 var(--font-display); margin-top: 18px; }
+.prose .candidate-view > h5 { margin: 26px 0 10px; font-size: 14px; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); }
+
+@media (max-width: 760px) {
+  .prose :is(.downstream-results, .adversarial-results, .stress-suite) { padding: 12px; }
+  .prose :is(.experiment-pair, .adversarial-panels) { grid-template-columns: 1fr; }
+  .prose .experiment-legend { gap: 10px; }
+  .prose #downstream-scatter, .prose .adversarial-plot { overflow-x: auto; }
+  .prose #downstream-scatter > svg { min-width: 540px; }
+  .prose .adversarial-plot svg { min-width: 340px; }
+  .prose .metric-algorithm { padding: 16px; }
+}
