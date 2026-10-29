@@ -1,0 +1,28 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      // Starts the local site at http://localhost:4321 when this folder opens.
+      // Open it beside your writing: Cmd+Shift+P, "Simple Browser: Show".
+      "label": "Site preview",
+      "type": "shell",
+      "command": "bun run dev",
+      "isBackground": true,
+      "problemMatcher": [],
+      "presentation": { "reveal": "silent", "panel": "dedicated" },
+      "runOptions": { "runOn": "folderOpen" }
+    },
+    {
+      "label": "Rebuild design-map figure",
+      "type": "shell",
+      "command": "python3 scripts/component-figures/build_embed.py src/standalone/component-figures.html public/figures/design-map/index.html",
+      "problemMatcher": []
+    },
+    {
+      "label": "Rebuild homepage from src/data",
+      "type": "shell",
+      "command": "python3 scripts/sync-home-draft.py",
+      "problemMatcher": []
+    }
+  ]
+}

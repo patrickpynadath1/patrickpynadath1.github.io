@@ -1,15 +1,23 @@
 {
   "pandocCiter.bibliographies": [
-    "/Users/patrickpynadath/Documents/patrickpynadath1.github.io/src/content/blog/dlm_bibliography.bib"
+    "src/content/blog/dlm_bibliography.bib"
   ],
   "pandocCiter.useDefaultBib": true,
-  "pandocCiter.defaultBib": "/Users/patrickpynadath/Documents/patrickpynadath1.github.io/src/content/blog/dlm_bibliography.bib",
+  "pandocCiter.defaultBib": "src/content/blog/dlm_bibliography.bib",
   "pandocCiter.formatStyle": "pandoc",
   "pandocCiter.citenameFormat": "author",
   "files.associations": {
     "*.mdx": "markdown"
   },
+  "files.autoSave": "afterDelay",
+  "files.autoSaveDelay": 800,
   "[markdown]": {
+    "editor.wordWrap": "on",
+    "editor.lineNumbers": "off",
+    "editor.fontSize": 16,
+    "editor.lineHeight": 1.7,
+    "editor.padding.top": 24,
+    "editor.renderWhitespace": "none",
     "editor.quickSuggestions": {
       "other": true,
       "comments": false,
@@ -17,5 +25,12 @@
     },
     "editor.suggest.showWords": false,
     "editor.suggest.showSnippets": true
+  },
+  "zenMode.centerLayout": true,
+  "zenMode.hideLineNumbers": true,
+  "files.exclude": {
+    "dist": true,
+    ".astro": true,
+    "node_modules": true
   }
 }
