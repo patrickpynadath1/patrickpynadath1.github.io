@@ -116,6 +116,17 @@ SPEC = {
                            note='No dedicated class: the ELBO is composed in YAML from forward distributions and a KL term.'),
     'loss:elbo@gaussian': dict(cfg=['configs/objective/replaid.yaml'], ov='objective=replaid',
                                code=[('core/objectives/replaid.py', 'RePlaidObjective')]),
+    # Training time sampler
+    'tsamp:uniform': dict(cfg=['configs/time_sampler/antithetic.yaml'], ov='time_sampler=antithetic',
+                          code=[('core/time_sampling/uniform.py', 'UniformTimeSampler.sample')],
+                          note='antithetic: true stratifies the batch: one time in each equal slice of [epsilon, 1].'),
+    'tsamp:discrete': dict(cfg=['configs/time_sampler/discrete.yaml'], ov='time_sampler=discrete',
+                           code=[('core/time_sampling/discrete.py', 'DiscreteTimeSampler')]),
+    'tsamp:lossd': dict(cfg=['configs/time_sampler/loss_derivative.yaml'], ov='time_sampler=loss_derivative time_sampler.adaptive=true',
+                        code=[('core/time_sampling/loss_derivative.py', 'LossDerivativeTimeSampler.refit')],
+                        note='The refit is off unless time_sampler.adaptive=true; with it off, times stay stratified uniform.'),
+    'tsamp:alloc': dict(cfg=['configs/time_sampler/adaptive_allocation.yaml'], ov='time_sampler=adaptive_allocation',
+                        code=[('core/time_sampling/adaptive_allocation.py', 'AdaptiveTimeAllocation.sample')]),
     # Sampler
     'samp:ancestral': dict(cfg=['configs/sampler/ancestral.yaml'], ov='sampler=ancestral',
                            code=[('core/samplers/ancestral.py', 'AbsorbingAncestralUpdate')]),

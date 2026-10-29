@@ -1,8 +1,29 @@
-# Site notes for Claude
+# CLAUDE.md
+
+This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
 Patrick's personal site: Astro + MDX, deployed to GitHub Pages from `main`
 (`.github/workflows/astro-deploy.yml`, built with bun). Blog posts live in `src/content/blog/`
 and render through `src/layouts/BlogLayout.astro` and `src/styles/post.css`.
+
+## Commands
+
+- `bun install`, then `bun run dev` (local server), `bun run build` (to `dist/`), `bun run preview`.
+- `bun run check` runs `astro check` (type checks). There are no unit tests.
+- `node scripts/check-wave-loop.mjs` checks the homepage wave animation.
+
+## How the site is built
+
+- **Homepage is one generated HTML file.** `src/pages/index.astro` imports `public/home-draft/index.html` raw and patches the title and asset paths.
+  - That file is written by `python3 scripts/sync-home-draft.py` from `src/data/*.json` (personal info, projects, education, experience). Edit the JSON, then rerun the script.
+  - The wave art: `scripts/generate-wave-loop.py` bakes `public/home-draft/wave-loop.bin`. Run `sync-home-draft.py` after it.
+  - The Astro components in `src/components/sections`, `project`, `layout` are from the old homepage and are not used by it.
+- **Blog:** content collection in `src/content/config.ts`. `draft: true` hides a post from `/blog/` but it still builds at `/blog/<slug>/`.
+  - Math is KaTeX (`remark-math` + `rehype-katex`).
+  - Citations use `rehype-citation` with `src/content/blog/dlm_bibliography.bib` (set in `astro.config.mjs`), not `src/content/bibliography.bib`.
+  - Interactive figures are React components in `src/components/*.jsx`, with shared colors in `vizTheme.js`.
+- **Blog themes:** `BlogLayout.astro` sets `data-theme` (dark default) on `<html>`. Images made for dark have a `-light` twin made by `scripts/relight_images.py`, which also updates `src/data/light_images.json`; the layout swaps them on theme change.
+- Root `index.html` and `static/` are the old pre-Astro site. Astro serves only `public/`.
 
 ## How to talk to me
 
@@ -45,13 +66,15 @@ taken from candi's experiment configs, grouped into families.
 
 Three main scripts, in this order:
 
-1. **Map (part 1).** `C` (components and options), `N` (box positions on a 1200-wide viewBox), `g()` (small glyph per box), `drawMap()`.
-   - It never owns state. It listens for the `pipestate` event and maps part 2's state onto the map through `FROM`.
-   - `NAME` / `TAG` override a box's label (the ELBO form, a recipe's schedule name, the block mode).
-   - `VARY` marks boxes that differ across a recipe family. `BLOCKV` is the block mode.
-   - Clicking a box fires `mapselect`.
+1. **Map (part 1).** Follows candi's recipe split (`docs/concepts/recipe.md`): three zones, information path / denoising task / inference, plus a row of modifier chips.
+   - `N` (box positions on a 1140 x 492 viewBox), `ZONES`, `MODS` (chips, the boxes each one touches, hover hint), `value()` (text per box), `drawMap()`.
+   - It never owns state. It listens for `pipestate`, which carries part 2's state `S`, option `labels`, `infer` (sampler settings) and `varies`.
+   - `VARY` marks boxes that differ across a recipe family.
+   - Clicking a box or chip fires `mapselect`; the bridge's `TO_LAYER` maps it to a part 2 layer.
 2. **Detail (part 2).**
-   - The option tables `REP`, `CORR`, `COMBINE`, `SCHED`, `ATTN`, `TCOND`, `SELF`, `PARAM`, `LOSS`, `SAMP`, `BLOCK`, `VARLEN`, each with `ok()` rules for what fits together.
+   - The option tables `REP`, `CORR`, `COMBINE`, `SCHED`, `ATTN`, `TCOND`, `SELF`, `PARAM`, `LOSS`, `TSAMP`, `SAMP`, `BLOCK`, `VARLEN`, each with `ok()` rules for what fits together.
+   - `LAYERS` carry a `part` (`path`, `task`, `infer`, `mods`); `CHAPTERS` puts a header before each part.
+   - Inference settings: `SAMP_CFG` (steps and final decoding per candi sampler config), `REC_SAMP` (the sampler config each recipe composes), `START`, `inferInfo()`.
    - The state `S`.
    - Recipe data: `RECIPES` (ids match candi `configs/experiment/*.yaml`), `FAMILIES`, `FIGS` (recipe-specific pictures).
    - `LAYERS`, the `draw*()` functions per layer, `render()` → `emitState()`.
