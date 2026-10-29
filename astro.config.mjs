@@ -1,10 +1,21 @@
 // @ts-check
+import { existsSync, readFileSync } from 'node:fs';
 import { defineConfig } from 'astro/config';
 import mdx from '@astrojs/mdx';
 import react from '@astrojs/react';
 import rehypeCitation from 'rehype-citation';
 import rehypeKatex from 'rehype-katex';
 import remarkMath from 'remark-math';
+
+// zotero.bib is auto-exported from Zotero (Better BibTeX, "Keep updated").
+// It is only used once it has entries: the citation parser rejects an empty file.
+// rehype-citation rewrites the list it is given in place, so hand it a fresh one on every read.
+const ZOTERO_BIB = './src/content/blog/zotero.bib';
+function bibliographies() {
+  const files = ['./src/content/blog/dlm_bibliography.bib'];
+  if (existsSync(ZOTERO_BIB) && /@\w+\s*\{/.test(readFileSync(ZOTERO_BIB, 'utf8'))) files.push(ZOTERO_BIB);
+  return files;
+}
 
 // https://astro.build/config
 export default defineConfig({
@@ -16,7 +27,7 @@ export default defineConfig({
         [
           rehypeCitation,
           {
-            bibliography: './src/content/blog/dlm_bibliography.bib',
+            get bibliography() { return bibliographies(); },
             linkCitations: true,
             csl: 'https://raw.githubusercontent.com/citation-style-language/styles/master/ieee.csl',
             lang: 'en-US',
