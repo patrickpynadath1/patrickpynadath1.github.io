@@ -7,10 +7,10 @@ import rehypeCitation from 'rehype-citation';
 import rehypeKatex from 'rehype-katex';
 import remarkMath from 'remark-math';
 
-// zotero.bib is auto-exported from Zotero (Better BibTeX, "Keep updated").
+// src/content/bibliography.bib is auto-exported from Zotero (Better BibTeX, "Keep updated", collection "Blog").
 // It is only used once it has entries: the citation parser rejects an empty file.
 // rehype-citation rewrites the list it is given in place, so hand it a fresh one on every read.
-const ZOTERO_BIB = './src/content/blog/zotero.bib';
+const ZOTERO_BIB = './src/content/bibliography.bib';
 function bibliographies() {
   const files = ['./src/content/blog/dlm_bibliography.bib'];
   if (existsSync(ZOTERO_BIB) && /@\w+\s*\{/.test(readFileSync(ZOTERO_BIB, 'utf8'))) files.push(ZOTERO_BIB);

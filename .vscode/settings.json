@@ -1,6 +1,6 @@
 {
   // Citation search (Pandoc Citer): type [@ or press Ctrl+Alt+C in a post.
-  "PandocCiter.DefaultBibs": ["src/content/blog/dlm_bibliography.bib", "src/content/blog/zotero.bib"],
+  "PandocCiter.DefaultBibs": ["src/content/blog/dlm_bibliography.bib", "src/content/bibliography.bib"],
   "PandocCiter.UseDefaultBib": true,
   "PandocCiter.ForgetUnusedBib": false,
   "files.associations": {

@@ -20,8 +20,8 @@ and render through `src/layouts/BlogLayout.astro` and `src/styles/post.css`.
   - The Astro components in `src/components/sections`, `project`, `layout` are from the old homepage and are not used by it.
 - **Blog:** content collection in `src/content/config.ts`. `draft: true` hides a post from `/blog/` but it still builds at `/blog/<slug>/`.
   - Math is KaTeX (`remark-math` + `rehype-katex`).
-  - Citations (`[@key]`) use `rehype-citation` with `src/content/blog/dlm_bibliography.bib` plus `src/content/blog/zotero.bib` (set in `astro.config.mjs`), not `src/content/bibliography.bib`.
-  - `zotero.bib` is written by Zotero's Better BibTeX auto-export ("Keep updated"); never edit it by hand. It is skipped while empty. `scripts/add_citation.py` adds arXiv/DOI entries to `dlm_bibliography.bib`.
+  - Citations (`[@key]`) use `rehype-citation` with `src/content/blog/dlm_bibliography.bib` (older hand-kept entries) plus `src/content/bibliography.bib` (set in `astro.config.mjs`).
+  - `src/content/bibliography.bib` is written by Zotero's Better BibTeX auto-export of the "Blog" collection ("Keep updated"); never edit it by hand. It is skipped while empty. `scripts/add_citation.py` adds arXiv/DOI entries to `dlm_bibliography.bib`.
   - Interactive figures are React components in `src/components/*.jsx`, with shared colors in `vizTheme.js`.
 - **Blog themes:** `BlogLayout.astro` sets `data-theme` (dark default) on `<html>`. Images made for dark have a `-light` twin made by `scripts/relight_images.py`, which also updates `src/data/light_images.json`; the layout swaps them on theme change.
 - Root `index.html` and `static/` are the old pre-Astro site. Astro serves only `public/`.
