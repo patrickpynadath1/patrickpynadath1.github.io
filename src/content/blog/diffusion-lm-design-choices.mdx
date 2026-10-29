@@ -9,11 +9,15 @@ wip: true
 
 {/* The figure lives in public/figures/design-map/index.html (built from the artifact by build_embed.py). */}
 
-# Every design choice in a diffusion language model
+# A Few Design Choices for Diffusion Language Models (And a Codebase)
 
 Patrick Pynadath<sup>1</sup>
 
 <sup>1</sup> Purdue Department of Computer Science
+
+## Introduction
+
+Diffusion language models have grown into a large family of methods. Most of them can be described as choices along three parts: the information path (how text is represented and gradually destroyed), the denoising task (how the model is trained to recover the information), and inference (how the model is used at inference). A new method usually introduces several novel techniques at once, each with their own benefits. These individual technniques are often transferable other recipes, but some are not transferable. And even when one transfers, how much it helps, and why, can depend on the rest of the recipe. A technique that helps masked diffusion may do little for Gaussian diffusion, or help only with a certain sampler. This codebase exists to make those questions easy to ask. It breaks the recipe into swappable components to allow for more precise investigation into interplay between these different components.
 
 ## The design space
 
