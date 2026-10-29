@@ -53,7 +53,7 @@ taken from candi's experiment configs, grouped into families.
 - `public/figures/design-map/index.html` is **generated**. Never edit it by hand. Rebuild it with:
   `python3 scripts/component-figures/build_embed.py src/standalone/component-figures.html public/figures/design-map/index.html`
   The embed version drops the page header, follows the post's theme, sizes its iframe to fit, and places popups where the reader is looking.
-- `src/content/blog/diffusion-lm-design-choices.mdx` is the post, live at `/blog/diffusion-lm-design-choices/` with the work-in-progress badge (`wip: true`). It embeds the figure as an iframe pointing at `/figures/design-map/`, inside `<div className="fig-bleed">`.
+- `src/content/blog/diffusion-lm-design-choices.mdx` is the post, live at `/blog/diffusion-lm-design-choices/` with the work-in-progress badge (`wip: true`). It embeds the figure as an iframe pointing at `/figures/design-map/index.html` (the full path: the local dev server does not serve folder URLs from `public/`), inside `<div className="fig-bleed">`.
 - `src/styles/post.css`: `.post-grid:has(.fig-bleed)` widens the reading column to the figure's width on screens wider than 1300px.
 - Code popup snippets come from candi at a pinned commit:
   1. `python3 scripts/component-figures/code_refs.py /Users/patrickpynadath/candi > code_refs.json`
