@@ -1,11 +1,8 @@
 {
-  "pandocCiter.bibliographies": [
-    "src/content/blog/dlm_bibliography.bib"
-  ],
-  "pandocCiter.useDefaultBib": true,
-  "pandocCiter.defaultBib": "src/content/blog/dlm_bibliography.bib",
-  "pandocCiter.formatStyle": "pandoc",
-  "pandocCiter.citenameFormat": "author",
+  // Citation search (Pandoc Citer): type [@ or press Ctrl+Alt+C in a post.
+  "PandocCiter.DefaultBibs": ["src/content/blog/dlm_bibliography.bib"],
+  "PandocCiter.UseDefaultBib": true,
+  "PandocCiter.ForgetUnusedBib": false,
   "files.associations": {
     "*.mdx": "markdown"
   },

@@ -23,6 +23,21 @@
       "type": "shell",
       "command": "python3 scripts/sync-home-draft.py",
       "problemMatcher": []
+    },
+    {
+      // Ctrl+Alt+A. Fetches BibTeX, adds it to dlm_bibliography.bib, copies [@key] to the clipboard.
+      "label": "Add source (arXiv or DOI)",
+      "type": "shell",
+      "command": "python3 scripts/add_citation.py '${input:paper}'",
+      "problemMatcher": [],
+      "presentation": { "reveal": "always", "panel": "shared", "clear": true }
+    }
+  ],
+  "inputs": [
+    {
+      "id": "paper",
+      "type": "promptString",
+      "description": "arXiv ID or link, or a DOI (e.g. 2310.16834 or 10.1038/nature14539)"
     }
   ]
 }
