@@ -125,6 +125,41 @@
   archiveprefix = {arXiv}
 }
 
+@misc{deschenauxLoopholingAllWay2026a,
+  title = {Loopholing {{All}} the {{Way}}: {{Language Modeling}} with Pure {{Self-Conditioning}}},
+  shorttitle = {Loopholing {{All}} the {{Way}}},
+  author = {Deschenaux, Adrien and Ilieva, Nadezhda and Deschenaux, Justin and Madeira, Manuel and Thanou, Dorina and Lucchi, Aur{\'e}lien and Orvieto, Antonio and Gulcehre, Caglar and Frossard, Pascal},
+  year = 2026,
+  month = oct,
+  number = {arXiv:2610.30068},
+  eprint = {2610.30068},
+  primaryclass = {cs.LG},
+  publisher = {arXiv},
+  doi = {10.48550/arXiv.2610.30068},
+  urldate = {2026-10-29},
+  abstract = {Recent Diffusion Language Models (DLMs) use Self-Conditioning (SC), or Loopholing, to improve their performance. While SC is traditionally seen as an auxiliary heuristic, its empirical success raises the question: can a continuous generative model be based purely on Self-Conditioning? We answer affirmatively with LAW (``Loopholing All the Way''), which propagates the Expected Embedding under the denoiser's prediction across steps, decoding the tokens once, at the end. On Sudoku, LAW outperforms previous Discrete and Continuous Diffusion Models, including Loopholing Discrete Diffusion. On Maze, LAW is the most accurate from 2 to 64 NFE. After training on TinyGSM and sampling at temperature 1 with 1024 NFE, LAW solves 42.2\% of GSM8K problems against 34.5\% for uniform Loopholing Discrete Diffusion. Additionally, fine-tuning a pre-trained Uniform Diffusion Model (Duo) with LAW increases its accuracy from 17.2\% to 48.1\%. Finally, on OpenWebText, LAW pushes the Pareto frontier and approaches Autoregressive Models (ARMs) with 64 NFE. Find our code at https://github.com/ilievanadezhda/law.},
+  archiveprefix = {arXiv},
+  keywords = {Computer Science - Machine Learning},
+  file = {/Users/patrickpynadath/Zotero/storage/MI69PS9D/Deschenaux et al. - 2026 - Loopholing All the Way Language Modeling with pure Self-Conditioning.pdf;/Users/patrickpynadath/Zotero/storage/GQZUTAE7/2610.html}
+}
+
+@misc{deschenauxSimplexDiffusionModels2026a,
+  title = {Simplex {{Diffusion Models}}},
+  author = {Deschenaux, Justin and Galashov, Alexandre and Campbell, Andrew and Wenliang, Li Kevin and Thornton, James and Doucet, Arnaud and Bortoli, Valentin De},
+  year = 2026,
+  month = sep,
+  number = {arXiv:2609.35553},
+  eprint = {2609.35553},
+  primaryclass = {cs.LG},
+  publisher = {arXiv},
+  doi = {10.48550/arXiv.2609.35553},
+  urldate = {2026-10-29},
+  abstract = {Diffusion models have revolutionized generative modeling for continuous data through the gradual refinement of a belief state. This iterative refinement has not yet carried over to discrete diffusion models, which discard uncertainty at intermediate steps through categorical sampling (information collapse). We propose Simplex Diffusion Models (SDMs), a framework that lifts the diffusion process to the probability simplex to represent beliefs over categories. SDMs admit probability paths with closed-form reverse transitions and can be trained with a simple cross-entropy loss. Contrary to earlier proposals such as Dirichlet Flow Matching which requires integrating an ordinary differential equation, we introduce a DDIM-like sampler with a tunable level of stochasticity. Because SDMs operate on samples on the simplex, they can carry uncertainty across denoising steps, which mitigates information collapse. On OpenWebText, SDMs are competitive with strong Discrete Diffusion baselines, achieving \$17.0\$ GenPPL at \$5.46\$ unigram entropy in 64 sampling steps, close to real validation data. Even without Self-Conditioning (SC), SDMs outperform masked and uniform diffusion (with SC or predictor-corrector sampling) on code generation (TinyGSM, \$T=0.1\$; \$49.0\textbackslash\%\$ vs. \$45.8\textbackslash\%\$). Distilled down to 8 steps, SDMs solve \$32.1\textbackslash\%\$ of GSM8K problems, more than distilled Discrete Diffusion models with 128 steps (\$21.4\textbackslash\%\$).},
+  archiveprefix = {arXiv},
+  keywords = {Computer Science - Machine Learning,Statistics - Machine Learning},
+  file = {/Users/patrickpynadath/Zotero/storage/VBJF7NGP/Deschenaux et al. - 2026 - Simplex Diffusion Models.pdf;/Users/patrickpynadath/Zotero/storage/NMRB29ID/2609.html}
+}
+
 @misc{devlinBERTPretrainingDeep2019,
   title = {{{BERT}}: {{Pre}}-Training of {{Deep Bidirectional Transformers}} for {{Language Understanding}}},
   author = {Devlin, Jacob and Chang, Ming-Wei and Lee, Kenton and Toutanova, Kristina},
@@ -202,6 +237,24 @@
   abstract = {Diffusion models have emerged as a promising alternative to autoregressive models in modeling discrete categorical data. However, diffusion models that directly work on discrete data space fail to fully exploit the power of iterative refinement, as the signals are lost during transitions between discrete states. Existing continuous diffusion models for discrete data underperform compared to discrete methods, and the lack of a clear connection between the two approaches hinders the development of effective diffusion models for discrete data. In this work, we propose a continuous diffusion model for language modeling that incorporates the geometry of the underlying categorical distribution. We establish a connection between the discrete diffusion and continuous flow on the statistical manifold, and building on this analogy, introduce a simple diffusion process that generalizes existing discrete diffusion models. We further propose a simulation-free training framework based on radial symmetry, along with a simple technique to address the high dimensionality of the manifold. Comprehensive experiments on language modeling benchmarks and other modalities show that our method outperforms existing discrete diffusion models and approaches the performance of autoregressive models. The code is available at https://github.com/harryjo97/RDLM.},
   archiveprefix = {arXiv},
   file = {/Users/patrickpynadath/Zotero/storage/KCCBNXXB/arxiv_2502.11564.pdf}
+}
+
+@misc{joLoopholingDiscreteDiffusion2026,
+  title = {Loopholing {{Discrete Diffusion}}: {{Deterministic Bypass}} of the {{Sampling Wall}}},
+  shorttitle = {Loopholing {{Discrete Diffusion}}},
+  author = {Jo, Mingyu and Yoon, Jaesik and Deschenaux, Justin and Gulcehre, Caglar and Ahn, Sungjin},
+  year = 2026,
+  month = may,
+  number = {arXiv:2510.19304},
+  eprint = {2510.19304},
+  primaryclass = {cs.LG},
+  publisher = {arXiv},
+  doi = {10.48550/arXiv.2510.19304},
+  urldate = {2026-10-29},
+  abstract = {Discrete diffusion models offer a promising alternative to autoregressive generation through parallel decoding, but they suffer from a sampling wall: once categorical sampling occurs, rich distributional information collapses into one-hot vectors and cannot be propagated across steps, forcing subsequent steps to operate with limited information. To mitigate this problem, we introduce Loopholing, a novel and simple mechanism that preserves this information via a deterministic latent pathway, leading to Loopholing Discrete Diffusion Models (LDDMs). Trained efficiently with a self-conditioning strategy that avoids unrolling the full denoising trajectory, LDDMs achieve substantial gains-reducing generative perplexity by up to 61\% over prior baselines, thereby closing (and in some cases surpassing) the gap with autoregressive models, and producing more coherent text. Applied to reasoning tasks, LDDMs also improve performance on arithmetic benchmarks such as Countdown and Game of 24. These results also indicate that loopholing mitigates idle steps and oscillations, providing a general and effective path toward high-quality non-autoregressive text generation.},
+  archiveprefix = {arXiv},
+  keywords = {Computer Science - Machine Learning},
+  file = {/Users/patrickpynadath/Zotero/storage/IYC5LCFB/Jo et al. - 2026 - Loopholing Discrete Diffusion Deterministic Bypass of the Sampling Wall.pdf;/Users/patrickpynadath/Zotero/storage/2BKMQ7GQ/2510.html}
 }
 
 @article{kangLadirLatentDiffusion2025,
@@ -385,6 +438,23 @@
   file = {/Users/patrickpynadath/Zotero/storage/VVE2S2GK/arxiv_2412.10193.pdf}
 }
 
+@misc{shabalinWhyGaussianDiffusion2026,
+  title = {Why {{Gaussian Diffusion Models Fail}} on {{Discrete Data}} and {{How}} to {{Prevent It}}?},
+  author = {Shabalin, Alexander and Elistratov, Simon and Meshchaninov, Viacheslav and Sadrtdinov, Ildus and Vetrov, Dmitry},
+  year = 2026,
+  month = may,
+  number = {arXiv:2604.02028},
+  eprint = {2604.02028},
+  primaryclass = {cs.CL},
+  publisher = {arXiv},
+  doi = {10.48550/arXiv.2604.02028},
+  urldate = {2026-10-29},
+  abstract = {Diffusion models have become a standard approach for generative modeling in continuous domains, yet their application to discrete data remains challenging. We investigate why Gaussian diffusion models with the DDPM solver struggle to sample from discrete distributions that are represented as a mixture of delta-distributions in the continuous space. Using a toy Random Hierarchy Model, we identify a critical sampling interval in which the density of noisified data becomes multimodal. In this regime, DDPM occasionally enters low-density regions between modes producing out-of-distribution inputs for the model and degrading sample quality. We show that existing heuristics, including self-conditioning and a solver we term q-sampling, help alleviate this issue. Furthermore, we demonstrate that combining self-conditioning with switching from DDPM to q-sampling within the critical interval improves generation quality on real data. We validate these findings across conditional and unconditional tasks in multiple domains, including text, programming code, and proteins.},
+  archiveprefix = {arXiv},
+  keywords = {Computer Science - Computation and Language},
+  file = {/Users/patrickpynadath/Zotero/storage/4V626AYH/Shabalin et al. - 2026 - Why Gaussian Diffusion Models Fail on Discrete Data and How to Prevent It.pdf;/Users/patrickpynadath/Zotero/storage/AAADD7ES/2604.html}
+}
+
 @article{shannonMathematicalTheoryCommunication1948,
   title = {A {{Mathematical Theory}} of {{Communication}}},
   author = {Shannon, Claude E.},
@@ -440,6 +510,23 @@
   year = 2026,
   eprint = {2605.18530},
   archiveprefix = {arXiv}
+}
+
+@misc{yooSelfconditionedFlowMap2026a,
+  title = {Self-Conditioned {{Flow Map Language Models}} via {{Fixed}}-Point {{Flows}}},
+  author = {Yoo, Jaehoon and Kim, Wonjung and Eijkelboom, Floor and Lee, Chanhyuk and Boffi, Nicholas M. and Hong, Seunghoon and Kim, Jinwoo},
+  year = 2026,
+  month = oct,
+  number = {arXiv:2607.00714},
+  eprint = {2607.00714},
+  primaryclass = {cs.CL},
+  publisher = {arXiv},
+  doi = {10.48550/arXiv.2607.00714},
+  urldate = {2026-10-29},
+  abstract = {Self-conditioning is a core technique that enhances continuous flow-based language models, where the model learns to denoise generated text by conditioning on its own denoising estimate. While empirically successful, its performance improvements are poorly understood. Moreover, there is growing interest in the use of few-step generators based on flow maps, for which how to leverage self-conditioning is unclear. Here, we show that flow language models with self-conditioning perform a fixed-point iteration that improves generation through iterative refinement. We use this viewpoint to formulate fixed-point flows, a two-dimensional class of self-conditioned flows, where the first dimension represents the flow process and the second represents the fixed-point iteration. We show that fixed-point flows define valid flow maps, and show that they can be distilled from self-conditioned flow models by compressing both fixed-point iterations and the flow process, the former with fixed-point distillation and the latter with flow map distillation. Our resulting flow map language model, FMLM\$\textasciicircum\textbackslash star\$, outperforms state-of-the-art self-conditioned models and few-step models in one- and few-step generation on OpenWebText. Code is available at https://github.com/Ugness/self-conditioned-fmlm.},
+  archiveprefix = {arXiv},
+  keywords = {Computer Science - Artificial Intelligence,Computer Science - Computation and Language},
+  file = {/Users/patrickpynadath/Zotero/storage/FPMVDCLC/Yoo et al. - 2026 - Self-conditioned Flow Map Language Models via Fixed-point Flows.pdf;/Users/patrickpynadath/Zotero/storage/SIGGFRDA/2607.html}
 }
 
 @misc{zhengContinuouslyAugmentedDiscrete2025,

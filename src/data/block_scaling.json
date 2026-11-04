@@ -1,0 +1,604 @@
+{
+ "source": "portable-v2-mi210-partial-20261105-0000",
+ "note": "portable-v2-mi210 partial snapshot; final test scores, 2 eval seeds, one training seed; block cases tuned native/native_greedy only",
+ "rows": [
+  {
+   "task": "sudoku_hard",
+   "kind": "e2d2",
+   "enc": 1,
+   "dec": 8,
+   "name": "sudoku_hard-e2d2-encoder-1-seed-1",
+   "status": "completed",
+   "score": 0.025390625,
+   "validation": 0.03125,
+   "seeds": [
+    0.01953125,
+    0.03125
+   ],
+   "policy": "native_greedy",
+   "train_hours": 7.36,
+   "eval_seconds": 21.125767594203353,
+   "nfe": 84.0
+  },
+  {
+   "task": "sudoku_hard",
+   "kind": "e2d2",
+   "enc": 2,
+   "dec": 8,
+   "name": "sudoku_hard-e2d2-encoder-2-seed-1",
+   "status": "completed",
+   "score": 0.021484375,
+   "validation": 0.05078125,
+   "seeds": [
+    0.01171875,
+    0.03125
+   ],
+   "policy": "native",
+   "train_hours": 7.74,
+   "eval_seconds": 21.304657198488712,
+   "nfe": 84.0
+  },
+  {
+   "task": "sudoku_hard",
+   "kind": "e2d2",
+   "enc": 4,
+   "dec": 8,
+   "name": "sudoku_hard-e2d2-encoder-4-seed-1",
+   "status": "completed",
+   "score": 0.033203125,
+   "validation": 0.05078125,
+   "seeds": [
+    0.0390625,
+    0.02734375
+   ],
+   "policy": "native",
+   "train_hours": 8.56,
+   "eval_seconds": 21.616965287481435,
+   "nfe": 84.0
+  },
+  {
+   "task": "sudoku_hard",
+   "kind": "e2d2",
+   "enc": 8,
+   "dec": 1,
+   "name": "sudoku_hard-e2d2-decoder-1-seed-1",
+   "status": "completed",
+   "score": 0.001953125,
+   "validation": 0.01171875,
+   "seeds": [
+    0.0,
+    0.00390625
+   ],
+   "policy": "native",
+   "train_hours": 5.74,
+   "eval_seconds": 8.767940446734428,
+   "nfe": 84.0
+  },
+  {
+   "task": "sudoku_hard",
+   "kind": "e2d2",
+   "enc": 8,
+   "dec": 2,
+   "name": "sudoku_hard-e2d2-decoder-2-seed-1",
+   "status": "completed",
+   "score": 0.01171875,
+   "validation": 0.0234375,
+   "seeds": [
+    0.01171875,
+    0.01171875
+   ],
+   "policy": "native",
+   "train_hours": 6.5,
+   "eval_seconds": 10.78701950609684,
+   "nfe": 84.0
+  },
+  {
+   "task": "sudoku_hard",
+   "kind": "e2d2",
+   "enc": 8,
+   "dec": 4,
+   "name": "sudoku_hard-e2d2-decoder-4-seed-1",
+   "status": "completed",
+   "score": 0.029296875,
+   "validation": 0.0703125,
+   "seeds": [
+    0.03125,
+    0.02734375
+   ],
+   "policy": "native",
+   "train_hours": 7.74,
+   "eval_seconds": 14.816565286368132,
+   "nfe": 84.0
+  },
+  {
+   "task": "sudoku_hard",
+   "kind": "e2d2",
+   "enc": 8,
+   "dec": 8,
+   "name": "sudoku_hard-e2d2-encoder-8-seed-1",
+   "status": "completed",
+   "score": 0.048828125,
+   "validation": 0.046875,
+   "seeds": [
+    0.0546875,
+    0.04296875
+   ],
+   "policy": "native",
+   "train_hours": 10.21,
+   "eval_seconds": 21.95606430899352,
+   "nfe": 84.0
+  },
+  {
+   "task": "sudoku_hard",
+   "kind": "kv",
+   "enc": 2,
+   "dec": 8,
+   "name": "sudoku_hard-encoder-kv-2-decoder-8-seed-1",
+   "status": "completed",
+   "score": 0.009765625,
+   "validation": 0.03125,
+   "seeds": [
+    0.0078125,
+    0.01171875
+   ],
+   "policy": "native",
+   "train_hours": 12.04,
+   "eval_seconds": 30.731617502868176,
+   "nfe": 84.0
+  },
+  {
+   "task": "sudoku_hard",
+   "kind": "kv",
+   "enc": 4,
+   "dec": 8,
+   "name": "sudoku_hard-encoder-kv-4-decoder-8-seed-1",
+   "status": "completed",
+   "score": 0.03515625,
+   "validation": 0.05078125,
+   "seeds": [
+    0.03515625,
+    0.03515625
+   ],
+   "policy": "native",
+   "train_hours": 13.45,
+   "eval_seconds": 30.567482136189938,
+   "nfe": 84.0
+  },
+  {
+   "task": "sudoku_hard",
+   "kind": "kv",
+   "enc": 8,
+   "dec": 8,
+   "name": "sudoku_hard-encoder-kv-8-decoder-8-seed-1",
+   "status": "completed",
+   "score": 0.021484375,
+   "validation": 0.05859375,
+   "seeds": [
+    0.01953125,
+    0.0234375
+   ],
+   "policy": "native",
+   "train_hours": 14.64,
+   "eval_seconds": 32.709262154996395,
+   "nfe": 84.0
+  },
+  {
+   "task": "sudoku_hard",
+   "kind": "raw",
+   "enc": 0,
+   "dec": 8,
+   "name": "sudoku_hard-raw-context-decoder-8-seed-1",
+   "status": "completed",
+   "score": 0.021484375,
+   "validation": 0.03125,
+   "seeds": [
+    0.015625,
+    0.02734375
+   ],
+   "policy": "native",
+   "train_hours": 6.78,
+   "eval_seconds": 21.088438648730516,
+   "nfe": 84.0
+  },
+  {
+   "task": "sudoku_hard",
+   "kind": "shared",
+   "enc": null,
+   "dec": 8,
+   "name": "sudoku_hard-block-shared-8-seed-1",
+   "status": "completed",
+   "score": 0.03515625,
+   "validation": 0.06640625,
+   "seeds": [
+    0.02734375,
+    0.04296875
+   ],
+   "policy": "native_greedy",
+   "train_hours": 6.15,
+   "eval_seconds": 22.679638732224703,
+   "nfe": 84.0
+  },
+  {
+   "task": "text8",
+   "kind": "e2d2",
+   "enc": 1,
+   "dec": 8,
+   "name": "text8-e2d2-encoder-1-seed-1",
+   "status": "completed",
+   "score": 10.52734375,
+   "validation": 10.1484375,
+   "seeds": [
+    10.68359375,
+    10.37109375
+   ],
+   "policy": "native",
+   "train_hours": 7.54,
+   "eval_seconds": 42.81531647220254,
+   "nfe": 128.0
+  },
+  {
+   "task": "text8",
+   "kind": "e2d2",
+   "enc": 2,
+   "dec": 8,
+   "name": "text8-e2d2-encoder-2-seed-1",
+   "status": "completed",
+   "score": 10.2734375,
+   "validation": 10.1875,
+   "seeds": [
+    10.62109375,
+    9.92578125
+   ],
+   "policy": "native",
+   "train_hours": 7.95,
+   "eval_seconds": 42.437759928405285,
+   "nfe": 128.0
+  },
+  {
+   "task": "text8",
+   "kind": "e2d2",
+   "enc": 4,
+   "dec": 8,
+   "name": "text8-e2d2-encoder-4-seed-1",
+   "status": "completed",
+   "score": 10.11328125,
+   "validation": 10.01953125,
+   "seeds": [
+    10.046875,
+    10.1796875
+   ],
+   "policy": "native",
+   "train_hours": 8.75,
+   "eval_seconds": 41.99831448122859,
+   "nfe": 128.0
+  },
+  {
+   "task": "text8",
+   "kind": "e2d2",
+   "enc": 8,
+   "dec": 1,
+   "name": "text8-e2d2-decoder-1-seed-1",
+   "status": "completed",
+   "score": 5.552734375,
+   "validation": 5.6171875,
+   "seeds": [
+    5.52734375,
+    5.578125
+   ],
+   "policy": "native",
+   "train_hours": 6.02,
+   "eval_seconds": 24.579775594174862,
+   "nfe": 128.0
+  },
+  {
+   "task": "text8",
+   "kind": "e2d2",
+   "enc": 8,
+   "dec": 2,
+   "name": "text8-e2d2-decoder-2-seed-1",
+   "status": "completed",
+   "score": 7.826171875,
+   "validation": 7.9140625,
+   "seeds": [
+    7.921875,
+    7.73046875
+   ],
+   "policy": "native",
+   "train_hours": 6.74,
+   "eval_seconds": 28.49028320191428,
+   "nfe": 128.0
+  },
+  {
+   "task": "text8",
+   "kind": "e2d2",
+   "enc": 8,
+   "dec": 4,
+   "name": "text8-e2d2-decoder-4-seed-1",
+   "status": "completed",
+   "score": 9.072265625,
+   "validation": 9.48828125,
+   "seeds": [
+    9.31640625,
+    8.828125
+   ],
+   "policy": "native",
+   "train_hours": 8.03,
+   "eval_seconds": 33.66362107358873,
+   "nfe": 128.0
+  },
+  {
+   "task": "text8",
+   "kind": "e2d2",
+   "enc": 8,
+   "dec": 8,
+   "name": "text8-e2d2-encoder-8-seed-1",
+   "status": "completed",
+   "score": 9.798828125,
+   "validation": 9.703125,
+   "seeds": [
+    10.171875,
+    9.42578125
+   ],
+   "policy": "native",
+   "train_hours": 10.34,
+   "eval_seconds": 43.332389591261744,
+   "nfe": 128.0
+  },
+  {
+   "task": "text8",
+   "kind": "kv",
+   "enc": 2,
+   "dec": 8,
+   "name": "text8-encoder-kv-2-decoder-8-seed-1",
+   "status": "completed",
+   "score": 10.056640625,
+   "validation": 10.19140625,
+   "seeds": [
+    10.21484375,
+    9.8984375
+   ],
+   "policy": "native",
+   "train_hours": 13.95,
+   "eval_seconds": 57.28471111506224,
+   "nfe": 128.0
+  },
+  {
+   "task": "text8",
+   "kind": "kv",
+   "enc": 4,
+   "dec": 8,
+   "name": "text8-encoder-kv-4-decoder-8-seed-1",
+   "status": "tuning"
+  },
+  {
+   "task": "text8",
+   "kind": "kv",
+   "enc": 8,
+   "dec": 8,
+   "name": "text8-encoder-kv-8-decoder-8-seed-1",
+   "status": "training"
+  },
+  {
+   "task": "text8",
+   "kind": "raw",
+   "enc": 0,
+   "dec": 8,
+   "name": "text8-raw-context-decoder-8-seed-1",
+   "status": "completed",
+   "score": 10.3046875,
+   "validation": 10.08203125,
+   "seeds": [
+    10.45703125,
+    10.15234375
+   ],
+   "policy": "native",
+   "train_hours": 7.09,
+   "eval_seconds": 42.14762517809868,
+   "nfe": 128.0
+  },
+  {
+   "task": "text8",
+   "kind": "shared",
+   "enc": null,
+   "dec": 8,
+   "name": "text8-block-shared-8-seed-1",
+   "status": "completed",
+   "score": 9.9296875,
+   "validation": 9.89453125,
+   "seeds": [
+    9.9765625,
+    9.8828125
+   ],
+   "policy": "native",
+   "train_hours": 6.63,
+   "eval_seconds": 46.22882407531142,
+   "nfe": 128.0
+  },
+  {
+   "task": "tinystories",
+   "kind": "e2d2",
+   "enc": 1,
+   "dec": 8,
+   "name": "tinystories-bpe-10000-e2d2-encoder-1-seed-1",
+   "status": "completed",
+   "score": 6.956481482414926,
+   "validation": 6.551403766153635,
+   "seeds": [
+    7.0875893796275165,
+    6.8253735852023345
+   ],
+   "policy": "native_greedy",
+   "train_hours": 10.32,
+   "eval_seconds": 40.76454411447048,
+   "nfe": 128.0
+  },
+  {
+   "task": "tinystories",
+   "kind": "e2d2",
+   "enc": 2,
+   "dec": 8,
+   "name": "tinystories-bpe-10000-e2d2-encoder-2-seed-1",
+   "status": "completed",
+   "score": 6.879806683564819,
+   "validation": 6.6897521129727195,
+   "seeds": [
+    6.834617332997883,
+    6.9249960341317545
+   ],
+   "policy": "native_greedy",
+   "train_hours": 10.82,
+   "eval_seconds": 40.30385376885533,
+   "nfe": 128.0
+  },
+  {
+   "task": "tinystories",
+   "kind": "e2d2",
+   "enc": 4,
+   "dec": 8,
+   "name": "tinystories-bpe-10000-e2d2-encoder-4-seed-1",
+   "status": "completed",
+   "score": 6.983328560270154,
+   "validation": 6.596479607700578,
+   "seeds": [
+    7.0698287841485365,
+    6.896828336391772
+   ],
+   "policy": "native_greedy",
+   "train_hours": 11.87,
+   "eval_seconds": 42.36186273396015,
+   "nfe": 128.0
+  },
+  {
+   "task": "tinystories",
+   "kind": "e2d2",
+   "enc": 8,
+   "dec": 1,
+   "name": "tinystories-bpe-10000-e2d2-decoder-1-seed-1",
+   "status": "completed",
+   "score": 6.157361097949611,
+   "validation": 6.0404913120982275,
+   "seeds": [
+    6.259244721696585,
+    6.055477474202636
+   ],
+   "policy": "native_greedy",
+   "train_hours": 8.22,
+   "eval_seconds": 18.24097498699848,
+   "nfe": 128.0
+  },
+  {
+   "task": "tinystories",
+   "kind": "e2d2",
+   "enc": 8,
+   "dec": 2,
+   "name": "tinystories-bpe-10000-e2d2-decoder-2-seed-1",
+   "status": "completed",
+   "score": 6.773647994510368,
+   "validation": 6.496052592448278,
+   "seeds": [
+    6.680616514511762,
+    6.866679474508973
+   ],
+   "policy": "native_greedy",
+   "train_hours": 9.01,
+   "eval_seconds": 22.342096010994283,
+   "nfe": 128.0
+  },
+  {
+   "task": "tinystories",
+   "kind": "e2d2",
+   "enc": 8,
+   "dec": 4,
+   "name": "tinystories-bpe-10000-e2d2-decoder-4-seed-1",
+   "status": "completed",
+   "score": 6.900774268844447,
+   "validation": 6.721723839719115,
+   "seeds": [
+    7.112348127495279,
+    6.689200410193616
+   ],
+   "policy": "native_greedy",
+   "train_hours": 10.62,
+   "eval_seconds": 28.983885146008106,
+   "nfe": 128.0
+  },
+  {
+   "task": "tinystories",
+   "kind": "e2d2",
+   "enc": 8,
+   "dec": 8,
+   "name": "tinystories-bpe-10000-e2d2-encoder-8-seed-1",
+   "status": "completed",
+   "score": 6.9808220917505555,
+   "validation": 6.68302150989167,
+   "seeds": [
+    7.164506086638874,
+    6.797138096862236
+   ],
+   "policy": "native_greedy",
+   "train_hours": 13.72,
+   "eval_seconds": 43.69847087189555,
+   "nfe": 128.0
+  },
+  {
+   "task": "tinystories",
+   "kind": "kv",
+   "enc": 2,
+   "dec": 8,
+   "name": "tinystories-bpe-10000-encoder-kv-2-decoder-8-seed-1",
+   "status": "training"
+  },
+  {
+   "task": "tinystories",
+   "kind": "kv",
+   "enc": 4,
+   "dec": 8,
+   "name": "tinystories-bpe-10000-encoder-kv-4-decoder-8-seed-1",
+   "status": "training"
+  },
+  {
+   "task": "tinystories",
+   "kind": "kv",
+   "enc": 8,
+   "dec": 8,
+   "name": "tinystories-bpe-10000-encoder-kv-8-decoder-8-seed-1",
+   "status": "training"
+  },
+  {
+   "task": "tinystories",
+   "kind": "raw",
+   "enc": 0,
+   "dec": 8,
+   "name": "tinystories-bpe-10000-raw-context-decoder-8-seed-1",
+   "status": "completed",
+   "score": 6.533774895988856,
+   "validation": 6.61715792588218,
+   "seeds": [
+    6.673129448692168,
+    6.394420343285544
+   ],
+   "policy": "native",
+   "train_hours": 9.9,
+   "eval_seconds": 39.63428400736302,
+   "nfe": 128.0
+  },
+  {
+   "task": "tinystories",
+   "kind": "shared",
+   "enc": null,
+   "dec": 8,
+   "name": "tinystories-bpe-10000-block-shared-8-seed-1",
+   "status": "completed",
+   "score": 6.896348504637819,
+   "validation": 6.659178968803288,
+   "seeds": [
+    7.163389064063254,
+    6.6293079452123855
+   ],
+   "policy": "native",
+   "train_hours": 12.95,
+   "eval_seconds": 44.49523515626788,
+   "nfe": 128.0
+  }
+ ]
+}

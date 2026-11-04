@@ -9,6 +9,10 @@ wip: true
 
 {/* The figure lives in public/figures/design-map/index.html (built from the artifact by build_embed.py). */}
 
+import { HeadToHead, Dumbbells, GapGrid, SamplerChoice } from "../../components/SelfCondDepth.jsx"
+import { CdcdLinearity, CdcdSchedules, CdcdCorruption, CdcdPerformance } from "../../components/CdcdSchedules.jsx"
+import { BlockEncDec } from "../../components/BlockScaling.jsx"
+
 # A Few Design Choices for Diffusion Language Models (And a Codebase)
 
 Patrick Pynadath<sup>1</sup>
@@ -16,8 +20,35 @@ Patrick Pynadath<sup>1</sup>
 <sup>1</sup> Purdue Department of Computer Science
 
 ## Introduction
+Diffusion language models have grown into a rapidly evolving field, with recent releases demonstrating diffusion's potential at scale. However, this does not mean that the field has arrived at a singular recipe for diffusion language models. 
 
-Diffusion language models have grown into a large family of methods. Most of them can be described as choices along three parts: the information path (how text is represented and gradually destroyed), the denoising task (how the model is trained to recover the information), and inference (how the model is used at inference). A new method usually introduces several novel techniques at once, each with their own benefits. These individual technniques are often transferable other recipes, but some are not transferable. And even when one transfers, how much it helps, and why, can depend on the rest of the recipe. A technique that helps masked diffusion may do little for Gaussian diffusion, or help only with a certain sampler. This codebase exists to make those questions easy to ask. It breaks the recipe into swappable components to allow for more precise investigation into interplay between these different components.
+This lack of a single recipe is due to the flexibility of the diffusion framework: DLMs have come to capture methods that move from some form of random noise to clean data. This definition leaves many degrees of freedom: we can define noise in the discrete space as replacing clean tokens with masks or random tokens; we can also work in the continuous space with either one-hot vectors, embeddings, or contextual representations from a pretrained encoder. 
+
+This effects how we should train the model, but still leaves some freedom: if continuous, we could use cross entropy to predict clean tokens or MSE to predict the clean representation. If discrete, we can predict clean tokens or learn a plug-in value that allows us to simulate the reverse process -- these need not be the same, as shown (cite loo). 
+
+Past this, we still have various choices to make regarding the inputs the model sees in addition to the noisy state; how we distribute training capacity along the noisy trajectory; and how we use this diffusion model for generation. 
+
+Different methods generally take distinct approaches for addressing these design choices, and often introduce multiple novel techniques at each step. Often times, these techniques can be transferred to alternative recipes. Sometimes, they are not as transferable. But even in the case of being transferable, it is unclear whether the underlying mechanism or effectiveness will remain the same.
+
+The goal of this blog and the accompanying codebase is to frame a diffusion recipe as answering three core questions: how do we represent information and corruption of information in a way the model can understand; how do we train the model to recover information from noisy inputs; and how do we actually generate new information at inference. The codebase aims at making these decisions interchangeable in terms of implementation in order to explicitly capture how combinatorial the design space truly is, and make it easier to study how different decisions along these axis interact. 
+
+## Scope: What is this Codebase? 
+
+
+As hopefully emphasized by the name, this codebase does not capture all the design choices present within the DLM landscape. In fact, it captures a very narrow slice: all methods in this codebase have the following properties: 
+1. They work with **factorized** representations
+2. They do not alter the **tokenization** process
+3. The training loop is **simulation free**, except for the extra pass needed for self conditioning.
+
+Below we expand on what each of these constraints mean, and what works they exclude. The exclusion is for no other reason than time -- each of the directions mentioned are important directions for DLM research and not including them is a current flaw of the codebase. 
+
+### What this Codebase and Blog Is Not
+
+### Factorized Representations 
+
+### Tokenizer Agnostic 
+
+### Simulation Free
 
 ## The design space
 
@@ -30,3 +61,84 @@ Diffusion language models have grown into a large family of methods. Most of the
     style={{ height: '2400px' }}
   ></iframe>
 </div>
+
+## The Experimental Pipeline
+ 
+I spent some time thinking about how to show what this codebase do -- if I am releasing a codebase meant to further research, it should be accompanied by some actual research. At first, I thought of doing a grid search over all the potential recipe's that can be run. I decided against it for the following reasons: 
+1. That is at least 3,000 different recipes -- and that is excluding different samplers, modifiers, and completely ignoring architectural modifications. I simply don't have the compute or patience to run that many in a reasonable amount of time. 
+2. Anyone's agent could run a massive grid search; and the idea of research being reduced to supervising agents as they run sweeps is not appealing to me.
+
+To show how this codebase could be used to ask more specific questions about the ingredients of a diffusion recipe, I thought it would make sense to do exactly that. So the next part can be considered an explanation as to how the codebase organizes experiments, as well as a showcase of some interesting results regarding self conditioning. I will first explain the core question and what we want to investigate; and then the workflow for running the experiment and interpreting the results.
+
+## Continuous Noise Schedules 
+How should we design noise schedules for cDLMs? 
+
+{/* MOCKUP: CDCD schedule figures. Data in src/data/cdcd_schedules.json and cdcd_performance.json. */}
+
+*Draft mockup.* Each pure continuous recipe here (Gaussian embeddings, simplex, spherical, vMF) learns its noise schedule with CDCD [@dieleman2022continuous]. We check three things on the final checkpoints: that the learned clock does its job, what the clocks look like, and how each method performs with and without self conditioning. We focus on text8 and TinyStories. The Sudoku models overfit their training puzzles, so their clocks do not match held-out loss; we keep them behind a toggle for completeness.
+
+<CdcdLinearity client:visible />
+
+<CdcdSchedules client:visible />
+
+<CdcdCorruption client:visible />
+
+<CdcdPerformance client:visible />
+
+## Poor-man's Contextual Representation
+Can we define the corruption process to entangle positions across the sequence? 
+
+
+
+## Block Diffusion: Scale the Encoder or the Decoder?
+
+{/* MOCKUP: block diffusion figure. Data in src/data/block_scaling.json (portable-v2-mi210 snapshot). */}
+
+*Draft mockup.* Block diffusion generates a sequence one block at a time. Each block is denoised while the model reads the blocks already written. Ordinary block diffusion uses one transformer for both jobs. E2D2 splits them: an encoder reads the clean context, and a decoder denoises the current block. The encoder runs once per block. The decoder runs at every denoising step. So the two sides have very different costs, and we can ask which one is worth making deeper.
+
+We train E2D2 with the decoder fixed at 8 layers and the encoder at 1, 2, 4 or 8, and with the encoder fixed at 8 and the decoder at 1, 2, 4 or 8. We also train a model with no encoder at all, where the decoder reads the raw context embeddings, and ordinary block diffusion with one shared 8-layer transformer.
+
+<BlockEncDec client:visible />
+
+What the runs show so far:
+
+- **Decoder depth matters.** On text8, going from 1 to 8 decoder layers raises the score from 5.6 to 9.8. On TinyStories it rises from 6.2 to 7.0, with most of the gain by 4 layers.
+- **Encoder depth does not.** With an 8-layer decoder, 1 to 8 encoder layers stay within seed noise on both tasks. On text8, even no encoder at all scores the same.
+- **One encoder layer is enough here.** On TinyStories, the first encoder layer helps over raw embeddings (6.5 to 7.0). Layers after that add nothing.
+- **Splitting does not beat sharing.** One shared 8-layer transformer matches E2D2 8/8 on both tasks, with half the layers.
+- **Encoder layers are cheap at inference, decoder layers are not.** Inference time barely changes with encoder depth, but roughly doubles from 1 to 8 decoder layers.
+
+## Self Conditioning: What does it do? 
+
+Self conditioning has emerged as a necessary part of continuous diffusion language models (cDLMs). First introduced in [@Chen_Zhang_Hinton_2023], it was shown to be generally effective across a wide range of different cDLM recipes [@dieleman2022continuous; @strudel2022self; @batzolis2026towards; @yang2026continuousdiffusionscalescompetitively]. Some works have attempted to get rid of self conditioning due to its added cost at training and added cost at inference [@davis2026design]. Other works have embraced self conditioning and leaned further into it [@deschenauxLoopholingAllWay2026a; @yooSelfconditionedFlowMap2026a]. Regardless, there is almost no debate as to the effectiveness of self conditioning. 
+
+There have been many works posing reasonable answers to this exact question. We summarize a few of them below. 
+1. In [@pynadath2025candihybriddiscretecontinuousdiffusion], we hypothesized that self conditioning acted as anchoring for the model, due to the imbalance between discrete and continuous corruption. 
+2. In [@yooSelfconditionedFlowMap2026a], they show that self conditioned flows are equivalent to a fixed point iteration. 
+3. In [@davis2026design; @shabalinWhyGaussianDiffusion2026], they hypothesize that self conditioning alleviates an inference-training mismatch. 
+
+These answers are fairly convincing. However, it is unclear whether these capture the full picture. For instance, [@joLoopholingDiscreteDiffusion2026] demonstrates that loopholing also improves discrete diffusion models based on uniform and masked corruption, and [@deschenauxLoopholingAllWay2026a] shows that self conditioning on its own is a fairly performant generative method. All three hypothesis do not explain these latter results as they are dependent on properties of continuous diffusion. If self conditioning helps in discrete diffusion, where these reasons do not apply, then do these theories fully explain why self conditioning works in the continuous case? We articulate a few questions below. 
+
+{/* MOCKUP: SC vs depth figures. Data in src/data/sc_depth_results.json (from candi docs/handoffs/performance-index-2026-11-01.csv). */}
+
+### Is self conditioning just a deeper network?
+
+*Draft mockup.* Self conditioning runs the network twice in training, so a fair question is whether it only adds depth. We compare an 8-layer model with SC against a 16-layer model without it, for Gaussian, masked and uniform corruption on Sudoku, text8 and TinyStories. Everything else is held fixed: width 512, 20k updates, 128 NFE. Each model uses whichever sampler scored best on validation.
+
+<HeadToHead client:visible />
+
+<Dumbbells client:visible />
+
+<GapGrid client:visible />
+
+### Does self conditioning change how the model should be sampled?
+
+<SamplerChoice client:visible />
+
+
+### Training Pipeline and Supported Tasks
+
+### Inference Pipeline 
+
+
+To give an example as to how this codebase can be used to ask more precise questions, 

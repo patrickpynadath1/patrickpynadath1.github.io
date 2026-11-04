@@ -1,0 +1,341 @@
+{
+ "source": "per-sampler validation (inference/<policy>/selected.json) and final/result.json from feedback-depth-cdcd-20k-20261030 and feedback-renoising-128nfe-20261031 on ruqi6000, 2026-11-01; sampler chosen by validation",
+ "rows": [
+  {
+   "task": "sudoku_hard",
+   "method": "gaussian",
+   "arm": "none",
+   "score": 0.5195,
+   "seeds": [
+    0.5273,
+    0.5117
+   ],
+   "validation": 0.4844,
+   "policy": "renoise_greedy",
+   "renoise_tried": true,
+   "case": "sudoku_hard-gaussian_embedding-none-seed-1"
+  },
+  {
+   "task": "sudoku_hard",
+   "method": "gaussian",
+   "arm": "sc",
+   "score": 0.9277,
+   "seeds": [
+    0.9336,
+    0.9219
+   ],
+   "validation": 0.9414,
+   "policy": "renoise_sample",
+   "renoise_tried": true,
+   "case": "sudoku_hard-gaussian_embedding-expected_embedding-seed-1"
+  },
+  {
+   "task": "text8",
+   "method": "gaussian",
+   "arm": "none",
+   "score": 12.8379,
+   "seeds": [
+    12.7109,
+    12.9648
+   ],
+   "validation": 12.9531,
+   "policy": "renoise_sample",
+   "renoise_tried": true,
+   "case": "text8-gaussian_embedding-none-seed-1"
+  },
+  {
+   "task": "text8",
+   "method": "gaussian",
+   "arm": "sc",
+   "score": 14.3906,
+   "seeds": [
+    14.4609,
+    14.3203
+   ],
+   "validation": 14.7891,
+   "policy": "native",
+   "renoise_tried": true,
+   "case": "text8-gaussian_embedding-expected_embedding-seed-1"
+  },
+  {
+   "task": "tinystories",
+   "method": "gaussian",
+   "arm": "none",
+   "score": 6.3385,
+   "seeds": [
+    6.3112,
+    6.3658
+   ],
+   "validation": 6.0294,
+   "policy": "renoise_sample",
+   "renoise_tried": true,
+   "case": "tinystories-gaussian_embedding-none-seed-1"
+  },
+  {
+   "task": "tinystories",
+   "method": "gaussian",
+   "arm": "sc",
+   "score": 7.6447,
+   "seeds": [
+    7.6408,
+    7.6487
+   ],
+   "validation": 7.5196,
+   "policy": "native",
+   "renoise_tried": true,
+   "case": "tinystories-gaussian_embedding-expected_embedding-seed-1"
+  },
+  {
+   "task": "sudoku_hard",
+   "method": "simplex",
+   "arm": "none",
+   "score": 0.2637,
+   "seeds": [
+    0.2422,
+    0.2852
+   ],
+   "validation": 0.3086,
+   "policy": "native",
+   "renoise_tried": true,
+   "case": "sudoku_hard-simplex-none-seed-1"
+  },
+  {
+   "task": "sudoku_hard",
+   "method": "simplex",
+   "arm": "sc",
+   "score": 0.916,
+   "seeds": [
+    0.918,
+    0.9141
+   ],
+   "validation": 0.8711,
+   "policy": "native_greedy",
+   "renoise_tried": true,
+   "case": "sudoku_hard-simplex-expected_embedding-seed-1"
+  },
+  {
+   "task": "text8",
+   "method": "simplex",
+   "arm": "none",
+   "score": 11.0371,
+   "seeds": [
+    10.8867,
+    11.1875
+   ],
+   "validation": 11.6016,
+   "policy": "native",
+   "renoise_tried": false,
+   "case": "text8-simplex-none-seed-1"
+  },
+  {
+   "task": "text8",
+   "method": "simplex",
+   "arm": "sc",
+   "score": 11.9707,
+   "seeds": [
+    12.2656,
+    11.6758
+   ],
+   "validation": 11.8008,
+   "policy": "native",
+   "renoise_tried": false,
+   "case": "text8-simplex-expected_embedding-seed-1"
+  },
+  {
+   "task": "tinystories",
+   "method": "simplex",
+   "arm": "none",
+   "score": 6.0835,
+   "seeds": [
+    6.1053,
+    6.0618
+   ],
+   "validation": 5.9184,
+   "policy": "native",
+   "renoise_tried": false,
+   "case": "tinystories-simplex-none-seed-1"
+  },
+  {
+   "task": "tinystories",
+   "method": "simplex",
+   "arm": "sc",
+   "score": 8.6796,
+   "seeds": [
+    8.6098,
+    8.7494
+   ],
+   "validation": 8.6278,
+   "policy": "eb_greedy",
+   "renoise_tried": false,
+   "case": "tinystories-simplex-expected_embedding-seed-1"
+  },
+  {
+   "task": "sudoku_hard",
+   "method": "spherical",
+   "arm": "none",
+   "score": 0.5957,
+   "seeds": [
+    0.6094,
+    0.582
+   ],
+   "validation": 0.5898,
+   "policy": "eb_greedy",
+   "renoise_tried": true,
+   "case": "sudoku_hard-spherical-none-seed-1"
+  },
+  {
+   "task": "sudoku_hard",
+   "method": "spherical",
+   "arm": "sc",
+   "score": 0.9258,
+   "seeds": [
+    0.9297,
+    0.9219
+   ],
+   "validation": 0.9062,
+   "policy": "native",
+   "renoise_tried": true,
+   "case": "sudoku_hard-spherical-expected_embedding-seed-1"
+  },
+  {
+   "task": "text8",
+   "method": "spherical",
+   "arm": "none",
+   "score": 9.6133,
+   "seeds": [
+    9.6133,
+    9.6133
+   ],
+   "validation": 9.4922,
+   "policy": "native",
+   "renoise_tried": false,
+   "case": "text8-spherical-none-seed-1"
+  },
+  {
+   "task": "text8",
+   "method": "spherical",
+   "arm": "sc",
+   "score": 13.1055,
+   "seeds": [
+    13.7109,
+    12.5
+   ],
+   "validation": 12.9453,
+   "policy": "native",
+   "renoise_tried": false,
+   "case": "text8-spherical-expected_embedding-seed-1"
+  },
+  {
+   "task": "tinystories",
+   "method": "spherical",
+   "arm": "none",
+   "score": 5.6798,
+   "seeds": [
+    5.6691,
+    5.6906
+   ],
+   "validation": 5.4404,
+   "policy": "native",
+   "renoise_tried": false,
+   "case": "tinystories-spherical-none-seed-1"
+  },
+  {
+   "task": "tinystories",
+   "method": "spherical",
+   "arm": "sc",
+   "score": 7.8894,
+   "seeds": [
+    7.9128,
+    7.8661
+   ],
+   "validation": 7.8059,
+   "policy": "native",
+   "renoise_tried": false,
+   "case": "tinystories-spherical-expected_embedding-seed-1"
+  },
+  {
+   "task": "sudoku_hard",
+   "method": "vmf",
+   "arm": "none",
+   "score": 0.5508,
+   "seeds": [
+    0.5469,
+    0.5547
+   ],
+   "validation": 0.5312,
+   "policy": "renoise_sample",
+   "renoise_tried": true,
+   "case": "sudoku_hard-spherical_vmf-none-seed-1"
+  },
+  {
+   "task": "sudoku_hard",
+   "method": "vmf",
+   "arm": "sc",
+   "score": 0.957,
+   "seeds": [
+    0.9609,
+    0.9531
+   ],
+   "validation": 0.9492,
+   "policy": "native",
+   "renoise_tried": true,
+   "case": "sudoku_hard-spherical_vmf-expected_embedding-seed-1"
+  },
+  {
+   "task": "text8",
+   "method": "vmf",
+   "arm": "none",
+   "score": 9.9766,
+   "seeds": [
+    10.0312,
+    9.9219
+   ],
+   "validation": 9.8711,
+   "policy": "native",
+   "renoise_tried": false,
+   "case": "text8-spherical_vmf-none-seed-1"
+  },
+  {
+   "task": "text8",
+   "method": "vmf",
+   "arm": "sc",
+   "score": 13.1562,
+   "seeds": [
+    13.1367,
+    13.1758
+   ],
+   "validation": 13.3164,
+   "policy": "native",
+   "renoise_tried": false,
+   "case": "text8-spherical_vmf-expected_embedding-seed-1"
+  },
+  {
+   "task": "tinystories",
+   "method": "vmf",
+   "arm": "none",
+   "score": 5.7256,
+   "seeds": [
+    5.7485,
+    5.7027
+   ],
+   "validation": 5.3489,
+   "policy": "native",
+   "renoise_tried": false,
+   "case": "tinystories-spherical_vmf-none-seed-1"
+  },
+  {
+   "task": "tinystories",
+   "method": "vmf",
+   "arm": "sc",
+   "score": 7.636,
+   "seeds": [
+    7.6185,
+    7.6534
+   ],
+   "validation": 7.4028,
+   "policy": "native",
+   "renoise_tried": false,
+   "case": "tinystories-spherical_vmf-expected_embedding-seed-1"
+  }
+ ]
+}
