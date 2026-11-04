@@ -17,7 +17,7 @@ const METHODS = [
 const TASKS = [
   { id: "text8", label: "text8", color: () => P.duo, fmt: (v) => v.toFixed(1), metric: "unique valid words / sample",
     domain: [8, 16], ticks: [8, 10, 12, 14, 16], tick: (v) => `${v}` },
-  { id: "tinystories", label: "TinyStories", color: () => P.highlight, fmt: (v) => v.toFixed(2), metric: "reference BLEU",
+  { id: "tinystories", label: "TinyStories (bytes)", color: () => P.highlight, fmt: (v) => v.toFixed(2), metric: "reference BLEU",
     domain: [5, 9], ticks: [5, 6, 7, 8, 9], tick: (v) => `${v}` },
   { id: "sudoku_hard", label: "Sudoku", overfit: true, color: () => P.accent, fmt: (v) => `${(v * 100).toFixed(1)}%`, metric: "solve rate",
     domain: [0, 1], ticks: [0, 0.25, 0.5, 0.75, 1], tick: (v) => `${Math.round(v * 100)}%` },
@@ -407,8 +407,8 @@ function PerformanceInner() {
       kicker="Figure G · performance"
       title="How much SC adds to each continuous method"
       subtitle="Grey ring: no SC. Green dot: with SC. Same 8-layer backbone, same learned CDCD clock, best sampler on validation."
-      controls={<Pills value={task} onChange={setTask} options={TASKS.map((tk) => ({ id: tk.id, label: tk.overfit ? `${tk.label} (overfit)` : tk.label }))} />}
-      note={`${t.overfit ? "Sudoku models overfit the training puzzles, so their learned clocks do not match held-out loss; shown for completeness. " : ""}Metric: ${t.metric}. Final held-out scores; thin bars show the two evaluation seeds. Renoising samplers were not run for simplex, spherical and vMF on text8 and TinyStories.`}
+      controls={<Pills value={task} onChange={setTask} options={TASKS.map((tk) => ({ id: tk.id, label: tk.id === "tinystories" ? "TinyStories BPE" : tk.overfit ? `${tk.label} (overfit)` : tk.label }))} />}
+      note={`${t.overfit ? "Sudoku models overfit the training puzzles, so their learned clocks do not match held-out loss; shown for completeness. " : ""}Metric: ${t.metric}. Final held-out scores; thin bars show the two evaluation seeds. ${task === "tinystories" ? "TinyStories: 10k-token BPE run on MI210 GPUs (a second, independent run); all five samplers tried. Simplex is still training." : task === "text8" ? "Renoising samplers were not run for simplex, spherical and vMF on text8." : ""}`}
     >
       <svg viewBox={`0 0 720 ${H}`} style={{ width: "100%", height: "auto", display: "block", fontFamily: FONT }}>
         {t.ticks.map((v) => (
@@ -421,7 +421,14 @@ function PerformanceInner() {
         {METHODS.map((m, i) => {
           const a = get(m.id, "none"), b = get(m.id, "sc");
           const cy = T + i * rowH + rowH / 2 - 8;
-          if (!a || !b) return null;
+          if (!a || !b || a.pending || b.pending) return (
+            <g key={m.id}>
+              <rect x={8} y={cy - rowH / 2 + 5} width={704} height={rowH - 10} rx={9} fill={i % 2 ? "transparent" : rgba(P.panel, 0.6)} />
+              <circle cx={22} cy={cy} r={5} fill={m.color()} opacity={0.4} />
+              <text x={34} y={cy + 4} fill={P.dim} fontSize={12.5} fontWeight={600}>{m.label}</text>
+              <text x={L} y={cy + 4} fill={P.dim} fontSize={11} fontStyle="italic">still training</text>
+            </g>
+          );
           const g = (b.score / a.score - 1) * 100;
           return (
             <g key={m.id}>

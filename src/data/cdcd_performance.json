@@ -1,5 +1,5 @@
 {
- "source": "per-sampler validation (inference/<policy>/selected.json) and final/result.json from feedback-depth-cdcd-20k-20261030 and feedback-renoising-128nfe-20261031 on ruqi6000, 2026-11-01; sampler chosen by validation",
+ "source": "per-sampler validation (inference/<policy>/selected.json) and final/result.json from feedback-depth-cdcd-20k-20261030 and feedback-renoising-128nfe-20261031 on ruqi6000, 2026-11-01; sampler chosen by validation; TinyStories rows replaced by portable-v2-mi210 TinyStories BPE-10k",
  "rows": [
   {
    "task": "sudoku_hard",
@@ -58,34 +58,6 @@
    "case": "text8-gaussian_embedding-expected_embedding-seed-1"
   },
   {
-   "task": "tinystories",
-   "method": "gaussian",
-   "arm": "none",
-   "score": 6.3385,
-   "seeds": [
-    6.3112,
-    6.3658
-   ],
-   "validation": 6.0294,
-   "policy": "renoise_sample",
-   "renoise_tried": true,
-   "case": "tinystories-gaussian_embedding-none-seed-1"
-  },
-  {
-   "task": "tinystories",
-   "method": "gaussian",
-   "arm": "sc",
-   "score": 7.6447,
-   "seeds": [
-    7.6408,
-    7.6487
-   ],
-   "validation": 7.5196,
-   "policy": "native",
-   "renoise_tried": true,
-   "case": "tinystories-gaussian_embedding-expected_embedding-seed-1"
-  },
-  {
    "task": "sudoku_hard",
    "method": "simplex",
    "arm": "none",
@@ -142,34 +114,6 @@
    "case": "text8-simplex-expected_embedding-seed-1"
   },
   {
-   "task": "tinystories",
-   "method": "simplex",
-   "arm": "none",
-   "score": 6.0835,
-   "seeds": [
-    6.1053,
-    6.0618
-   ],
-   "validation": 5.9184,
-   "policy": "native",
-   "renoise_tried": false,
-   "case": "tinystories-simplex-none-seed-1"
-  },
-  {
-   "task": "tinystories",
-   "method": "simplex",
-   "arm": "sc",
-   "score": 8.6796,
-   "seeds": [
-    8.6098,
-    8.7494
-   ],
-   "validation": 8.6278,
-   "policy": "eb_greedy",
-   "renoise_tried": false,
-   "case": "tinystories-simplex-expected_embedding-seed-1"
-  },
-  {
    "task": "sudoku_hard",
    "method": "spherical",
    "arm": "none",
@@ -224,34 +168,6 @@
    "policy": "native",
    "renoise_tried": false,
    "case": "text8-spherical-expected_embedding-seed-1"
-  },
-  {
-   "task": "tinystories",
-   "method": "spherical",
-   "arm": "none",
-   "score": 5.6798,
-   "seeds": [
-    5.6691,
-    5.6906
-   ],
-   "validation": 5.4404,
-   "policy": "native",
-   "renoise_tried": false,
-   "case": "tinystories-spherical-none-seed-1"
-  },
-  {
-   "task": "tinystories",
-   "method": "spherical",
-   "arm": "sc",
-   "score": 7.8894,
-   "seeds": [
-    7.9128,
-    7.8661
-   ],
-   "validation": 7.8059,
-   "policy": "native",
-   "renoise_tried": false,
-   "case": "tinystories-spherical-expected_embedding-seed-1"
   },
   {
    "task": "sudoku_hard",
@@ -311,31 +227,457 @@
   },
   {
    "task": "tinystories",
+   "method": "gaussian",
+   "arm": "none",
+   "score": 6.8119,
+   "validation": 6.876,
+   "seeds": [
+    6.8149,
+    6.809
+   ],
+   "policy": "renoise_sample",
+   "campaign": "portable-v2-mi210 (TinyStories BPE-10k)",
+   "case": "tinystories-bpe-10000-gaussian_embedding-none-seed-1",
+   "samplers": [
+    {
+     "policy": "native",
+     "validation": 6.6822,
+     "seeds": [
+      6.4939,
+      6.8705
+     ],
+     "params": {
+      "temperature": 0.74
+     }
+    },
+    {
+     "policy": "native_greedy",
+     "validation": 5.8296,
+     "seeds": [
+      5.7089,
+      5.9503
+     ],
+     "params": {
+      "final_denoise": "greedy"
+     }
+    },
+    {
+     "policy": "eb_greedy",
+     "validation": 0.003,
+     "seeds": [
+      0.0032,
+      0.0029
+     ],
+     "params": {
+      "temperature": 1.332,
+      "entropy_bound": 0.04
+     }
+    },
+    {
+     "policy": "renoise_sample",
+     "validation": 6.876,
+     "seeds": [
+      6.7403,
+      7.0117
+     ],
+     "params": {
+      "temperature": 1.059
+     }
+    },
+    {
+     "policy": "renoise_greedy",
+     "validation": 3.7939,
+     "seeds": [
+      3.9524,
+      3.6354
+     ],
+     "params": {
+      "final_denoise": "greedy"
+     }
+    }
+   ],
+   "renoise_tried": true
+  },
+  {
+   "task": "tinystories",
+   "method": "gaussian",
+   "arm": "sc",
+   "score": 7.8644,
+   "validation": 7.0553,
+   "seeds": [
+    8.1138,
+    7.615
+   ],
+   "policy": "native",
+   "campaign": "portable-v2-mi210 (TinyStories BPE-10k)",
+   "case": "tinystories-bpe-10000-gaussian_embedding-expected_embedding-seed-1",
+   "samplers": [
+    {
+     "policy": "native",
+     "validation": 7.0553,
+     "seeds": [
+      7.2743,
+      6.8363
+     ],
+     "params": {
+      "temperature": 0.996
+     }
+    },
+    {
+     "policy": "native_greedy",
+     "validation": 6.1606,
+     "seeds": [
+      6.2356,
+      6.0856
+     ],
+     "params": {
+      "final_denoise": "greedy"
+     }
+    },
+    {
+     "policy": "eb_greedy",
+     "validation": 0.7039,
+     "seeds": [
+      0.7484,
+      0.6595
+     ],
+     "params": {
+      "temperature": 0.656,
+      "entropy_bound": 0.033
+     }
+    },
+    {
+     "policy": "renoise_sample",
+     "validation": 7.0476,
+     "seeds": [
+      7.0467,
+      7.0485
+     ],
+     "params": {
+      "temperature": 1.024
+     }
+    },
+    {
+     "policy": "renoise_greedy",
+     "validation": 3.36,
+     "seeds": [
+      3.4041,
+      3.3159
+     ],
+     "params": {
+      "final_denoise": "greedy"
+     }
+    }
+   ],
+   "renoise_tried": true
+  },
+  {
+   "task": "tinystories",
+   "method": "simplex",
+   "arm": "none",
+   "pending": true,
+   "case": "tinystories-bpe-10000-simplex-none-seed-1",
+   "campaign": "portable-v2-mi210 (TinyStories BPE-10k)"
+  },
+  {
+   "task": "tinystories",
+   "method": "simplex",
+   "arm": "sc",
+   "pending": true,
+   "case": "tinystories-bpe-10000-simplex-expected_embedding-seed-1",
+   "campaign": "portable-v2-mi210 (TinyStories BPE-10k)"
+  },
+  {
+   "task": "tinystories",
+   "method": "spherical",
+   "arm": "none",
+   "score": 7.5526,
+   "validation": 7.1798,
+   "seeds": [
+    7.4882,
+    7.6169
+   ],
+   "policy": "renoise_sample",
+   "campaign": "portable-v2-mi210 (TinyStories BPE-10k)",
+   "case": "tinystories-bpe-10000-spherical-none-seed-1",
+   "samplers": [
+    {
+     "policy": "native",
+     "validation": 6.3214,
+     "seeds": [
+      6.0589,
+      6.5839
+     ],
+     "params": {
+      "temperature": 0.847
+     }
+    },
+    {
+     "policy": "native_greedy",
+     "validation": 6.1382,
+     "seeds": [
+      6.0353,
+      6.2411
+     ],
+     "params": {
+      "final_denoise": "sample"
+     }
+    },
+    {
+     "policy": "eb_greedy",
+     "validation": 0.3712,
+     "seeds": [
+      0.3715,
+      0.3709
+     ],
+     "params": {
+      "temperature": 1.496,
+      "entropy_bound": 0.055
+     }
+    },
+    {
+     "policy": "renoise_sample",
+     "validation": 7.1798,
+     "seeds": [
+      7.3513,
+      7.0082
+     ],
+     "params": {
+      "temperature": 1.0
+     }
+    },
+    {
+     "policy": "renoise_greedy",
+     "validation": 3.9899,
+     "seeds": [
+      4.0128,
+      3.967
+     ],
+     "params": {
+      "final_denoise": "greedy"
+     }
+    }
+   ],
+   "renoise_tried": true
+  },
+  {
+   "task": "tinystories",
+   "method": "spherical",
+   "arm": "sc",
+   "score": 8.2699,
+   "validation": 7.8517,
+   "seeds": [
+    8.2692,
+    8.2706
+   ],
+   "policy": "eb_greedy",
+   "campaign": "portable-v2-mi210 (TinyStories BPE-10k)",
+   "case": "tinystories-bpe-10000-spherical-expected_embedding-seed-1",
+   "samplers": [
+    {
+     "policy": "native",
+     "validation": 7.2704,
+     "seeds": [
+      7.2913,
+      7.2494
+     ],
+     "params": {
+      "temperature": 1.0
+     }
+    },
+    {
+     "policy": "native_greedy",
+     "validation": 6.0986,
+     "seeds": [
+      6.2206,
+      5.9766
+     ],
+     "params": {
+      "final_denoise": "sample"
+     }
+    },
+    {
+     "policy": "eb_greedy",
+     "validation": 7.8517,
+     "seeds": [
+      7.8487,
+      7.8548
+     ],
+     "params": {
+      "temperature": 0.508,
+      "entropy_bound": 0.444
+     }
+    },
+    {
+     "policy": "renoise_sample",
+     "validation": 7.4303,
+     "seeds": [
+      7.4813,
+      7.3793
+     ],
+     "params": {
+      "temperature": 1.087
+     }
+    },
+    {
+     "policy": "renoise_greedy",
+     "validation": 2.6133,
+     "seeds": [
+      2.7676,
+      2.459
+     ],
+     "params": {
+      "final_denoise": "greedy"
+     }
+    }
+   ],
+   "renoise_tried": true
+  },
+  {
+   "task": "tinystories",
    "method": "vmf",
    "arm": "none",
-   "score": 5.7256,
+   "score": 7.0596,
+   "validation": 6.8184,
    "seeds": [
-    5.7485,
-    5.7027
+    6.9688,
+    7.1503
    ],
-   "validation": 5.3489,
-   "policy": "native",
-   "renoise_tried": false,
-   "case": "tinystories-spherical_vmf-none-seed-1"
+   "policy": "renoise_sample",
+   "campaign": "portable-v2-mi210 (TinyStories BPE-10k)",
+   "case": "tinystories-bpe-10000-spherical_vmf-none-seed-1",
+   "samplers": [
+    {
+     "policy": "native",
+     "validation": 6.1933,
+     "seeds": [
+      6.4275,
+      5.9592
+     ],
+     "params": {
+      "temperature": 0.656
+     }
+    },
+    {
+     "policy": "native_greedy",
+     "validation": 5.9218,
+     "seeds": [
+      5.9506,
+      5.8929
+     ],
+     "params": {
+      "final_denoise": "greedy"
+     }
+    },
+    {
+     "policy": "eb_greedy",
+     "validation": 2.1506,
+     "seeds": [
+      2.1314,
+      2.1697
+     ],
+     "params": {
+      "temperature": 1.488,
+      "entropy_bound": 0.02
+     }
+    },
+    {
+     "policy": "renoise_sample",
+     "validation": 6.8184,
+     "seeds": [
+      6.9048,
+      6.732
+     ],
+     "params": {
+      "temperature": 1.007
+     }
+    },
+    {
+     "policy": "renoise_greedy",
+     "validation": 3.8576,
+     "seeds": [
+      3.7007,
+      4.0145
+     ],
+     "params": {
+      "final_denoise": "greedy"
+     }
+    }
+   ],
+   "renoise_tried": true
   },
   {
    "task": "tinystories",
    "method": "vmf",
    "arm": "sc",
-   "score": 7.636,
+   "score": 7.667,
+   "validation": 7.481,
    "seeds": [
-    7.6185,
-    7.6534
+    7.9296,
+    7.4045
    ],
-   "validation": 7.4028,
    "policy": "native",
-   "renoise_tried": false,
-   "case": "tinystories-spherical_vmf-expected_embedding-seed-1"
+   "campaign": "portable-v2-mi210 (TinyStories BPE-10k)",
+   "case": "tinystories-bpe-10000-spherical_vmf-expected_embedding-seed-1",
+   "samplers": [
+    {
+     "policy": "native",
+     "validation": 7.481,
+     "seeds": [
+      7.5065,
+      7.4555
+     ],
+     "params": {
+      "temperature": 1.059
+     }
+    },
+    {
+     "policy": "native_greedy",
+     "validation": 6.1729,
+     "seeds": [
+      6.4562,
+      5.8897
+     ],
+     "params": {
+      "final_denoise": "greedy"
+     }
+    },
+    {
+     "policy": "eb_greedy",
+     "validation": 7.0928,
+     "seeds": [
+      7.0151,
+      7.1706
+     ],
+     "params": {
+      "temperature": 0.558,
+      "entropy_bound": 0.325
+     }
+    },
+    {
+     "policy": "renoise_sample",
+     "validation": 7.3751,
+     "seeds": [
+      7.3503,
+      7.3998
+     ],
+     "params": {
+      "temperature": 1.101
+     }
+    },
+    {
+     "policy": "renoise_greedy",
+     "validation": 3.5476,
+     "seeds": [
+      3.6057,
+      3.4895
+     ],
+     "params": {
+      "final_denoise": "sample"
+     }
+    }
+   ],
+   "renoise_tried": true
   }
  ]
 }

@@ -1,6 +1,7 @@
 // Self conditioning vs doubling depth: four linked mockup figures.
 // Data: src/data/sc_depth_results.json, built from candi
-// docs/handoffs/performance-index-2026-11-01.csv (final held-out scores, one
+// docs/handoffs/performance-index-2026-11-01.csv for Sudoku and text8, and the
+// portable-v2-mi210 snapshot for TinyStories BPE-10k (final held-out scores, one
 // training seed, two evaluation seeds, 128 NFE). Each cell uses the sampler with the best validation score.
 import { useMemo, useState } from "react";
 import { P, withVizTheme } from "./vizTheme.js";
@@ -24,7 +25,7 @@ const TASKS = [
     domain: [0, 1], ticks: [0, 0.2, 0.4, 0.6, 0.8, 1], tick: (v) => `${Math.round(v * 100)}%` },
   { id: "text8", label: "text8", metric: "unique valid words / sample", fmt: (v) => v.toFixed(1),
     domain: [0, 18], ticks: [0, 3, 6, 9, 12, 15, 18], tick: (v) => `${v}` },
-  { id: "tinystories", label: "TinyStories", metric: "reference BLEU", fmt: (v) => v.toFixed(2),
+  { id: "tinystories", label: "TinyStories BPE", metric: "reference BLEU", fmt: (v) => v.toFixed(2),
     domain: [4, 9], ticks: [4, 5, 6, 7, 8, 9], tick: (v) => `${v}` },
 ];
 const ARMS = [
@@ -136,7 +137,7 @@ function HeadToHeadInner() {
       kicker="Figure A · the headline"
       title="Does self conditioning buy what doubling depth buys?"
       subtitle="Each mark is one corruption type on one task. Both axes show the change over the same 8-layer model without SC. Above the diagonal, 8 layers + SC beats 16 layers."
-      note="Final held-out scores. Each model uses the sampler that scored best on validation. Axes use a signed square-root scale. One training seed per cell."
+      note="Final held-out scores. Each model uses the sampler that scored best on validation. Axes use a signed square-root scale. One training seed per cell. TinyStories uses a 10k-token BPE vocabulary and comes from a second, independent run (AMD MI210, new data splits); Sudoku and text8 come from the original run."
     >
       <svg viewBox="0 0 720 440" style={{ width: "100%", height: "auto", display: "block", fontFamily: FONT }}>
         <polygon points={`${L},${T + S} ${L},${T} ${L + S},${T}`} fill={rgba(P.candi, 0.07)} />
@@ -395,7 +396,7 @@ function SamplerChoiceInner() {
         <Pills value={view} onChange={setView} options={[{ id: "map", label: "Winner map" }, { id: "grid", label: "All samplers" }]} />
         {view === "grid" && <Pills value={task} onChange={setTask} options={TASKS.map((tk) => ({ id: tk.id, label: tk.label }))} />}
       </>}
-      note="Lead = winner's validation score over the runner-up sampler's. Small leads (under 2%, in yellow) mean the choice is close to a coin flip. Renoising sends committed tokens back through the forward process during generation."
+      note="Lead = winner's validation score over the runner-up sampler's. Small leads (under 2%, in yellow) mean the choice is close to a coin flip. Renoising sends committed tokens back through the forward process during generation. TinyStories: BPE-10k run on MI210 GPUs."
     >
       {stat}
       {view === "map" ? <WinnerMap hover={hover} setHover={setHover} /> : <SamplerGrid task={task} />}

@@ -75,7 +75,7 @@ How should we design noise schedules for cDLMs?
 
 {/* MOCKUP: CDCD schedule figures. Data in src/data/cdcd_schedules.json and cdcd_performance.json. */}
 
-*Draft mockup.* Each pure continuous recipe here (Gaussian embeddings, simplex, spherical, vMF) learns its noise schedule with CDCD [@dieleman2022continuous]. We check three things on the final checkpoints: that the learned clock does its job, what the clocks look like, and how each method performs with and without self conditioning. We focus on text8 and TinyStories. The Sudoku models overfit their training puzzles, so their clocks do not match held-out loss; we keep them behind a toggle for completeness.
+*Draft mockup.* Each pure continuous recipe here (Gaussian embeddings, simplex, spherical, vMF) learns its noise schedule with CDCD [@dieleman2022continuous]. We check three things on the final checkpoints: that the learned clock does its job, what the clocks look like, and how each method performs with and without self conditioning. We focus on text8 and TinyStories. The schedule figures use byte-level TinyStories checkpoints; the performance figure uses a 10k-token BPE run, which is closer to how real language models tokenize. The Sudoku models overfit their training puzzles, so their clocks do not match held-out loss; we keep them behind a toggle for completeness.
 
 <CdcdLinearity client:visible />
 
@@ -94,7 +94,9 @@ Can we define the corruption process to entangle positions across the sequence?
 
 {/* MOCKUP: block diffusion figure. Data in src/data/block_scaling.json (portable-v2-mi210 snapshot). */}
 
-*Draft mockup.* Block diffusion generates a sequence one block at a time. Each block is denoised while the model reads the blocks already written. Ordinary block diffusion uses one transformer for both jobs. E2D2 splits them: an encoder reads the clean context, and a decoder denoises the current block. The encoder runs once per block. The decoder runs at every denoising step. So the two sides have very different costs, and we can ask which one is worth making deeper.
+*Draft mockup.* Block diffusion generates a sequence one block at a time. Each block is denoised while the model reads the blocks already written. Ordinary block diffusion [@arriola2025block] uses one transformer for both jobs. E2D2 [@arriola2025e2d2] splits them: an encoder reads the clean context, and a decoder denoises the current block. The encoder runs once per block. The decoder runs at every denoising step. So the two sides have very different costs, and we can ask which one is worth making deeper.
+
+The design map above shows how the weights are split: pick block diffusion, then **Weights → Encoder + decoder (E2D2)** under Sequence modifiers.
 
 We train E2D2 with the decoder fixed at 8 layers and the encoder at 1, 2, 4 or 8, and with the encoder fixed at 8 and the decoder at 1, 2, 4 or 8. We also train a model with no encoder at all, where the decoder reads the raw context embeddings, and ordinary block diffusion with one shared 8-layer transformer.
 
@@ -123,7 +125,7 @@ These answers are fairly convincing. However, it is unclear whether these captur
 
 ### Is self conditioning just a deeper network?
 
-*Draft mockup.* Self conditioning runs the network twice in training, so a fair question is whether it only adds depth. We compare an 8-layer model with SC against a 16-layer model without it, for Gaussian, masked and uniform corruption on Sudoku, text8 and TinyStories. Everything else is held fixed: width 512, 20k updates, 128 NFE. Each model uses whichever sampler scored best on validation.
+*Draft mockup.* Self conditioning runs the network twice in training, so a fair question is whether it only adds depth. We compare an 8-layer model with SC against a 16-layer model without it, for Gaussian, masked and uniform corruption on Sudoku, text8 and TinyStories. For TinyStories we use a 10k-token BPE vocabulary rather than raw bytes, since most language models use subword tokenizers. Those runs come from a second, independent run on different hardware. Everything else is held fixed: width 512, 20k updates, 128 NFE. Each model uses whichever sampler scored best on validation.
 
 <HeadToHead client:visible />
 

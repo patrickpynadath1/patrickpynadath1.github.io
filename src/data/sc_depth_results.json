@@ -1,5 +1,5 @@
 {
- "source": "candi docs/handoffs/performance-index-2026-11-01.csv; per cell, sampler chosen by validation score across standard and renoising policies; per-sampler validation scores from inference/<policy>/selected.json on ruqi6000 (2026-11-01)",
+ "source": "Sudoku and text8: candi docs/handoffs/performance-index-2026-11-01.csv (ruqi6000). TinyStories: portable-v2-mi210 partial snapshot, TinyStories BPE-10k. Per cell, sampler chosen by validation score.",
  "rows": [
   {
    "task": "sudoku_hard",
@@ -1308,106 +1308,34 @@
   {
    "task": "tinystories",
    "method": "gaussian",
-   "arm": "depth",
-   "score": 6.3867,
-   "validation": 6.1784,
-   "seeds": [
-    6.0933,
-    6.6801
-   ],
-   "policy": "renoise_sample",
-   "campaign": "feedback-renoising-128nfe-20261031",
-   "case": "tinystories-gaussian_embedding-double_depth-seed-1",
-   "samplers": [
-    {
-     "policy": "native",
-     "validation": 5.6802,
-     "seeds": [
-      5.8196,
-      5.5408
-     ],
-     "params": {
-      "temperature": 0.926
-     }
-    },
-    {
-     "policy": "native_greedy",
-     "validation": 1.7811,
-     "seeds": [
-      1.9467,
-      1.6155
-     ],
-     "params": {
-      "final_denoise": "greedy"
-     }
-    },
-    {
-     "policy": "eb_greedy",
-     "validation": 0.0,
-     "seeds": [
-      0.0,
-      0.0
-     ],
-     "params": {
-      "temperature": 1.491,
-      "entropy_bound": 0.022
-     }
-    },
-    {
-     "policy": "renoise_sample",
-     "validation": 6.1784,
-     "seeds": [
-      6.1677,
-      6.1892
-     ],
-     "params": {
-      "temperature": 0.896
-     }
-    },
-    {
-     "policy": "renoise_greedy",
-     "validation": 0.6978,
-     "seeds": [
-      0.7652,
-      0.6305
-     ],
-     "params": {
-      "final_denoise": "greedy"
-     }
-    }
-   ]
-  },
-  {
-   "task": "tinystories",
-   "method": "gaussian",
    "arm": "none",
-   "score": 6.3385,
-   "validation": 6.0294,
+   "score": 6.8119,
+   "validation": 6.876,
    "seeds": [
-    6.3112,
-    6.3658
+    6.8149,
+    6.809
    ],
    "policy": "renoise_sample",
-   "campaign": "feedback-renoising-128nfe-20261031",
-   "case": "tinystories-gaussian_embedding-none-seed-1",
+   "campaign": "portable-v2-mi210 (TinyStories BPE-10k)",
+   "case": "tinystories-bpe-10000-gaussian_embedding-none-seed-1",
    "samplers": [
     {
      "policy": "native",
-     "validation": 5.3194,
+     "validation": 6.6822,
      "seeds": [
-      5.4552,
-      5.1835
+      6.4939,
+      6.8705
      ],
      "params": {
-      "temperature": 0.687
+      "temperature": 0.74
      }
     },
     {
      "policy": "native_greedy",
-     "validation": 0.8149,
+     "validation": 5.8296,
      "seeds": [
-      0.7251,
-      0.9048
+      5.7089,
+      5.9503
      ],
      "params": {
       "final_denoise": "greedy"
@@ -1415,94 +1343,95 @@
     },
     {
      "policy": "eb_greedy",
-     "validation": 0.0,
+     "validation": 0.003,
      "seeds": [
-      0.0,
-      0.0
+      0.0032,
+      0.0029
      ],
      "params": {
-      "temperature": 1.491,
-      "entropy_bound": 0.022
+      "temperature": 1.332,
+      "entropy_bound": 0.04
      }
     },
     {
      "policy": "renoise_sample",
-     "validation": 6.0294,
+     "validation": 6.876,
      "seeds": [
-      6.1253,
-      5.9336
+      6.7403,
+      7.0117
      ],
      "params": {
-      "temperature": 0.968
+      "temperature": 1.059
      }
     },
     {
      "policy": "renoise_greedy",
-     "validation": 0.3822,
+     "validation": 3.7939,
      "seeds": [
-      0.3679,
-      0.3965
+      3.9524,
+      3.6354
      ],
      "params": {
       "final_denoise": "greedy"
      }
     }
-   ]
+   ],
+   "renoise_tried": true
   },
   {
    "task": "tinystories",
    "method": "gaussian",
-   "arm": "sc",
-   "score": 7.6447,
-   "validation": 7.5196,
+   "arm": "depth",
+   "score": 7.1765,
+   "validation": 6.8452,
    "seeds": [
-    7.6408,
-    7.6487
+    7.1986,
+    7.1543
    ],
-   "policy": "native",
-   "campaign": "feedback-depth-cdcd-20k-20261030",
-   "case": "tinystories-gaussian_embedding-expected_embedding-seed-1",
+   "policy": "renoise_sample",
+   "campaign": "portable-v2-mi210 (TinyStories BPE-10k)",
+   "case": "tinystories-bpe-10000-gaussian_embedding-double_depth-seed-1",
    "samplers": [
     {
      "policy": "native",
-     "validation": 7.5196,
+     "validation": 6.4491,
      "seeds": [
-      7.5514,
-      7.4878
+      6.5465,
+      6.3517
      ],
      "params": {
-      "temperature": 0.974
+      "temperature": 0.828
      }
     },
     {
      "policy": "native_greedy",
-     "validation": 5.5979,
+     "validation": 5.9346,
      "seeds": [
-      5.8755,
-      5.3202
+      5.9745,
+      5.8946
      ],
      "params": {
-      "final_denoise": "sample"
+      "final_denoise": "greedy"
      }
     },
     {
      "policy": "eb_greedy",
-     "validation": 0.0048,
+     "validation": 2.9539,
      "seeds": [
-      0.004,
-      0.0055
+      2.9481,
+      2.9597
      ],
      "params": {
-      "temperature": 1.043,
-      "entropy_bound": 0.141
+      "temperature": 0.638,
+      "entropy_bound": 0.057
      }
     },
     {
      "policy": "renoise_sample",
-     "validation": 6.9636,
+     "validation": 6.8452,
      "seeds": [
-      6.9305,
-      6.9967
+      7.0105,
+      6.6799
      ],
      "params": {
       "temperature": 1.0
@@ -1510,120 +1439,122 @@
     },
     {
      "policy": "renoise_greedy",
-     "validation": 0.1513,
+     "validation": 4.0876,
      "seeds": [
-      0.1242,
-      0.1785
+      3.8727,
+      4.3025
      ],
      "params": {
       "final_denoise": "sample"
      }
     }
-   ]
+   ],
+   "renoise_tried": true
   },
   {
    "task": "tinystories",
-   "method": "masked",
-   "arm": "depth",
-   "score": 6.7773,
-   "validation": 6.7072,
+   "method": "gaussian",
+   "arm": "sc",
+   "score": 7.8644,
+   "validation": 7.0553,
    "seeds": [
-    6.6888,
-    6.8657
+    8.1138,
+    7.615
    ],
-   "policy": "native_greedy",
-   "campaign": "feedback-depth-20k-20261028",
-   "case": "tinystories-masked-double_depth-seed-1",
+   "policy": "native",
+   "campaign": "portable-v2-mi210 (TinyStories BPE-10k)",
+   "case": "tinystories-bpe-10000-gaussian_embedding-expected_embedding-seed-1",
    "samplers": [
     {
      "policy": "native",
-     "validation": 5.9343,
+     "validation": 7.0553,
      "seeds": [
-      6.0314,
-      5.8371
+      7.2743,
+      6.8363
      ],
      "params": {
-      "temperature": 0.53
+      "temperature": 0.996
      }
     },
     {
      "policy": "native_greedy",
-     "validation": 6.7072,
+     "validation": 6.1606,
      "seeds": [
-      6.5776,
-      6.8367
+      6.2356,
+      6.0856
      ],
      "params": {
-      "final_denoise": "sample"
+      "final_denoise": "greedy"
      }
     },
     {
      "policy": "eb_greedy",
-     "validation": 0.0,
+     "validation": 0.7039,
      "seeds": [
-      0.0,
-      0.0
+      0.7484,
+      0.6595
      ],
      "params": {
-      "temperature": 0.558,
-      "entropy_bound": 0.325
+      "temperature": 0.656,
+      "entropy_bound": 0.033
      }
     },
     {
      "policy": "renoise_sample",
-     "validation": 4.9644,
+     "validation": 7.0476,
      "seeds": [
-      4.878,
-      5.0508
+      7.0467,
+      7.0485
      ],
      "params": {
-      "temperature": 0.508
+      "temperature": 1.024
      }
     },
     {
      "policy": "renoise_greedy",
-     "validation": 4.6096,
+     "validation": 3.36,
      "seeds": [
-      4.7746,
-      4.4447
+      3.4041,
+      3.3159
      ],
      "params": {
       "final_denoise": "greedy"
      }
     }
-   ]
+   ],
+   "renoise_tried": true
   },
   {
    "task": "tinystories",
    "method": "masked",
    "arm": "none",
-   "score": 6.2719,
-   "validation": 5.9169,
+   "score": 6.671,
+   "validation": 6.4822,
    "seeds": [
-    6.2263,
-    6.3174
+    6.7451,
+    6.5968
    ],
-   "policy": "native_greedy",
-   "campaign": "feedback-depth-20k-20261028",
-   "case": "tinystories-masked-none-seed-1",
+   "policy": "native",
+   "campaign": "portable-v2-mi210 (TinyStories BPE-10k)",
+   "case": "tinystories-bpe-10000-masked-none-seed-1",
    "samplers": [
     {
      "policy": "native",
-     "validation": 5.6519,
+     "validation": 6.4822,
      "seeds": [
-      5.78,
-      5.5238
+      6.5294,
+      6.435
      ],
      "params": {
-      "temperature": 0.502
+      "temperature": 0.828
      }
     },
     {
      "policy": "native_greedy",
-     "validation": 5.9169,
+     "validation": 4.9024,
      "seeds": [
-      6.0162,
-      5.8176
+      4.9716,
+      4.8331
      ],
      "params": {
       "final_denoise": "sample"
@@ -1631,71 +1562,145 @@
     },
     {
      "policy": "eb_greedy",
-     "validation": 0.0,
+     "validation": 1.1552,
      "seeds": [
-      0.0,
-      0.0
+      1.1552,
+      1.1551
      ],
      "params": {
-      "temperature": 0.508,
-      "entropy_bound": 0.444
+      "temperature": 1.488,
+      "entropy_bound": 0.02
      }
     },
     {
      "policy": "renoise_sample",
-     "validation": 4.7801,
+     "validation": 5.3187,
      "seeds": [
-      4.7216,
-      4.8386
+      5.4906,
+      5.1469
      ],
      "params": {
-      "temperature": 0.558
+      "temperature": 0.939
      }
     },
     {
      "policy": "renoise_greedy",
-     "validation": 4.0937,
+     "validation": 0.5442,
      "seeds": [
-      4.2452,
-      3.9423
+      0.5145,
+      0.574
+     ],
+     "params": {
+      "final_denoise": "greedy"
+     }
+    }
+   ],
+   "renoise_tried": true
+  },
+  {
+   "task": "tinystories",
+   "method": "masked",
+   "arm": "depth",
+   "score": 6.7674,
+   "validation": 6.4621,
+   "seeds": [
+    6.9677,
+    6.5672
+   ],
+   "policy": "native",
+   "campaign": "portable-v2-mi210 (TinyStories BPE-10k)",
+   "case": "tinystories-bpe-10000-masked-double_depth-seed-1",
+   "samplers": [
+    {
+     "policy": "native",
+     "validation": 6.4621,
+     "seeds": [
+      6.7813,
+      6.1429
+     ],
+     "params": {
+      "temperature": 0.7
+     }
+    },
+    {
+     "policy": "native_greedy",
+     "validation": 5.0411,
+     "seeds": [
+      5.169,
+      4.9131
+     ],
+     "params": {
+      "final_denoise": "sample"
+     }
+    },
+    {
+     "policy": "eb_greedy",
+     "validation": 1.1944,
+     "seeds": [
+      1.1944,
+      1.1944
+     ],
+     "params": {
+      "temperature": 1.332,
+      "entropy_bound": 0.04
+     }
+    },
+    {
+     "policy": "renoise_sample",
+     "validation": 5.7577,
+     "seeds": [
+      5.7112,
+      5.8041
+     ],
+     "params": {
+      "temperature": 0.954
+     }
+    },
+    {
+     "policy": "renoise_greedy",
+     "validation": 0.9136,
+     "seeds": [
+      0.9957,
+      0.8315
      ],
      "params": {
       "final_denoise": "sample"
      }
     }
-   ]
+   ],
+   "renoise_tried": true
   },
   {
    "task": "tinystories",
    "method": "masked",
    "arm": "sc",
-   "score": 6.8305,
-   "validation": 6.8038,
+   "score": 6.9085,
+   "validation": 7.0067,
    "seeds": [
-    6.7058,
-    6.9552
+    6.8057,
+    7.0113
    ],
-   "policy": "native_greedy",
-   "campaign": "feedback-depth-20k-20261028",
-   "case": "tinystories-masked-expected_embedding-seed-1",
+   "policy": "native",
+   "campaign": "portable-v2-mi210 (TinyStories BPE-10k)",
+   "case": "tinystories-bpe-10000-masked-expected_embedding-seed-1",
    "samplers": [
     {
      "policy": "native",
-     "validation": 6.6423,
+     "validation": 7.0067,
      "seeds": [
-      6.7955,
-      6.489
+      6.9183,
+      7.0951
      ],
      "params": {
-      "temperature": 0.702
+      "temperature": 0.901
      }
     },
     {
      "policy": "native_greedy",
-     "validation": 6.8038,
+     "validation": 4.9633,
      "seeds": [
-      6.8661,
-      6.7415
+      4.8813,
+      5.0453
      ],
      "params": {
       "final_denoise": "greedy"
@@ -1703,143 +1708,145 @@
     },
     {
      "policy": "eb_greedy",
-     "validation": 0.3536,
+     "validation": 1.3776,
      "seeds": [
-      0.3545,
-      0.3527
+      1.3776,
+      1.3777
      ],
      "params": {
-      "temperature": 0.558,
-      "entropy_bound": 0.325
+      "temperature": 1.488,
+      "entropy_bound": 0.02
      }
     },
     {
      "policy": "renoise_sample",
-     "validation": 5.973,
+     "validation": 6.5902,
      "seeds": [
-      5.7616,
-      6.1845
+      6.52,
+      6.6603
      ],
      "params": {
-      "temperature": 0.502
+      "temperature": 0.811
      }
     },
     {
      "policy": "renoise_greedy",
-     "validation": 5.9799,
+     "validation": 4.1486,
      "seeds": [
-      5.9126,
-      6.0473
+      4.0673,
+      4.23
      ],
      "params": {
-      "final_denoise": "greedy"
+      "final_denoise": "sample"
      }
     }
-   ]
-  },
-  {
-   "task": "tinystories",
-   "method": "uniform",
-   "arm": "depth",
-   "score": 6.6444,
-   "validation": 6.74,
-   "seeds": [
-    6.5823,
-    6.7065
    ],
-   "policy": "eb_greedy",
-   "campaign": "feedback-depth-20k-20261028",
-   "case": "tinystories-uniform_posterior_ce-double_depth-seed-1",
-   "samplers": [
-    {
-     "policy": "native",
-     "validation": 5.6244,
-     "seeds": [
-      5.5818,
-      5.6671
-     ],
-     "params": {
-      "temperature": 0.777
-     }
-    },
-    {
-     "policy": "native_greedy",
-     "validation": 5.4968,
-     "seeds": [
-      5.412,
-      5.5816
-     ],
-     "params": {
-      "final_denoise": "greedy"
-     }
-    },
-    {
-     "policy": "eb_greedy",
-     "validation": 6.74,
-     "seeds": [
-      6.8732,
-      6.6068
-     ],
-     "params": {
-      "temperature": 0.508,
-      "entropy_bound": 0.444
-     }
-    },
-    {
-     "policy": "renoise_sample",
-     "validation": 5.9005,
-     "seeds": [
-      6.0847,
-      5.7163
-     ],
-     "params": {
-      "temperature": 1.099
-     }
-    },
-    {
-     "policy": "renoise_greedy",
-     "validation": 5.3837,
-     "seeds": [
-      5.6593,
-      5.108
-     ],
-     "params": {
-      "final_denoise": "greedy"
-     }
-    }
-   ]
+   "renoise_tried": true
   },
   {
    "task": "tinystories",
    "method": "uniform",
    "arm": "none",
-   "score": 5.8406,
-   "validation": 5.8914,
+   "score": 6.624,
+   "validation": 6.588,
    "seeds": [
-    5.7913,
-    5.8899
+    6.814,
+    6.4339
+   ],
+   "policy": "eb_greedy",
+   "campaign": "portable-v2-mi210 (TinyStories BPE-10k)",
+   "case": "tinystories-bpe-10000-uniform_posterior_ce-none-seed-1",
+   "samplers": [
+    {
+     "policy": "native",
+     "validation": 6.3507,
+     "seeds": [
+      6.4089,
+      6.2926
+     ],
+     "params": {
+      "temperature": 0.801
+     }
+    },
+    {
+     "policy": "native_greedy",
+     "validation": 6.0019,
+     "seeds": [
+      6.2641,
+      5.7396
+     ],
+     "params": {
+      "final_denoise": "greedy"
+     }
+    },
+    {
+     "policy": "eb_greedy",
+     "validation": 6.588,
+     "seeds": [
+      6.1791,
+      6.9969
+     ],
+     "params": {
+      "temperature": 0.875,
+      "entropy_bound": 0.427
+     }
+    },
+    {
+     "policy": "renoise_sample",
+     "validation": 6.1149,
+     "seeds": [
+      6.1475,
+      6.0822
+     ],
+     "params": {
+      "temperature": 1.196
+     }
+    },
+    {
+     "policy": "renoise_greedy",
+     "validation": 2.7525,
+     "seeds": [
+      2.7503,
+      2.7547
+     ],
+     "params": {
+      "final_denoise": "sample"
+     }
+    }
+   ],
+   "renoise_tried": true
+  },
+  {
+   "task": "tinystories",
+   "method": "uniform",
+   "arm": "depth",
+   "score": 6.6541,
+   "validation": 6.3919,
+   "seeds": [
+    6.7474,
+    6.5607
    ],
    "policy": "renoise_sample",
-   "campaign": "feedback-renoising-128nfe-20261031",
-   "case": "tinystories-uniform_posterior_ce-none-seed-1",
+   "campaign": "portable-v2-mi210 (TinyStories BPE-10k)",
+   "case": "tinystories-bpe-10000-uniform_posterior_ce-double_depth-seed-1",
    "samplers": [
     {
      "policy": "native",
-     "validation": 5.2751,
+     "validation": 6.3522,
      "seeds": [
-      5.0165,
-      5.5338
+      6.5795,
+      6.1249
      ],
      "params": {
-      "temperature": 0.558
+      "temperature": 0.656
      }
     },
     {
      "policy": "native_greedy",
-     "validation": 5.4143,
+     "validation": 6.3809,
      "seeds": [
-      5.5567,
-      5.2719
+      6.3026,
+      6.4592
      ],
      "params": {
       "final_denoise": "sample"
@@ -1847,71 +1854,72 @@
     },
     {
      "policy": "eb_greedy",
-     "validation": 5.8385,
+     "validation": 5.2577,
      "seeds": [
-      5.4903,
-      6.1866
+      5.4219,
+      5.0935
      ],
      "params": {
-      "temperature": 0.694,
-      "entropy_bound": 0.256
+      "temperature": 0.897,
+      "entropy_bound": 0.068
      }
     },
     {
      "policy": "renoise_sample",
-     "validation": 5.8914,
+     "validation": 6.3919,
      "seeds": [
-      6.0101,
-      5.7727
+      6.7927,
+      5.9911
      ],
      "params": {
-      "temperature": 1.232
+      "temperature": 1.108
      }
     },
     {
      "policy": "renoise_greedy",
-     "validation": 5.4856,
+     "validation": 3.218,
      "seeds": [
-      5.7038,
-      5.2673
+      3.2801,
+      3.1559
      ],
      "params": {
-      "final_denoise": "greedy"
+      "final_denoise": "sample"
      }
     }
-   ]
+   ],
+   "renoise_tried": true
   },
   {
    "task": "tinystories",
    "method": "uniform",
    "arm": "sc",
-   "score": 7.1308,
-   "validation": 6.8448,
+   "score": 7.3671,
+   "validation": 7.3987,
    "seeds": [
-    7.2185,
-    7.0431
+    7.1463,
+    7.5879
    ],
    "policy": "eb_greedy",
-   "campaign": "feedback-depth-20k-20261028",
-   "case": "tinystories-uniform_posterior_ce-expected_embedding-seed-1",
+   "campaign": "portable-v2-mi210 (TinyStories BPE-10k)",
+   "case": "tinystories-bpe-10000-uniform_posterior_ce-expected_embedding-seed-1",
    "samplers": [
     {
      "policy": "native",
-     "validation": 6.7446,
+     "validation": 7.0857,
      "seeds": [
-      6.6276,
-      6.8616
+      6.7434,
+      7.4281
      ],
      "params": {
-      "temperature": 1.066
+      "temperature": 0.828
      }
     },
     {
      "policy": "native_greedy",
-     "validation": 6.1426,
+     "validation": 6.3396,
      "seeds": [
-      6.0015,
-      6.2838
+      6.4719,
+      6.2073
      ],
      "params": {
       "final_denoise": "greedy"
@@ -1919,22 +1927,22 @@
     },
     {
      "policy": "eb_greedy",
-     "validation": 6.8448,
+     "validation": 7.3987,
      "seeds": [
-      6.8899,
-      6.7997
+      7.4529,
+      7.3445
      ],
      "params": {
-      "temperature": 1.048,
-      "entropy_bound": 0.215
+      "temperature": 0.804,
+      "entropy_bound": 0.108
      }
     },
     {
      "policy": "renoise_sample",
-     "validation": 6.203,
+     "validation": 6.8134,
      "seeds": [
-      6.1659,
-      6.2401
+      6.7535,
+      6.8732
      ],
      "params": {
       "temperature": 1.47
@@ -1942,16 +1950,17 @@
     },
     {
      "policy": "renoise_greedy",
-     "validation": 4.3482,
+     "validation": 3.5702,
      "seeds": [
-      4.2367,
-      4.4596
+      3.6038,
+      3.5365
      ],
      "params": {
       "final_denoise": "greedy"
      }
     }
-   ]
+   ],
+   "renoise_tried": true
   }
  ]
 }
