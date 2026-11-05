@@ -514,6 +514,8 @@
   var MODS = [
     { id: 'block', name: 'Block diffusion', touch: ['corr', 'attn', 'samp'],
       hint: 'Block diffusion changes the input layout (a noisy and a clean copy), the attention mask and the order of generation. E2D2 also gives the two copies separate weights.' },
+    { id: 'e2d2', name: 'E2D2 weights', touch: ['attn', 'samp'],
+      hint: 'E2D2 keeps the block layout but splits the network: an encoder reads the clean copy once per block, a decoder denoises the noisy copy at every step. Needs block diffusion.' },
     { id: 'insert', name: 'Insertion', touch: ['corr', 'loss', 'samp'],
       hint: 'Insertion changes which positions exist, adds a length loss, and lets the sampler insert new tokens.' },
     { id: 'hybrid', name: 'Hybrid views', touch: ['rep', 'corr', 'sched', 'attn', 'samp'],
@@ -526,7 +528,7 @@
   // ---------- State mirrored from part 2 ----------
   var P = {}, F = {}, L = {}, I = {}, fixedName = '', VARY = {}, active = 'corr';
   var KEY_NODE = { rep: 'rep', corr: 'corr', combine: 'corr', sched: 'sched', 'f:sched': 'sched', 'f:schedNote': 'sched', tsamp: 'tsamp', attn: 'attn', tcond: 'time',
-    self: 'self', param: 'out', 'f:out': 'out', loss: 'loss', 'f:loss': 'loss', samp: 'samp', block: 'block', split: 'block', varlen: 'insert' };
+    self: 'self', param: 'out', 'f:out': 'out', loss: 'loss', 'f:loss': 'loss', samp: 'samp', block: 'block', split: 'e2d2', varlen: 'insert' };
   var SCHED_NAME = { loglinear: 'Log-linear', discrete: 'Discrete steps', duo: 'Log-linear + curriculum', gidd: 'GIDD mixture', candi: 'CANDI rank', cadd: 'Per-view', cdcd: 'CDCD adaptive',
     flm: 'Error clock', gumbel: 'Gumbel clock', replaid: 'Learned −log SNR', simplex: 'Simplex', spherical: 'Geodesic', vmf: 'vMF', blurring: 'Frequency blur' };
   // Which bound the ELBO becomes, for the current corruption and output.
@@ -550,7 +552,7 @@
     return { v: '' };
   }
   function modOn(id) {
-    return id === 'block' ? P.block !== 'off' : id === 'insert' ? P.varlen === 'insert' : id === 'hybrid' ? P.combine !== 'none' : P.self !== 'off';
+    return id === 'block' ? P.block !== 'off' : id === 'e2d2' ? P.split === 'e2d2' : id === 'insert' ? P.varlen === 'insert' : id === 'hybrid' ? P.combine !== 'none' : P.self !== 'off';
   }
 
   // ---------- Text fitting ----------
@@ -2182,7 +2184,7 @@
 <script>
 // Part 2 shows only the layer picked on the map, unless "Show all parts" is on.
 (function () {
-  var TO_LAYER = { attn: 'net', time: 'net', self: 'net', out: 'param', block: 'mods', insert: 'mods', hybrid: 'corr', selfc: 'net' };
+  var TO_LAYER = { attn: 'net', time: 'net', self: 'net', out: 'param', block: 'mods', e2d2: 'mods', insert: 'mods', hybrid: 'corr', selfc: 'net' };
   var pipe = document.getElementById('pipe'), bar = document.getElementById('focus-bar');
   var btn = document.getElementById('show-all'), nameEl = document.getElementById('focus-name');
   var all = false, current = 'corr';
