@@ -1,142 +1,136 @@
 // Where BLEU's brevity (length) penalty bites. Every TinyStories BPE run in the
-// post (tokenizer ladder + the 10k runs in the SC and CDCD figures), test split,
-// chosen sampler. Data: vocab_ladder.json, sc_depth_results.json,
-// cdcd_performance.json (score_nobp / bp / len_ratio recomputed with sacrebleu
-// 2.6.0 from the stored test samples; standard scores match the archive exactly).
+// post (tokenizer ladder, the 10k runs in the SC and CDCD figures, and the
+// block diffusion runs), test split, chosen sampler. Data: vocab_ladder.json,
+// sc_depth_results.json, cdcd_performance.json, block_scaling.json
+// (score_nobp / bp / len_ratio recomputed with sacrebleu 2.6.0 from the stored
+// test samples; standard scores match the archives exactly).
 import { useState } from "react";
 import { P, withVizTheme } from "./vizTheme.js";
 import { Frame, FONT, rgba } from "./SelfCondDepth.jsx";
-import { useBleuMode, BleuPills } from "./bleuMode.jsx";
+import { BleuPills } from "./bleuMode.jsx";
 import LADDER from "../data/vocab_ladder.json";
 import SC from "../data/sc_depth_results.json";
 import CDCD from "../data/cdcd_performance.json";
 import BLOCK from "../data/block_scaling.json";
 
 const FAMILIES = [
-  { id: "gaussian", label: "Gaussian", color: () => P.accent },
   { id: "masked", label: "Masked", color: () => P.mdlm },
-  { id: "uniform", label: "Uniform", color: () => P.duo },
-  { id: "simplex", label: "Simplex", color: () => P.lime },
-  { id: "spherical", label: "Spherical", color: () => P.orange2 },
-  { id: "vmf", label: "vMF", color: () => P.pinkText },
   { id: "block", label: "Block / E2D2", color: () => P.warn },
+  { id: "simplex", label: "Simplex", color: () => P.lime },
+  { id: "uniform", label: "Uniform", color: () => P.duo },
+  { id: "spherical", label: "Spherical", color: () => P.orange2 },
+  { id: "gaussian", label: "Gaussian", color: () => P.accent },
+  { id: "vmf", label: "vMF", color: () => P.pinkText },
   { id: "ar", label: "AR", color: () => P.dim2 },
 ];
-const famOf = (id) => FAMILIES.find((f) => f.id === id);
 const vlab = (v) => (v >= 1000 ? `${v / 1000}k` : `${v}`);
 
 function runs() {
   const out = [];
   for (const r of LADDER.rows)
-    out.push({ family: r.method, vocab: r.vocab, arm: r.method === "ar" ? "" : r.sc ? "SC" : "no SC",
+    out.push({ family: r.method, name: `${r.method === "ar" ? "" : r.sc ? "SC, " : "no SC, "}vocab ${vlab(r.vocab)}`,
       bleu: r.test, nobp: r.test_nobp, len: r.test_len_ratio });
-  const seen = new Set(out.map((o) => `${o.family}|${o.vocab}|${o.arm}`));
+  const seen = new Set(out.map((o) => `${o.family}|${o.name}`));
   for (const r of [...SC.rows, ...CDCD.rows]) {
     if (r.task !== "tinystories") continue;
-    const arm = r.arm === "sc" ? "SC" : r.arm === "depth" ? "16 layers" : "no SC";
-    const k = `${r.method}|10000|${arm}`;
-    if (seen.has(k)) continue;
-    seen.add(k);
-    out.push({ family: r.method, vocab: 10000, arm, bleu: r.score, nobp: r.score_nobp, len: r.len_ratio });
+    const name = `${r.arm === "sc" ? "SC" : r.arm === "depth" ? "16 layers" : "no SC"}, vocab 10k`;
+    if (seen.has(`${r.method}|${name}`)) continue;
+    seen.add(`${r.method}|${name}`);
+    out.push({ family: r.method, name, bleu: r.score, nobp: r.score_nobp, len: r.len_ratio });
   }
   for (const r of BLOCK.rows) {
     if (r.task !== "tinystories" || r.status !== "completed" || r.kind === "kv") continue;
-    const arm = r.kind === "shared" ? "shared 8 layers" : r.kind === "raw" ? "no encoder, decoder 8" : `encoder ${r.enc}, decoder ${r.dec}`;
-    out.push({ family: "block", vocab: 10000, arm, bleu: r.score, nobp: r.score_nobp, len: r.len_ratio });
+    const name = r.kind === "shared" ? "shared, 8 layers" : r.kind === "raw" ? "no encoder" : `enc ${r.enc} / dec ${r.dec}`;
+    out.push({ family: "block", name, bleu: r.score, nobp: r.score_nobp, len: r.len_ratio });
   }
   return out;
 }
 const RUNS = runs();
+const mean = (xs) => xs.reduce((a, b) => a + b, 0) / xs.length;
+const ROWS = FAMILIES.map((f) => {
+  const rs = RUNS.filter((r) => r.family === f.id);
+  return { f, rs, len: mean(rs.map((r) => r.len)), bp: mean(rs.map((r) => r.bleu / r.nobp)),
+    lost: mean(rs.map((r) => r.nobp - r.bleu)), maxLost: Math.max(...rs.map((r) => r.nobp - r.bleu)) };
+}).sort((a, b) => b.lost - a.lost);
 
-const W = 720, H = 360;
-const L = 56, R = 500, T = 16, B = 300;
-const X0 = 0.72, X1 = 1.06, Y0 = 5.5, Y1 = 10;
-const px = (v) => L + ((Math.min(Math.max(v, X0), X1) - X0) / (X1 - X0)) * (R - L);
-const py = (v) => B - ((v - Y0) / (Y1 - Y0)) * (B - T);
+const W = 720, rowH = 40, T = 46;
+const H = T + ROWS.length * rowH + 14;
+// columns
+const LX0 = 170, LX1 = 420, L0 = 0.74, L1 = 1.06;
+const lx = (v) => LX0 + ((Math.min(Math.max(v, L0), L1) - L0) / (L1 - L0)) * (LX1 - LX0);
+const MX = 470;
+const BX0 = 530, BX1 = 680, BMAX = 2;
+const bx = (v) => BX0 + (Math.min(v, BMAX) / BMAX) * (BX1 - BX0);
 
 function BleuLengthInner() {
-  const [mode] = useBleuMode();
   const [hover, setHover] = useState(null);
-  const [fam, setFam] = useState(null);
-  const h = hover != null && RUNS[hover];
-  const shown = (r) => !fam || r.family === fam;
-  const short = RUNS.filter((r) => r.len < 0.95);
-  const byFam = (id) => RUNS.filter((r) => r.family === id);
-  const meanLen = (id) => byFam(id).reduce((a, r) => a + r.len, 0) / byFam(id).length;
-
+  const short = RUNS.filter((r) => r.len < 0.95).length;
   return (
     <Frame
       kicker="A note on the metric"
-      title="BLEU's length penalty hits some methods much harder than others"
-      subtitle="Every TinyStories run in this post. Across: how long the model's continuations are, relative to the real endings. Hollow: standard BLEU. Filled: the same output without the length penalty."
-      controls={<BleuPills />}
-      note={`Test split (256 prompts, two seeds), with the sampler chosen on validation. BLEU multiplies n-gram overlap by a brevity penalty, exp(1 − real length / output length), when the output is shorter than the references. ${short.length} of ${RUNS.length} runs are under 95% of the real length. The switch above sets every TinyStories BLEU in the post. Click a method in the legend to isolate it.`}
+      title="Which models BLEU's length penalty hits"
+      subtitle="Every TinyStories run in this post, grouped by method. BLEU multiplies its score by a penalty when a model's stories are shorter than the real ones, so models that stop early lose points for length alone."
+      controls={<><span style={{ fontSize: 12, color: P.dim, marginRight: 8 }}>Show every TinyStories BLEU in this post as:</span><BleuPills /></>}
+      note={`Test split (256 prompts, two seeds), each model's chosen sampler. Small dots are single runs; the large dot is the method's average. Penalty = exp(1 − real length / output length) when the output is shorter, else 1. ${short} of ${RUNS.length} runs are under 95% of the real length. Hover a row for its runs.`}
     >
       <svg viewBox={`0 0 ${W} ${H}`} style={{ width: "100%", height: "auto", display: "block", fontFamily: FONT }}>
-        <rect x={px(X0)} y={T} width={px(1) - px(X0)} height={B - T} fill={rgba(P.highlight, 0.05)} />
-        <text x={px(X0) + 8} y={T + 14} fill={P.highlight} fontSize={10}>shorter than the real endings: penalized</text>
-        {[6, 7, 8, 9, 10].map((v) => (
+        {/* column headers */}
+        <text x={LX0} y={16} fill={P.muted} fontSize={10.5} fontWeight={600}>Story length vs real endings</text>
+        <text x={MX} y={16} fill={P.muted} fontSize={10.5} fontWeight={600} textAnchor="middle">Penalty</text>
+        <text x={BX0} y={16} fill={P.muted} fontSize={10.5} fontWeight={600}>BLEU lost to it</text>
+        {[0.8, 0.9, 1].map((v) => (
           <g key={v}>
-            <line x1={L} x2={R} y1={py(v)} y2={py(v)} stroke={P.grid} strokeWidth={0.6} />
-            <text x={L - 8} y={py(v) + 3.5} fill={P.dim} fontSize={9.5} textAnchor="end">{v}</text>
+            <line x1={lx(v)} x2={lx(v)} y1={T - 12} y2={H - 10} stroke={v === 1 ? P.line2 : P.grid} strokeWidth={v === 1 ? 1.4 : 0.7} strokeDasharray={v === 1 ? undefined : "2 3"} />
+            <text x={lx(v)} y={T - 16} fill={v === 1 ? P.text : P.dim} fontSize={9.5} textAnchor="middle">{v === 1 ? "same length" : `${v * 100}%`}</text>
           </g>
         ))}
-        {[0.75, 0.8, 0.85, 0.9, 0.95, 1, 1.05].map((v) => (
+        <rect x={LX0} y={T - 10} width={lx(1) - LX0} height={H - T} fill={rgba(P.highlight, 0.05)} />
+        {[0, 1, 2].map((v) => (
           <g key={v}>
-            <line x1={px(v)} x2={px(v)} y1={T} y2={B} stroke={v === 1 ? P.line2 : P.grid} strokeWidth={v === 1 ? 1.2 : 0.6} />
-            <text x={px(v)} y={B + 16} fill={P.dim} fontSize={9.5} textAnchor="middle">{`${Math.round(v * 100)}%`}</text>
+            <line x1={bx(v)} x2={bx(v)} y1={T - 12} y2={H - 10} stroke={P.grid} strokeWidth={0.7} strokeDasharray="2 3" />
+            <text x={bx(v)} y={T - 16} fill={P.dim} fontSize={9.5} textAnchor="middle">{v === 0 ? "0" : `−${v}`}</text>
           </g>
         ))}
-        <text x={(L + R) / 2} y={B + 34} fill={P.muted} fontSize={10.5} textAnchor="middle">output length / real length →</text>
-        <text transform={`translate(16, ${(T + B) / 2}) rotate(-90)`} fill={P.muted} fontSize={10.5} textAnchor="middle">test BLEU</text>
 
-        {RUNS.map((r, i) => {
-          const c = famOf(r.family).color();
-          const on = hover === i;
-          const x = px(r.len);
-          const filled = mode === "nobp" ? r.nobp : r.bleu;
+        {ROWS.map((row, i) => {
+          const cy = T + i * rowH + rowH / 2 - 4;
+          const c = row.f.color();
+          const on = hover === row.f.id;
           return (
-            <g key={i} opacity={shown(r) ? 1 : 0.1} style={{ cursor: "help" }}
-              onMouseEnter={() => setHover(i)} onMouseLeave={() => setHover(null)}>
-              <line x1={x} x2={x} y1={py(r.bleu)} y2={py(r.nobp)} stroke={c} strokeWidth={on ? 2.5 : 1.4} opacity={0.7} />
-              <circle cx={x} cy={py(r.bleu)} r={on ? 5 : 3.5} fill={P.bg} stroke={c} strokeWidth={1.4} />
-              <circle cx={x} cy={py(r.nobp)} r={on ? 5.5 : 4} fill={c} stroke={on ? P.text : "none"} strokeWidth={1.2} />
-              <circle cx={x} cy={py(filled)} r={12} fill="transparent" />
+            <g key={row.f.id} onMouseEnter={() => setHover(row.f.id)} onMouseLeave={() => setHover(null)} style={{ cursor: "help" }}>
+              <rect x={6} y={cy - rowH / 2 + 3} width={W - 12} height={rowH - 6} rx={8}
+                fill={on ? rgba(c, 0.1) : i % 2 ? "transparent" : rgba(P.panel, 0.5)} />
+              <circle cx={20} cy={cy} r={5} fill={c} />
+              <text x={32} y={cy + 1} fill={P.text} fontSize={12.5} fontWeight={600}>{row.f.label}</text>
+              <text x={32} y={cy + 14} fill={P.dim} fontSize={9.5}>{row.rs.length} runs</text>
+              {/* length: runs + mean */}
+              {row.rs.map((r, k) => (
+                <circle key={k} cx={lx(r.len)} cy={cy} r={2.6} fill={rgba(c, 0.55)} />
+              ))}
+              <circle cx={lx(row.len)} cy={cy} r={6.5} fill={c} stroke={P.bg} strokeWidth={1.5} />
+              {/* multiplier */}
+              <text x={MX} y={cy + 4} fill={row.bp < 0.95 ? P.highlight : P.muted} fontSize={12} fontWeight={700} textAnchor="middle">×{row.bp.toFixed(2)}</text>
+              {/* BLEU lost */}
+              <rect x={BX0} y={cy - 6} width={Math.max(1.5, bx(row.lost) - BX0)} height={12} rx={3} fill={rgba(c, 0.85)} />
+              <text x={bx(row.lost) + 6} y={cy + 4} fill={P.text} fontSize={11}>{`−${row.lost.toFixed(2)}`}</text>
             </g>
           );
         })}
-
-        <g transform={`translate(${R + 30}, ${T + 4})`}>
-          {h ? (
-            <g>
-              <text fill={famOf(h.family).color()} fontSize={12.5} fontWeight={700}>{famOf(h.family).label}{h.arm ? ` · ${h.arm}` : ""}</text>
-              <text y={18} fill={P.muted} fontSize={10.5}>vocab {vlab(h.vocab)}</text>
-              <text y={46} fill={P.muted} fontSize={10.5}>BLEU</text>
-              <text x={170} y={46} fill={P.text} fontSize={10.5} fontWeight={700} textAnchor="end">{h.bleu.toFixed(2)}</text>
-              <text y={66} fill={P.muted} fontSize={10.5}>no length penalty</text>
-              <text x={170} y={66} fill={P.highlight} fontSize={10.5} fontWeight={700} textAnchor="end">{h.nobp.toFixed(2)}</text>
-              <text y={86} fill={P.muted} fontSize={10.5}>length vs real</text>
-              <text x={170} y={86} fill={P.text} fontSize={10.5} textAnchor="end">{Math.round(h.len * 100)}%</text>
-              <text y={106} fill={P.muted} fontSize={10.5}>penalty cost</text>
-              <text x={170} y={106} fill={h.nobp - h.bleu > 0.3 ? P.bad : P.text} fontSize={10.5} textAnchor="end">−{(h.nobp - h.bleu).toFixed(2)}</text>
-            </g>
-          ) : (
-            <g>
-              <text fill={P.dim} fontSize={9.5} letterSpacing="0.1em">METHOD · mean length</text>
-              {FAMILIES.map((f, i) => (
-                <g key={f.id} transform={`translate(0, ${22 + i * 22})`} style={{ cursor: "pointer" }}
-                  onClick={() => setFam(fam === f.id ? null : f.id)}>
-                  <rect x={-4} y={-12} width={176} height={20} rx={6} fill={fam === f.id ? rgba(f.color(), 0.16) : "transparent"} />
-                  <circle cx={6} cy={-2} r={5} fill={f.color()} opacity={!fam || fam === f.id ? 1 : 0.3} />
-                  <text x={20} y={2} fill={!fam || fam === f.id ? P.text : P.dim} fontSize={11.5}>{f.label}</text>
-                  <text x={170} y={2} fill={P.muted} fontSize={10.5} textAnchor="end">{Math.round(meanLen(f.id) * 100)}%</text>
-                </g>
-              ))}
-              <text y={22 + FAMILIES.length * 22 + 8} fill={P.dim} fontSize={9.5}>Hover a run for its scores.</text>
-            </g>
-          )}
-        </g>
       </svg>
+      <div style={{ fontFamily: FONT, fontSize: 11, color: P.muted, marginTop: 6, lineHeight: 1.7, minHeight: 64,
+        display: "flex", flexWrap: "wrap", columnGap: 14 }}>
+        {hover ? (() => {
+          const row = ROWS.find((r) => r.f.id === hover);
+          return [
+            <span key="h" style={{ color: row.f.color(), fontWeight: 700 }}>{row.f.label}:</span>,
+            ...row.rs.slice().sort((a, b) => a.len - b.len).map((r, k) => (
+              <span key={k} style={{ whiteSpace: "nowrap" }}>
+                {r.name} · {Math.round(r.len * 100)}% · {r.bleu.toFixed(2)} → {r.nobp.toFixed(2)}
+              </span>
+            )),
+          ];
+        })() : <span style={{ color: P.dim }}>Hover a row to list its runs: length, then BLEU → BLEU without the penalty.</span>}
+      </div>
     </Frame>
   );
 }
