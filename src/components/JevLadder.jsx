@@ -15,6 +15,9 @@ const METHODS = [
 ];
 const pct = (v) => `${Math.round(v * 100)}%`;
 const METRICS = [
+  { id: "sc_preferred", label: "SC vs no SC", max: 1, ticks: [0, 0.25, 0.5, 0.75, 1], fmt: pct, noAr: true, scOnly: true, even: 0.5,
+    axis: "P(SC version is better)", short: "SC PREFERRED",
+    help: "Jev sees the same method's ending with and without SC and picks the better one. 50% means SC makes no difference." },
   { id: "realism", label: "Mistaken for the author", relAr: true, max: 0.5, ticks: [0, 0.1, 0.2, 0.3, 0.4, 0.5], fmt: pct,
     axis: "P(judged the original author)", relAxis: "mistaken for author ÷ AR", short: "AUTHOR?",
     help: "Jev sees the model's ending and the real one and picks which the original author wrote. 50% means it cannot tell them apart." },
@@ -24,7 +27,7 @@ const METRICS = [
   { id: "garbled", label: "Garbled words", max: 7, ticks: [0, 1, 2, 3, 4, 5, 6, 7], fmt: (v) => v.toFixed(1),
     axis: "garbled words per 100", short: "GARBLED / 100",
     help: "One yes/no question per distinct word: is it misspelled, made up, a fragment, or two words fused? Counted when Jev is over 80% sure." },
-  { id: "three_way", label: "Best of three", max: 0.8, ticks: [0, 0.2, 0.4, 0.6, 0.8], fmt: (v) => v.toFixed(2), noAr: true,
+  { id: "three_way", label: "Best of three", even: 1 / 3, max: 0.8, ticks: [0, 0.2, 0.4, 0.6, 0.8], fmt: (v) => v.toFixed(2), noAr: true,
     axis: "share of wins, same SC setting", short: "BEST OF 3",
     help: "Jev picks the best of the three diffusion methods' endings, all with SC or all without. 0.33 is an even split." },
 ];
@@ -37,7 +40,7 @@ const lx = (v) => Math.log(v);
 const px = (v) => L + ((lx(v) - lx(VOCABS[0])) / (lx(VOCABS.at(-1)) - lx(VOCABS[0]))) * (R - L);
 
 function JevLadderInner() {
-  const [metric, setMetric] = useState("realism");
+  const [metric, setMetric] = useState("sc_preferred");
   const [rel, setRel] = useState("abs");
   const [hover, setHover] = useState(null);
   const m = METRICS.find((x) => x.id === metric);
@@ -51,7 +54,7 @@ function JevLadderInner() {
   const fmt = relative ? (v) => v.toFixed(2) : m.fmt;
   const py = (v) => B - (Math.min(v, max) / max) * (B - T);
   const showAr = !relative && !m.noAr;
-  const series = METHODS.flatMap((me) => [true, false].map((sc) => ({ me, sc })));
+  const series = METHODS.flatMap((me) => (m.scOnly ? [true] : [true, false]).map((sc) => ({ me, sc })));
 
   return (
     <Frame
@@ -76,7 +79,7 @@ function JevLadderInner() {
         <text x={14} y={(T + B) / 2} fill={P.dim} fontSize={10} textAnchor="middle" transform={`rotate(-90 14 ${(T + B) / 2})`}>
           {relative ? m.relAxis : m.axis}
         </text>
-        {metric === "three_way" && <line x1={L} x2={R} y1={py(1 / 3)} y2={py(1 / 3)} stroke={P.line2} strokeDasharray="2 4" />}
+        {m.even != null && <line x1={L} x2={R} y1={py(m.even)} y2={py(m.even)} stroke={P.line2} strokeDasharray="2 4" />}
 
         {showAr && (() => {
           const pts = VOCABS.map((v) => [px(v), py(value(row("ar", null, v)))]);
@@ -111,12 +114,12 @@ function JevLadderInner() {
         <g transform={`translate(588, ${T + 6})`}>
           <text x={-6} fill={P.dim} fontSize={10} letterSpacing="0.08em">{hover ? `VOCAB ${vlab(hover)}` : m.short}</text>
           {series.map(({ me, sc }, i) => {
-            const y = 24 + i * 20 + Math.floor(i / 2) * 6;
+            const y = 24 + i * 20 + (m.scOnly ? i * 6 : Math.floor(i / 2) * 6);
             const r = hover && row(me.id, sc, hover);
             return (
               <g key={`${me.id}${sc}`}>
                 <line x1={-7} x2={5} y1={y - 3.5} y2={y - 3.5} stroke={me.color()} strokeWidth={2.4} strokeDasharray={sc ? undefined : "3 2"} />
-                <text x={10} y={y} fill={sc ? P.text : P.muted} fontSize={10.5} fontWeight={sc ? 700 : 400}>{`${me.label}${sc ? " + SC" : ""}`}</text>
+                <text x={10} y={y} fill={sc ? P.text : P.muted} fontSize={10.5} fontWeight={sc ? 700 : 400}>{m.scOnly ? me.label : `${me.label}${sc ? " + SC" : ""}`}</text>
                 {r && <text x={126} y={y} fill={sc ? P.text : P.muted} fontSize={10.5} fontWeight={sc ? 700 : 400} textAnchor="end">{fmt(value(r))}</text>}
               </g>
             );
@@ -128,7 +131,7 @@ function JevLadderInner() {
               {hover && <text x={126} y={24 + 6 * 20 + 18} fill={P.muted} fontSize={10.5} textAnchor="end">{fmt(value(row("ar", null, hover)))}</text>}
             </g>
           )}
-          {!hover && <text x={-6} y={24 + 7 * 20 + 30} fill={P.dim} fontSize={9.5}>Hover a vocab size.</text>}
+          {!hover && <text x={-6} y={24 + (m.scOnly ? 4 : 7) * 20 + 30} fill={P.dim} fontSize={9.5}>Hover a vocab size.</text>}
         </g>
       </svg>
     </Frame>
