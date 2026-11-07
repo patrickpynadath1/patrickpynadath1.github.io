@@ -62,7 +62,7 @@ This rules out contextual representations, even ones that keep one vector per to
 
 The tokenizer is fixed before diffusion starts. Every recipe sees the same token sequence, and the diffusion process never merges, splits, or learns tokens. This lets us swap tokenizers as an experimental variable (we do this below, from raw bytes up to a 10k-token BPE vocabulary) without changing anything else in the recipe.
 
-It rules out methods that learn their own segmentation or work on dynamic patches. The insertion and deletion modifier changes sequence length, but it inserts and deletes whole tokens from the same fixed vocabulary.
+It rules out methods that learn their own segmentation or work on dynamic patches. It also rules out methods that split each token into smaller units and diffuse those. CoBit [@batzolis2026towards] is one example: it writes each token's ID as a fixed-width binary code and runs continuous diffusion over the resulting bitstream, so the model predicts about $\log_2 V$ bits per token instead of one choice among $V$ tokens. The insertion and deletion modifier changes sequence length, but it inserts and deletes whole tokens from the same fixed vocabulary.
 
 ### Simulation Free
 
