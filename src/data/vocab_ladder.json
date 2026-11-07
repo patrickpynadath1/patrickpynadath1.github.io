@@ -1,0 +1,2340 @@
+{
+ "source": "portable-v2-mi210 (+ ladder-nosc), AMD MI210, TinyStories BPE, corpus BLEU; sampler scores are validation (128 examples, seeds 41/42), test is 256 examples, seeds 1041/1042, winner only",
+ "rows": [
+  {
+   "vocab": 260,
+   "method": "ar",
+   "sc": null,
+   "chosen": "native_greedy",
+   "test": 8.885,
+   "test_seeds": [
+    8.885,
+    8.885
+   ],
+   "samplers": {
+    "native": {
+     "val": 8.247,
+     "val_seeds": [
+      8.211,
+      8.284
+     ],
+     "params": {
+      "commitment": "sample",
+      "temperature": 0.502
+     }
+    },
+    "native_greedy": {
+     "val": 8.549,
+     "val_seeds": [
+      8.549,
+      8.549
+     ],
+     "params": {
+      "commitment": "greedy"
+     }
+    }
+   },
+   "test_nobp": 9.328,
+   "test_seeds_nobp": [
+    9.328,
+    9.328
+   ],
+   "test_bp": 0.9525,
+   "test_len_ratio": 0.9536
+  },
+  {
+   "vocab": 500,
+   "method": "ar",
+   "sc": null,
+   "chosen": "native_greedy",
+   "test": 8.917,
+   "test_seeds": [
+    8.917,
+    8.917
+   ],
+   "samplers": {
+    "native": {
+     "val": 8.591,
+     "val_seeds": [
+      8.446,
+      8.736
+     ],
+     "params": {
+      "commitment": "sample",
+      "temperature": 0.502
+     }
+    },
+    "native_greedy": {
+     "val": 8.814,
+     "val_seeds": [
+      8.814,
+      8.814
+     ],
+     "params": {
+      "commitment": "greedy"
+     }
+    }
+   },
+   "test_nobp": 9.1554,
+   "test_seeds_nobp": [
+    9.1554,
+    9.1554
+   ],
+   "test_bp": 0.9739,
+   "test_len_ratio": 0.9742
+  },
+  {
+   "vocab": 1000,
+   "method": "ar",
+   "sc": null,
+   "chosen": "native_greedy",
+   "test": 9.067,
+   "test_seeds": [
+    9.067,
+    9.067
+   ],
+   "samplers": {
+    "native": {
+     "val": 8.531,
+     "val_seeds": [
+      8.9,
+      8.163
+     ],
+     "params": {
+      "commitment": "sample",
+      "temperature": 0.558
+     }
+    },
+    "native_greedy": {
+     "val": 8.579,
+     "val_seeds": [
+      8.579,
+      8.579
+     ],
+     "params": {
+      "commitment": "greedy"
+     }
+    }
+   },
+   "test_nobp": 9.067,
+   "test_seeds_nobp": [
+    9.067,
+    9.067
+   ],
+   "test_bp": 1.0,
+   "test_len_ratio": 1.025
+  },
+  {
+   "vocab": 5000,
+   "method": "ar",
+   "sc": null,
+   "chosen": "native_greedy",
+   "test": 9.682,
+   "test_seeds": [
+    9.682,
+    9.682
+   ],
+   "samplers": {
+    "native": {
+     "val": 8.436,
+     "val_seeds": [
+      8.202,
+      8.671
+     ],
+     "params": {
+      "commitment": "sample",
+      "temperature": 0.502
+     }
+    },
+    "native_greedy": {
+     "val": 8.825,
+     "val_seeds": [
+      8.825,
+      8.825
+     ],
+     "params": {
+      "commitment": "greedy"
+     }
+    }
+   },
+   "test_nobp": 9.8196,
+   "test_seeds_nobp": [
+    9.8196,
+    9.8196
+   ],
+   "test_bp": 0.986,
+   "test_len_ratio": 0.9861
+  },
+  {
+   "vocab": 10000,
+   "method": "ar",
+   "sc": null,
+   "chosen": "native",
+   "test": 8.946,
+   "test_seeds": [
+    8.739,
+    9.153
+   ],
+   "samplers": {
+    "native": {
+     "val": 8.321,
+     "val_seeds": [
+      8.573,
+      8.068
+     ],
+     "params": {
+      "commitment": "sample",
+      "temperature": 0.508
+     }
+    },
+    "native_greedy": {
+     "val": 8.241,
+     "val_seeds": [
+      8.241,
+      8.241
+     ],
+     "params": {
+      "commitment": "greedy"
+     }
+    }
+   },
+   "test_nobp": 8.9732,
+   "test_seeds_nobp": [
+    8.7936,
+    9.1527
+   ],
+   "test_bp": 0.9969,
+   "test_len_ratio": 1.0043
+  },
+  {
+   "vocab": 260,
+   "method": "gaussian",
+   "sc": false,
+   "chosen": "renoise_sample",
+   "test": 6.009,
+   "test_seeds": [
+    6.062,
+    5.957
+   ],
+   "samplers": {
+    "native": {
+     "val": 5.357,
+     "val_seeds": [
+      5.387,
+      5.327
+     ],
+     "params": {
+      "temperature": 0.828
+     }
+    },
+    "eb_greedy": {
+     "val": 0.457,
+     "val_seeds": [
+      0.385,
+      0.529
+     ],
+     "params": {
+      "temperature": 1.324,
+      "entropy_bound": 0.06
+     }
+    },
+    "renoise_greedy": {
+     "val": 0.053,
+     "val_seeds": [
+      0.061,
+      0.046
+     ],
+     "params": {
+      "final_denoise": "sample"
+     }
+    },
+    "renoise_sample": {
+     "val": 5.942,
+     "val_seeds": [
+      5.731,
+      6.154
+     ],
+     "params": {
+      "temperature": 0.9
+     }
+    },
+    "native_greedy": {
+     "val": 0.652,
+     "val_seeds": [
+      0.683,
+      0.621
+     ],
+     "params": {
+      "final_denoise": "greedy"
+     }
+    }
+   },
+   "test_nobp": 7.1682,
+   "test_seeds_nobp": [
+    7.2147,
+    7.1216
+   ],
+   "test_bp": 0.8383,
+   "test_len_ratio": 0.8501
+  },
+  {
+   "vocab": 500,
+   "method": "gaussian",
+   "sc": false,
+   "chosen": "renoise_sample",
+   "test": 6.527,
+   "test_seeds": [
+    6.548,
+    6.507
+   ],
+   "samplers": {
+    "native": {
+     "val": 5.889,
+     "val_seeds": [
+      6.001,
+      5.777
+     ],
+     "params": {
+      "temperature": 0.875
+     }
+    },
+    "eb_greedy": {
+     "val": 0.0,
+     "val_seeds": [
+      0.0,
+      0.0
+     ],
+     "params": {
+      "temperature": 1.0,
+      "entropy_bound": 0.1
+     }
+    },
+    "renoise_greedy": {
+     "val": 2.014,
+     "val_seeds": [
+      2.194,
+      1.833
+     ],
+     "params": {
+      "final_denoise": "sample"
+     }
+    },
+    "renoise_sample": {
+     "val": 6.429,
+     "val_seeds": [
+      6.351,
+      6.507
+     ],
+     "params": {
+      "temperature": 1.0
+     }
+    },
+    "native_greedy": {
+     "val": 5.188,
+     "val_seeds": [
+      4.978,
+      5.398
+     ],
+     "params": {
+      "final_denoise": "sample"
+     }
+    }
+   },
+   "test_nobp": 6.5288,
+   "test_seeds_nobp": [
+    6.551,
+    6.5066
+   ],
+   "test_bp": 0.9998,
+   "test_len_ratio": 1.0011
+  },
+  {
+   "vocab": 1000,
+   "method": "gaussian",
+   "sc": false,
+   "chosen": "renoise_sample",
+   "test": 6.91,
+   "test_seeds": [
+    6.938,
+    6.882
+   ],
+   "samplers": {
+    "native": {
+     "val": 6.108,
+     "val_seeds": [
+      6.101,
+      6.115
+     ],
+     "params": {
+      "temperature": 0.775
+     }
+    },
+    "eb_greedy": {
+     "val": 0.0,
+     "val_seeds": [
+      0.0,
+      0.0
+     ],
+     "params": {
+      "temperature": 1.0,
+      "entropy_bound": 0.1
+     }
+    },
+    "renoise_greedy": {
+     "val": 3.376,
+     "val_seeds": [
+      3.423,
+      3.328
+     ],
+     "params": {
+      "final_denoise": "sample"
+     }
+    },
+    "renoise_sample": {
+     "val": 6.625,
+     "val_seeds": [
+      6.716,
+      6.533
+     ],
+     "params": {
+      "temperature": 1.0
+     }
+    },
+    "native_greedy": {
+     "val": 5.86,
+     "val_seeds": [
+      5.495,
+      6.225
+     ],
+     "params": {
+      "final_denoise": "greedy"
+     }
+    }
+   },
+   "test_nobp": 6.9403,
+   "test_seeds_nobp": [
+    6.9987,
+    6.882
+   ],
+   "test_bp": 0.9957,
+   "test_len_ratio": 0.9971
+  },
+  {
+   "vocab": 5000,
+   "method": "gaussian",
+   "sc": false,
+   "chosen": "renoise_sample",
+   "test": 7.14,
+   "test_seeds": [
+    6.994,
+    7.286
+   ],
+   "samplers": {
+    "native": {
+     "val": 6.204,
+     "val_seeds": [
+      6.049,
+      6.358
+     ],
+     "params": {
+      "temperature": 0.875
+     }
+    },
+    "eb_greedy": {
+     "val": 0.01,
+     "val_seeds": [
+      0.01,
+      0.011
+     ],
+     "params": {
+      "temperature": 0.558,
+      "entropy_bound": 0.325
+     }
+    },
+    "renoise_greedy": {
+     "val": 3.982,
+     "val_seeds": [
+      4.049,
+      3.914
+     ],
+     "params": {
+      "final_denoise": "greedy"
+     }
+    },
+    "renoise_sample": {
+     "val": 6.893,
+     "val_seeds": [
+      6.786,
+      6.999
+     ],
+     "params": {
+      "temperature": 1.0
+     }
+    },
+    "native_greedy": {
+     "val": 5.663,
+     "val_seeds": [
+      5.551,
+      5.776
+     ],
+     "params": {
+      "final_denoise": "greedy"
+     }
+    }
+   },
+   "test_nobp": 7.1721,
+   "test_seeds_nobp": [
+    7.0587,
+    7.2856
+   ],
+   "test_bp": 0.9954,
+   "test_len_ratio": 0.9993
+  },
+  {
+   "vocab": 10000,
+   "method": "gaussian",
+   "sc": false,
+   "chosen": "renoise_sample",
+   "test": 6.812,
+   "test_seeds": [
+    6.815,
+    6.809
+   ],
+   "samplers": {
+    "native": {
+     "val": 6.682,
+     "val_seeds": [
+      6.494,
+      6.871
+     ],
+     "params": {
+      "temperature": 0.74
+     }
+    },
+    "eb_greedy": {
+     "val": 0.003,
+     "val_seeds": [
+      0.003,
+      0.003
+     ],
+     "params": {
+      "temperature": 1.332,
+      "entropy_bound": 0.04
+     }
+    },
+    "renoise_greedy": {
+     "val": 3.794,
+     "val_seeds": [
+      3.952,
+      3.635
+     ],
+     "params": {
+      "final_denoise": "greedy"
+     }
+    },
+    "renoise_sample": {
+     "val": 6.876,
+     "val_seeds": [
+      6.74,
+      7.012
+     ],
+     "params": {
+      "temperature": 1.059
+     }
+    },
+    "native_greedy": {
+     "val": 5.83,
+     "val_seeds": [
+      5.709,
+      5.95
+     ],
+     "params": {
+      "final_denoise": "greedy"
+     }
+    }
+   },
+   "test_nobp": 6.8119,
+   "test_seeds_nobp": [
+    6.8149,
+    6.809
+   ],
+   "test_bp": 1.0,
+   "test_len_ratio": 1.0272
+  },
+  {
+   "vocab": 260,
+   "method": "gaussian",
+   "sc": true,
+   "chosen": "native",
+   "test": 7.55,
+   "test_seeds": [
+    7.387,
+    7.713
+   ],
+   "samplers": {
+    "native": {
+     "val": 7.235,
+     "val_seeds": [
+      7.344,
+      7.127
+     ],
+     "params": {
+      "temperature": 0.816
+     }
+    },
+    "eb_greedy": {
+     "val": 0.627,
+     "val_seeds": [
+      0.627,
+      0.627
+     ],
+     "params": {
+      "temperature": 0.508,
+      "entropy_bound": 0.444
+     }
+    },
+    "renoise_greedy": {
+     "val": 0.001,
+     "val_seeds": [
+      0.002,
+      0.001
+     ],
+     "params": {
+      "final_denoise": "sample"
+     }
+    },
+    "renoise_sample": {
+     "val": 7.195,
+     "val_seeds": [
+      7.112,
+      7.279
+     ],
+     "params": {
+      "temperature": 1.0
+     }
+    },
+    "native_greedy": {
+     "val": 4.208,
+     "val_seeds": [
+      4.279,
+      4.138
+     ],
+     "params": {
+      "final_denoise": "greedy"
+     }
+    }
+   },
+   "test_nobp": 8.1584,
+   "test_seeds_nobp": [
+    7.9598,
+    8.357
+   ],
+   "test_bp": 0.9255,
+   "test_len_ratio": 0.9281
+  },
+  {
+   "vocab": 500,
+   "method": "gaussian",
+   "sc": true,
+   "chosen": "native",
+   "test": 7.482,
+   "test_seeds": [
+    7.355,
+    7.609
+   ],
+   "samplers": {
+    "native": {
+     "val": 7.338,
+     "val_seeds": [
+      7.203,
+      7.473
+     ],
+     "params": {
+      "temperature": 1.0
+     }
+    },
+    "eb_greedy": {
+     "val": 2.197,
+     "val_seeds": [
+      2.066,
+      2.327
+     ],
+     "params": {
+      "temperature": 0.65,
+      "entropy_bound": 0.041
+     }
+    },
+    "renoise_greedy": {
+     "val": 0.323,
+     "val_seeds": [
+      0.284,
+      0.363
+     ],
+     "params": {
+      "final_denoise": "greedy"
+     }
+    },
+    "renoise_sample": {
+     "val": 7.207,
+     "val_seeds": [
+      7.251,
+      7.164
+     ],
+     "params": {
+      "temperature": 1.055
+     }
+    },
+    "native_greedy": {
+     "val": 5.241,
+     "val_seeds": [
+      5.101,
+      5.38
+     ],
+     "params": {
+      "final_denoise": "sample"
+     }
+    }
+   },
+   "test_nobp": 7.4821,
+   "test_seeds_nobp": [
+    7.3551,
+    7.6091
+   ],
+   "test_bp": 1.0,
+   "test_len_ratio": 1.0059
+  },
+  {
+   "vocab": 1000,
+   "method": "gaussian",
+   "sc": true,
+   "chosen": "renoise_sample",
+   "test": 7.582,
+   "test_seeds": [
+    7.959,
+    7.204
+   ],
+   "samplers": {
+    "native": {
+     "val": 7.001,
+     "val_seeds": [
+      6.743,
+      7.26
+     ],
+     "params": {
+      "temperature": 0.939
+     }
+    },
+    "eb_greedy": {
+     "val": 1.833,
+     "val_seeds": [
+      1.801,
+      1.865
+     ],
+     "params": {
+      "temperature": 0.737,
+      "entropy_bound": 0.02
+     }
+    },
+    "renoise_greedy": {
+     "val": 1.892,
+     "val_seeds": [
+      1.96,
+      1.824
+     ],
+     "params": {
+      "final_denoise": "sample"
+     }
+    },
+    "renoise_sample": {
+     "val": 7.59,
+     "val_seeds": [
+      7.632,
+      7.548
+     ],
+     "params": {
+      "temperature": 1.018
+     }
+    },
+    "native_greedy": {
+     "val": 6.115,
+     "val_seeds": [
+      5.906,
+      6.325
+     ],
+     "params": {
+      "final_denoise": "greedy"
+     }
+    }
+   },
+   "test_nobp": 7.5903,
+   "test_seeds_nobp": [
+    7.9761,
+    7.2045
+   ],
+   "test_bp": 0.9989,
+   "test_len_ratio": 1.0036
+  },
+  {
+   "vocab": 5000,
+   "method": "gaussian",
+   "sc": true,
+   "chosen": "native",
+   "test": 7.657,
+   "test_seeds": [
+    7.788,
+    7.526
+   ],
+   "samplers": {
+    "native": {
+     "val": 7.465,
+     "val_seeds": [
+      7.449,
+      7.481
+     ],
+     "params": {
+      "temperature": 0.901
+     }
+    },
+    "eb_greedy": {
+     "val": 1.815,
+     "val_seeds": [
+      1.781,
+      1.85
+     ],
+     "params": {
+      "temperature": 0.509,
+      "entropy_bound": 0.246
+     }
+    },
+    "renoise_greedy": {
+     "val": 3.247,
+     "val_seeds": [
+      3.054,
+      3.44
+     ],
+     "params": {
+      "final_denoise": "sample"
+     }
+    },
+    "renoise_sample": {
+     "val": 7.265,
+     "val_seeds": [
+      7.222,
+      7.308
+     ],
+     "params": {
+      "temperature": 0.996
+     }
+    },
+    "native_greedy": {
+     "val": 6.131,
+     "val_seeds": [
+      6.321,
+      5.94
+     ],
+     "params": {
+      "final_denoise": "greedy"
+     }
+    }
+   },
+   "test_nobp": 8.1333,
+   "test_seeds_nobp": [
+    8.1539,
+    8.1126
+   ],
+   "test_bp": 0.9414,
+   "test_len_ratio": 0.9431
+  },
+  {
+   "vocab": 10000,
+   "method": "gaussian",
+   "sc": true,
+   "chosen": "native",
+   "test": 7.864,
+   "test_seeds": [
+    8.114,
+    7.615
+   ],
+   "samplers": {
+    "native": {
+     "val": 7.055,
+     "val_seeds": [
+      7.274,
+      6.836
+     ],
+     "params": {
+      "temperature": 0.996
+     }
+    },
+    "eb_greedy": {
+     "val": 0.704,
+     "val_seeds": [
+      0.748,
+      0.66
+     ],
+     "params": {
+      "temperature": 0.656,
+      "entropy_bound": 0.033
+     }
+    },
+    "renoise_greedy": {
+     "val": 3.36,
+     "val_seeds": [
+      3.404,
+      3.316
+     ],
+     "params": {
+      "final_denoise": "greedy"
+     }
+    },
+    "renoise_sample": {
+     "val": 7.048,
+     "val_seeds": [
+      7.047,
+      7.049
+     ],
+     "params": {
+      "temperature": 1.024
+     }
+    },
+    "native_greedy": {
+     "val": 6.161,
+     "val_seeds": [
+      6.236,
+      6.086
+     ],
+     "params": {
+      "final_denoise": "greedy"
+     }
+    }
+   },
+   "test_nobp": 7.9335,
+   "test_seeds_nobp": [
+    8.1138,
+    7.7531
+   ],
+   "test_bp": 0.9911,
+   "test_len_ratio": 0.9943
+  },
+  {
+   "vocab": 260,
+   "method": "masked",
+   "sc": false,
+   "chosen": "native_greedy",
+   "test": 6.209,
+   "test_seeds": [
+    6.143,
+    6.276
+   ],
+   "samplers": {
+    "native": {
+     "val": 5.513,
+     "val_seeds": [
+      5.716,
+      5.311
+     ],
+     "params": {
+      "temperature": 0.53
+     }
+    },
+    "eb_greedy": {
+     "val": 0.0,
+     "val_seeds": [
+      0.0,
+      0.0
+     ],
+     "params": {
+      "temperature": 0.508,
+      "entropy_bound": 0.444
+     }
+    },
+    "renoise_greedy": {
+     "val": 4.673,
+     "val_seeds": [
+      4.706,
+      4.64
+     ],
+     "params": {
+      "final_denoise": "greedy"
+     }
+    },
+    "renoise_sample": {
+     "val": 5.014,
+     "val_seeds": [
+      4.927,
+      5.1
+     ],
+     "params": {
+      "temperature": 0.502
+     }
+    },
+    "native_greedy": {
+     "val": 5.837,
+     "val_seeds": [
+      5.872,
+      5.802
+     ],
+     "params": {
+      "final_denoise": "greedy"
+     }
+    }
+   },
+   "test_nobp": 8.2734,
+   "test_seeds_nobp": [
+    8.1578,
+    8.3891
+   ],
+   "test_bp": 0.7505,
+   "test_len_ratio": 0.777
+  },
+  {
+   "vocab": 500,
+   "method": "masked",
+   "sc": false,
+   "chosen": "native",
+   "test": 5.918,
+   "test_seeds": [
+    5.771,
+    6.065
+   ],
+   "samplers": {
+    "native": {
+     "val": 5.847,
+     "val_seeds": [
+      5.879,
+      5.815
+     ],
+     "params": {
+      "temperature": 0.777
+     }
+    },
+    "eb_greedy": {
+     "val": 0.515,
+     "val_seeds": [
+      0.515,
+      0.515
+     ],
+     "params": {
+      "temperature": 1.284,
+      "entropy_bound": 0.062
+     }
+    },
+    "renoise_greedy": {
+     "val": 0.147,
+     "val_seeds": [
+      0.063,
+      0.231
+     ],
+     "params": {
+      "final_denoise": "sample"
+     }
+    },
+    "renoise_sample": {
+     "val": 5.106,
+     "val_seeds": [
+      4.929,
+      5.283
+     ],
+     "params": {
+      "temperature": 0.847
+     }
+    },
+    "native_greedy": {
+     "val": 4.811,
+     "val_seeds": [
+      4.782,
+      4.84
+     ],
+     "params": {
+      "final_denoise": "greedy"
+     }
+    }
+   },
+   "test_nobp": 7.1485,
+   "test_seeds_nobp": [
+    7.0054,
+    7.2916
+   ],
+   "test_bp": 0.8278,
+   "test_len_ratio": 0.8411
+  },
+  {
+   "vocab": 1000,
+   "method": "masked",
+   "sc": false,
+   "chosen": "native",
+   "test": 6.436,
+   "test_seeds": [
+    6.364,
+    6.508
+   ],
+   "samplers": {
+    "native": {
+     "val": 6.166,
+     "val_seeds": [
+      6.318,
+      6.014
+     ],
+     "params": {
+      "temperature": 0.702
+     }
+    },
+    "eb_greedy": {
+     "val": 0.724,
+     "val_seeds": [
+      0.724,
+      0.724
+     ],
+     "params": {
+      "temperature": 1.47,
+      "entropy_bound": 0.02
+     }
+    },
+    "renoise_greedy": {
+     "val": 0.388,
+     "val_seeds": [
+      0.379,
+      0.397
+     ],
+     "params": {
+      "final_denoise": "sample"
+     }
+    },
+    "renoise_sample": {
+     "val": 5.283,
+     "val_seeds": [
+      5.272,
+      5.294
+     ],
+     "params": {
+      "temperature": 0.892
+     }
+    },
+    "native_greedy": {
+     "val": 5.456,
+     "val_seeds": [
+      5.199,
+      5.713
+     ],
+     "params": {
+      "final_denoise": "sample"
+     }
+    }
+   },
+   "test_nobp": 8.1117,
+   "test_seeds_nobp": [
+    8.026,
+    8.1974
+   ],
+   "test_bp": 0.7934,
+   "test_len_ratio": 0.8121
+  },
+  {
+   "vocab": 5000,
+   "method": "masked",
+   "sc": false,
+   "chosen": "native",
+   "test": 6.456,
+   "test_seeds": [
+    6.576,
+    6.336
+   ],
+   "samplers": {
+    "native": {
+     "val": 6.485,
+     "val_seeds": [
+      6.438,
+      6.532
+     ],
+     "params": {
+      "temperature": 0.875
+     }
+    },
+    "eb_greedy": {
+     "val": 1.049,
+     "val_seeds": [
+      1.049,
+      1.049
+     ],
+     "params": {
+      "temperature": 1.491,
+      "entropy_bound": 0.022
+     }
+    },
+    "renoise_greedy": {
+     "val": 0.316,
+     "val_seeds": [
+      0.319,
+      0.314
+     ],
+     "params": {
+      "final_denoise": "greedy"
+     }
+    },
+    "renoise_sample": {
+     "val": 5.222,
+     "val_seeds": [
+      5.259,
+      5.185
+     ],
+     "params": {
+      "temperature": 1.0
+     }
+    },
+    "native_greedy": {
+     "val": 4.929,
+     "val_seeds": [
+      4.997,
+      4.86
+     ],
+     "params": {
+      "final_denoise": "sample"
+     }
+    }
+   },
+   "test_nobp": 7.0413,
+   "test_seeds_nobp": [
+    7.1784,
+    6.9042
+   ],
+   "test_bp": 0.9169,
+   "test_len_ratio": 0.9202
+  },
+  {
+   "vocab": 10000,
+   "method": "masked",
+   "sc": false,
+   "chosen": "native",
+   "test": 6.671,
+   "test_seeds": [
+    6.745,
+    6.597
+   ],
+   "samplers": {
+    "native": {
+     "val": 6.482,
+     "val_seeds": [
+      6.529,
+      6.435
+     ],
+     "params": {
+      "temperature": 0.828
+     }
+    },
+    "eb_greedy": {
+     "val": 1.155,
+     "val_seeds": [
+      1.155,
+      1.155
+     ],
+     "params": {
+      "temperature": 1.488,
+      "entropy_bound": 0.02
+     }
+    },
+    "renoise_greedy": {
+     "val": 0.544,
+     "val_seeds": [
+      0.515,
+      0.574
+     ],
+     "params": {
+      "final_denoise": "greedy"
+     }
+    },
+    "renoise_sample": {
+     "val": 5.319,
+     "val_seeds": [
+      5.491,
+      5.147
+     ],
+     "params": {
+      "temperature": 0.939
+     }
+    },
+    "native_greedy": {
+     "val": 4.902,
+     "val_seeds": [
+      4.972,
+      4.833
+     ],
+     "params": {
+      "final_denoise": "sample"
+     }
+    }
+   },
+   "test_nobp": 7.8328,
+   "test_seeds_nobp": [
+    7.9908,
+    7.6748
+   ],
+   "test_bp": 0.8518,
+   "test_len_ratio": 0.8618
+  },
+  {
+   "vocab": 260,
+   "method": "masked",
+   "sc": true,
+   "chosen": "native_greedy",
+   "test": 6.775,
+   "test_seeds": [
+    6.874,
+    6.675
+   ],
+   "samplers": {
+    "native": {
+     "val": 6.147,
+     "val_seeds": [
+      6.02,
+      6.275
+     ],
+     "params": {
+      "temperature": 0.502
+     }
+    },
+    "eb_greedy": {
+     "val": 0.003,
+     "val_seeds": [
+      0.003,
+      0.003
+     ],
+     "params": {
+      "temperature": 0.558,
+      "entropy_bound": 0.325
+     }
+    },
+    "renoise_greedy": {
+     "val": 5.9,
+     "val_seeds": [
+      5.873,
+      5.926
+     ],
+     "params": {
+      "final_denoise": "greedy"
+     }
+    },
+    "renoise_sample": {
+     "val": 5.537,
+     "val_seeds": [
+      5.316,
+      5.758
+     ],
+     "params": {
+      "temperature": 0.508
+     }
+    },
+    "native_greedy": {
+     "val": 6.47,
+     "val_seeds": [
+      6.273,
+      6.667
+     ],
+     "params": {
+      "final_denoise": "sample"
+     }
+    }
+   },
+   "test_nobp": 9.2279,
+   "test_seeds_nobp": [
+    9.418,
+    9.0377
+   ],
+   "test_bp": 0.7342,
+   "test_len_ratio": 0.764
+  },
+  {
+   "vocab": 500,
+   "method": "masked",
+   "sc": true,
+   "chosen": "native",
+   "test": 6.809,
+   "test_seeds": [
+    6.633,
+    6.986
+   ],
+   "samplers": {
+    "native": {
+     "val": 6.439,
+     "val_seeds": [
+      6.414,
+      6.463
+     ],
+     "params": {
+      "temperature": 0.873
+     }
+    },
+    "eb_greedy": {
+     "val": 1.536,
+     "val_seeds": [
+      1.536,
+      1.536
+     ],
+     "params": {
+      "temperature": 1.365,
+      "entropy_bound": 0.069
+     }
+    },
+    "renoise_greedy": {
+     "val": 3.35,
+     "val_seeds": [
+      3.259,
+      3.44
+     ],
+     "params": {
+      "final_denoise": "greedy"
+     }
+    },
+    "renoise_sample": {
+     "val": 6.064,
+     "val_seeds": [
+      5.876,
+      6.253
+     ],
+     "params": {
+      "temperature": 0.675
+     }
+    },
+    "native_greedy": {
+     "val": 5.423,
+     "val_seeds": [
+      5.514,
+      5.332
+     ],
+     "params": {
+      "final_denoise": "greedy"
+     }
+    }
+   },
+   "test_nobp": 7.6115,
+   "test_seeds_nobp": [
+    7.5721,
+    7.6509
+   ],
+   "test_bp": 0.8945,
+   "test_len_ratio": 0.8998
+  },
+  {
+   "vocab": 1000,
+   "method": "masked",
+   "sc": true,
+   "chosen": "native",
+   "test": 7.114,
+   "test_seeds": [
+    7.241,
+    6.988
+   ],
+   "samplers": {
+    "native": {
+     "val": 6.543,
+     "val_seeds": [
+      6.74,
+      6.347
+     ],
+     "params": {
+      "temperature": 0.656
+     }
+    },
+    "eb_greedy": {
+     "val": 1.919,
+     "val_seeds": [
+      1.919,
+      1.919
+     ],
+     "params": {
+      "temperature": 1.47,
+      "entropy_bound": 0.02
+     }
+    },
+    "renoise_greedy": {
+     "val": 3.404,
+     "val_seeds": [
+      3.295,
+      3.513
+     ],
+     "params": {
+      "final_denoise": "sample"
+     }
+    },
+    "renoise_sample": {
+     "val": 6.356,
+     "val_seeds": [
+      6.233,
+      6.478
+     ],
+     "params": {
+      "temperature": 0.828
+     }
+    },
+    "native_greedy": {
+     "val": 5.606,
+     "val_seeds": [
+      5.213,
+      6.0
+     ],
+     "params": {
+      "final_denoise": "sample"
+     }
+    }
+   },
+   "test_nobp": 9.2266,
+   "test_seeds_nobp": [
+    9.341,
+    9.1121
+   ],
+   "test_bp": 0.771,
+   "test_len_ratio": 0.7936
+  },
+  {
+   "vocab": 5000,
+   "method": "masked",
+   "sc": true,
+   "chosen": "native",
+   "test": 7.25,
+   "test_seeds": [
+    7.442,
+    7.057
+   ],
+   "samplers": {
+    "native": {
+     "val": 7.368,
+     "val_seeds": [
+      7.198,
+      7.539
+     ],
+     "params": {
+      "temperature": 0.828
+     }
+    },
+    "eb_greedy": {
+     "val": 1.538,
+     "val_seeds": [
+      1.538,
+      1.538
+     ],
+     "params": {
+      "temperature": 1.491,
+      "entropy_bound": 0.022
+     }
+    },
+    "renoise_greedy": {
+     "val": 3.898,
+     "val_seeds": [
+      4.025,
+      3.772
+     ],
+     "params": {
+      "final_denoise": "sample"
+     }
+    },
+    "renoise_sample": {
+     "val": 6.738,
+     "val_seeds": [
+      6.52,
+      6.957
+     ],
+     "params": {
+      "temperature": 0.811
+     }
+    },
+    "native_greedy": {
+     "val": 5.269,
+     "val_seeds": [
+      5.311,
+      5.226
+     ],
+     "params": {
+      "final_denoise": "greedy"
+     }
+    }
+   },
+   "test_nobp": 8.2728,
+   "test_seeds_nobp": [
+    8.4177,
+    8.1279
+   ],
+   "test_bp": 0.8762,
+   "test_len_ratio": 0.8833
+  },
+  {
+   "vocab": 10000,
+   "method": "masked",
+   "sc": true,
+   "chosen": "native",
+   "test": 6.908,
+   "test_seeds": [
+    6.806,
+    7.011
+   ],
+   "samplers": {
+    "native": {
+     "val": 7.007,
+     "val_seeds": [
+      6.918,
+      7.095
+     ],
+     "params": {
+      "temperature": 0.901
+     }
+    },
+    "eb_greedy": {
+     "val": 1.378,
+     "val_seeds": [
+      1.378,
+      1.378
+     ],
+     "params": {
+      "temperature": 1.488,
+      "entropy_bound": 0.02
+     }
+    },
+    "renoise_greedy": {
+     "val": 4.149,
+     "val_seeds": [
+      4.067,
+      4.23
+     ],
+     "params": {
+      "final_denoise": "sample"
+     }
+    },
+    "renoise_sample": {
+     "val": 6.59,
+     "val_seeds": [
+      6.52,
+      6.66
+     ],
+     "params": {
+      "temperature": 0.811
+     }
+    },
+    "native_greedy": {
+     "val": 4.963,
+     "val_seeds": [
+      4.881,
+      5.045
+     ],
+     "params": {
+      "final_denoise": "greedy"
+     }
+    }
+   },
+   "test_nobp": 7.7618,
+   "test_seeds_nobp": [
+    7.7315,
+    7.7921
+   ],
+   "test_bp": 0.89,
+   "test_len_ratio": 0.8957
+  },
+  {
+   "vocab": 260,
+   "method": "uniform",
+   "sc": false,
+   "chosen": "eb_greedy",
+   "test": 6.271,
+   "test_seeds": [
+    6.262,
+    6.28
+   ],
+   "samplers": {
+    "native": {
+     "val": 5.12,
+     "val_seeds": [
+      5.398,
+      4.841
+     ],
+     "params": {
+      "temperature": 0.656
+     }
+    },
+    "eb_greedy": {
+     "val": 6.19,
+     "val_seeds": [
+      6.03,
+      6.35
+     ],
+     "params": {
+      "temperature": 0.508,
+      "entropy_bound": 0.444
+     }
+    },
+    "renoise_greedy": {
+     "val": 5.241,
+     "val_seeds": [
+      5.369,
+      5.114
+     ],
+     "params": {
+      "final_denoise": "sample"
+     }
+    },
+    "renoise_sample": {
+     "val": 5.773,
+     "val_seeds": [
+      5.99,
+      5.556
+     ],
+     "params": {
+      "temperature": 1.232
+     }
+    },
+    "native_greedy": {
+     "val": 5.496,
+     "val_seeds": [
+      5.703,
+      5.288
+     ],
+     "params": {
+      "final_denoise": "sample"
+     }
+    }
+   },
+   "test_nobp": 6.2707,
+   "test_seeds_nobp": [
+    6.2616,
+    6.2797
+   ],
+   "test_bp": 1.0,
+   "test_len_ratio": 1.0163
+  },
+  {
+   "vocab": 500,
+   "method": "uniform",
+   "sc": false,
+   "chosen": "renoise_sample",
+   "test": 7.011,
+   "test_seeds": [
+    7.069,
+    6.953
+   ],
+   "samplers": {
+    "native": {
+     "val": 5.458,
+     "val_seeds": [
+      5.35,
+      5.567
+     ],
+     "params": {
+      "temperature": 0.53
+     }
+    },
+    "eb_greedy": {
+     "val": 6.067,
+     "val_seeds": [
+      6.014,
+      6.12
+     ],
+     "params": {
+      "temperature": 0.656,
+      "entropy_bound": 0.033
+     }
+    },
+    "renoise_greedy": {
+     "val": 1.987,
+     "val_seeds": [
+      2.165,
+      1.81
+     ],
+     "params": {
+      "final_denoise": "sample"
+     }
+    },
+    "renoise_sample": {
+     "val": 6.714,
+     "val_seeds": [
+      6.717,
+      6.712
+     ],
+     "params": {
+      "temperature": 1.272
+     }
+    },
+    "native_greedy": {
+     "val": 5.056,
+     "val_seeds": [
+      4.953,
+      5.158
+     ],
+     "params": {
+      "final_denoise": "sample"
+     }
+    }
+   },
+   "test_nobp": 7.1335,
+   "test_seeds_nobp": [
+    7.3115,
+    6.9556
+   ],
+   "test_bp": 0.9832,
+   "test_len_ratio": 0.9835
+  },
+  {
+   "vocab": 1000,
+   "method": "uniform",
+   "sc": false,
+   "chosen": "renoise_sample",
+   "test": 7.279,
+   "test_seeds": [
+    7.157,
+    7.402
+   ],
+   "samplers": {
+    "native": {
+     "val": 6.08,
+     "val_seeds": [
+      6.14,
+      6.02
+     ],
+     "params": {
+      "temperature": 0.508
+     }
+    },
+    "eb_greedy": {
+     "val": 6.236,
+     "val_seeds": [
+      6.127,
+      6.344
+     ],
+     "params": {
+      "temperature": 0.67,
+      "entropy_bound": 0.063
+     }
+    },
+    "renoise_greedy": {
+     "val": 2.165,
+     "val_seeds": [
+      2.277,
+      2.053
+     ],
+     "params": {
+      "final_denoise": "greedy"
+     }
+    },
+    "renoise_sample": {
+     "val": 6.891,
+     "val_seeds": [
+      6.869,
+      6.912
+     ],
+     "params": {
+      "temperature": 1.277
+     }
+    },
+    "native_greedy": {
+     "val": 5.616,
+     "val_seeds": [
+      5.79,
+      5.442
+     ],
+     "params": {
+      "final_denoise": "greedy"
+     }
+    }
+   },
+   "test_nobp": 7.2939,
+   "test_seeds_nobp": [
+    7.1568,
+    7.4311
+   ],
+   "test_bp": 0.998,
+   "test_len_ratio": 0.9984
+  },
+  {
+   "vocab": 5000,
+   "method": "uniform",
+   "sc": false,
+   "chosen": "native",
+   "test": 6.399,
+   "test_seeds": [
+    6.545,
+    6.252
+   ],
+   "samplers": {
+    "native": {
+     "val": 6.671,
+     "val_seeds": [
+      6.847,
+      6.495
+     ],
+     "params": {
+      "temperature": 0.508
+     }
+    },
+    "eb_greedy": {
+     "val": 6.562,
+     "val_seeds": [
+      6.89,
+      6.235
+     ],
+     "params": {
+      "temperature": 0.715,
+      "entropy_bound": 0.044
+     }
+    },
+    "renoise_greedy": {
+     "val": 2.714,
+     "val_seeds": [
+      2.715,
+      2.714
+     ],
+     "params": {
+      "final_denoise": "greedy"
+     }
+    },
+    "renoise_sample": {
+     "val": 6.418,
+     "val_seeds": [
+      6.384,
+      6.453
+     ],
+     "params": {
+      "temperature": 1.101
+     }
+    },
+    "native_greedy": {
+     "val": 6.043,
+     "val_seeds": [
+      6.052,
+      6.034
+     ],
+     "params": {
+      "final_denoise": "greedy"
+     }
+    }
+   },
+   "test_nobp": 7.6715,
+   "test_seeds_nobp": [
+    7.6987,
+    7.6443
+   ],
+   "test_bp": 0.834,
+   "test_len_ratio": 0.8465
+  },
+  {
+   "vocab": 10000,
+   "method": "uniform",
+   "sc": false,
+   "chosen": "eb_greedy",
+   "test": 6.624,
+   "test_seeds": [
+    6.814,
+    6.434
+   ],
+   "samplers": {
+    "native": {
+     "val": 6.351,
+     "val_seeds": [
+      6.409,
+      6.293
+     ],
+     "params": {
+      "temperature": 0.801
+     }
+    },
+    "eb_greedy": {
+     "val": 6.588,
+     "val_seeds": [
+      6.179,
+      6.997
+     ],
+     "params": {
+      "temperature": 0.875,
+      "entropy_bound": 0.427
+     }
+    },
+    "renoise_greedy": {
+     "val": 2.753,
+     "val_seeds": [
+      2.75,
+      2.755
+     ],
+     "params": {
+      "final_denoise": "sample"
+     }
+    },
+    "renoise_sample": {
+     "val": 6.115,
+     "val_seeds": [
+      6.148,
+      6.082
+     ],
+     "params": {
+      "temperature": 1.196
+     }
+    },
+    "native_greedy": {
+     "val": 6.002,
+     "val_seeds": [
+      6.264,
+      5.74
+     ],
+     "params": {
+      "final_denoise": "greedy"
+     }
+    }
+   },
+   "test_nobp": 7.4531,
+   "test_seeds_nobp": [
+    7.7938,
+    7.1125
+   ],
+   "test_bp": 0.8894,
+   "test_len_ratio": 0.8952
+  },
+  {
+   "vocab": 260,
+   "method": "uniform",
+   "sc": true,
+   "chosen": "native",
+   "test": 7.509,
+   "test_seeds": [
+    7.54,
+    7.478
+   ],
+   "samplers": {
+    "native": {
+     "val": 7.046,
+     "val_seeds": [
+      7.52,
+      6.573
+     ],
+     "params": {
+      "temperature": 1.196
+     }
+    },
+    "eb_greedy": {
+     "val": 6.969,
+     "val_seeds": [
+      7.091,
+      6.847
+     ],
+     "params": {
+      "temperature": 0.682,
+      "entropy_bound": 0.036
+     }
+    },
+    "renoise_greedy": {
+     "val": 4.624,
+     "val_seeds": [
+      4.802,
+      4.446
+     ],
+     "params": {
+      "final_denoise": "greedy"
+     }
+    },
+    "renoise_sample": {
+     "val": 6.203,
+     "val_seeds": [
+      6.32,
+      6.086
+     ],
+     "params": {
+      "temperature": 1.459
+     }
+    },
+    "native_greedy": {
+     "val": 6.23,
+     "val_seeds": [
+      6.27,
+      6.19
+     ],
+     "params": {
+      "final_denoise": "sample"
+     }
+    }
+   },
+   "test_nobp": 7.5292,
+   "test_seeds_nobp": [
+    7.5403,
+    7.5181
+   ],
+   "test_bp": 0.9974,
+   "test_len_ratio": 1.0006
+  },
+  {
+   "vocab": 500,
+   "method": "uniform",
+   "sc": true,
+   "chosen": "renoise_sample",
+   "test": 7.408,
+   "test_seeds": [
+    7.557,
+    7.259
+   ],
+   "samplers": {
+    "native": {
+     "val": 6.859,
+     "val_seeds": [
+      6.747,
+      6.971
+     ],
+     "params": {
+      "temperature": 1.066
+     }
+    },
+    "eb_greedy": {
+     "val": 7.024,
+     "val_seeds": [
+      6.948,
+      7.1
+     ],
+     "params": {
+      "temperature": 0.558,
+      "entropy_bound": 0.325
+     }
+    },
+    "renoise_greedy": {
+     "val": 0.993,
+     "val_seeds": [
+      0.977,
+      1.01
+     ],
+     "params": {
+      "final_denoise": "sample"
+     }
+    },
+    "renoise_sample": {
+     "val": 7.217,
+     "val_seeds": [
+      7.284,
+      7.15
+     ],
+     "params": {
+      "temperature": 1.47
+     }
+    },
+    "native_greedy": {
+     "val": 5.542,
+     "val_seeds": [
+      5.413,
+      5.671
+     ],
+     "params": {
+      "final_denoise": "sample"
+     }
+    }
+   },
+   "test_nobp": 8.3105,
+   "test_seeds_nobp": [
+    8.5727,
+    8.0483
+   ],
+   "test_bp": 0.8917,
+   "test_len_ratio": 0.8972
+  },
+  {
+   "vocab": 1000,
+   "method": "uniform",
+   "sc": true,
+   "chosen": "eb_greedy",
+   "test": 7.235,
+   "test_seeds": [
+    7.428,
+    7.042
+   ],
+   "samplers": {
+    "native": {
+     "val": 6.805,
+     "val_seeds": [
+      6.97,
+      6.641
+     ],
+     "params": {
+      "temperature": 0.896
+     }
+    },
+    "eb_greedy": {
+     "val": 7.09,
+     "val_seeds": [
+      6.987,
+      7.193
+     ],
+     "params": {
+      "temperature": 0.531,
+      "entropy_bound": 0.021
+     }
+    },
+    "renoise_greedy": {
+     "val": 1.844,
+     "val_seeds": [
+      1.911,
+      1.777
+     ],
+     "params": {
+      "final_denoise": "sample"
+     }
+    },
+    "renoise_sample": {
+     "val": 6.897,
+     "val_seeds": [
+      6.625,
+      7.169
+     ],
+     "params": {
+      "temperature": 1.459
+     }
+    },
+    "native_greedy": {
+     "val": 5.894,
+     "val_seeds": [
+      5.771,
+      6.017
+     ],
+     "params": {
+      "final_denoise": "greedy"
+     }
+    }
+   },
+   "test_nobp": 7.3446,
+   "test_seeds_nobp": [
+    7.4637,
+    7.2255
+   ],
+   "test_bp": 0.9849,
+   "test_len_ratio": 0.985
+  },
+  {
+   "vocab": 5000,
+   "method": "uniform",
+   "sc": true,
+   "chosen": "eb_greedy",
+   "test": 7.574,
+   "test_seeds": [
+    7.485,
+    7.663
+   ],
+   "samplers": {
+    "native": {
+     "val": 6.814,
+     "val_seeds": [
+      7.105,
+      6.523
+     ],
+     "params": {
+      "temperature": 1.0
+     }
+    },
+    "eb_greedy": {
+     "val": 7.348,
+     "val_seeds": [
+      7.392,
+      7.305
+     ],
+     "params": {
+      "temperature": 0.656,
+      "entropy_bound": 0.033
+     }
+    },
+    "renoise_greedy": {
+     "val": 3.308,
+     "val_seeds": [
+      3.205,
+      3.411
+     ],
+     "params": {
+      "final_denoise": "sample"
+     }
+    },
+    "renoise_sample": {
+     "val": 6.369,
+     "val_seeds": [
+      6.165,
+      6.573
+     ],
+     "params": {
+      "temperature": 1.225
+     }
+    },
+    "native_greedy": {
+     "val": 6.348,
+     "val_seeds": [
+      6.43,
+      6.266
+     ],
+     "params": {
+      "final_denoise": "greedy"
+     }
+    }
+   },
+   "test_nobp": 8.0163,
+   "test_seeds_nobp": [
+    7.8236,
+    8.2089
+   ],
+   "test_bp": 0.9451,
+   "test_len_ratio": 0.9466
+  },
+  {
+   "vocab": 10000,
+   "method": "uniform",
+   "sc": true,
+   "chosen": "eb_greedy",
+   "test": 7.367,
+   "test_seeds": [
+    7.146,
+    7.588
+   ],
+   "samplers": {
+    "native": {
+     "val": 7.086,
+     "val_seeds": [
+      6.743,
+      7.428
+     ],
+     "params": {
+      "temperature": 0.828
+     }
+    },
+    "eb_greedy": {
+     "val": 7.399,
+     "val_seeds": [
+      7.453,
+      7.345
+     ],
+     "params": {
+      "temperature": 0.804,
+      "entropy_bound": 0.108
+     }
+    },
+    "renoise_greedy": {
+     "val": 3.57,
+     "val_seeds": [
+      3.604,
+      3.537
+     ],
+     "params": {
+      "final_denoise": "greedy"
+     }
+    },
+    "renoise_sample": {
+     "val": 6.813,
+     "val_seeds": [
+      6.753,
+      6.873
+     ],
+     "params": {
+      "temperature": 1.47
+     }
+    },
+    "native_greedy": {
+     "val": 6.34,
+     "val_seeds": [
+      6.472,
+      6.207
+     ],
+     "params": {
+      "final_denoise": "greedy"
+     }
+    }
+   },
+   "test_nobp": 7.7317,
+   "test_seeds_nobp": [
+    7.4711,
+    7.9924
+   ],
+   "test_bp": 0.953,
+   "test_len_ratio": 0.954
+  }
+ ]
+}

@@ -1,6 +1,6 @@
 ---
 title: "Some design choices in a diffusion language model"
-description: "An interactive map of the parts of a diffusion language model, and the paper recipes built from them."
+description: "An interactive map of the parts of a diffusion language model, a codebase for swapping them, and a few small experiments on how they interact."
 pubDate: 2026-10-28T12:00:00.000Z
 author: "Patrick Pynadath"
 tags: ["diffusion", "language models"]
@@ -12,6 +12,11 @@ wip: true
 import { HeadToHead, Dumbbells, GapGrid, SamplerChoice } from "../../components/SelfCondDepth.jsx"
 import { CdcdLinearity, CdcdSchedules, CdcdCorruption, CdcdPerformance } from "../../components/CdcdSchedules.jsx"
 import { BlockEncDec } from "../../components/BlockScaling.jsx"
+import { VocabLadder } from "../../components/VocabLadder.jsx"
+import { BleuLength } from "../../components/BleuLength.jsx"
+import { JevLadder } from "../../components/JevLadder.jsx"
+import { Pipeline } from "../../components/PipelineFigure.jsx"
+import ExpandableSection from "../../components/ExpandableSection.jsx"
 
 # A Few Design Choices for Diffusion Language Models (And a Codebase)
 
@@ -20,37 +25,58 @@ Patrick Pynadath<sup>1</sup>
 <sup>1</sup> Purdue Department of Computer Science
 
 ## Introduction
-Diffusion language models have grown into a rapidly evolving field, with recent releases demonstrating diffusion's potential at scale. However, this does not mean that the field has arrived at a singular recipe for diffusion language models. 
 
-This lack of a single recipe is due to the flexibility of the diffusion framework: DLMs have come to capture methods that move from some form of random noise to clean data. This definition leaves many degrees of freedom: we can define noise in the discrete space as replacing clean tokens with masks or random tokens; we can also work in the continuous space with either one-hot vectors, embeddings, or contextual representations from a pretrained encoder. 
+Diffusion language models have grown into a rapidly evolving field, with recent releases demonstrating diffusion's potential at scale. However, this does not mean the field has arrived at a single recipe for diffusion language models.
 
-This effects how we should train the model, but still leaves some freedom: if continuous, we could use cross entropy to predict clean tokens or MSE to predict the clean representation. If discrete, we can predict clean tokens or learn a plug-in value that allows us to simulate the reverse process -- these need not be the same, as shown (cite loo). 
+The lack of a single recipe comes from the flexibility of the diffusion framework: DLMs have come to cover any method that moves from some form of random noise to clean data. This definition leaves many degrees of freedom. We can define noise in the discrete space by replacing clean tokens with masks or random tokens. We can also work in a continuous space with one-hot vectors, embeddings, or contextual representations from a pretrained encoder.
 
-Past this, we still have various choices to make regarding the inputs the model sees in addition to the noisy state; how we distribute training capacity along the noisy trajectory; and how we use this diffusion model for generation. 
+This affects how we should train the model, but still leaves some freedom. If continuous, we could use cross entropy to predict clean tokens or MSE to predict the clean representation. If discrete, we can predict clean tokens or learn a plug-in value that lets us simulate the reverse process; these need not be the same.
 
-Different methods generally take distinct approaches for addressing these design choices, and often introduce multiple novel techniques at each step. Often times, these techniques can be transferred to alternative recipes. Sometimes, they are not as transferable. But even in the case of being transferable, it is unclear whether the underlying mechanism or effectiveness will remain the same.
+Past this, we still have choices to make about the inputs the model sees in addition to the noisy state, how we distribute training capacity along the noisy trajectory, and how we use the trained model for generation.
 
-The goal of this blog and the accompanying codebase is to frame a diffusion recipe as answering three core questions: how do we represent information and corruption of information in a way the model can understand; how do we train the model to recover information from noisy inputs; and how do we actually generate new information at inference. The codebase aims at making these decisions interchangeable in terms of implementation in order to explicitly capture how combinatorial the design space truly is, and make it easier to study how different decisions along these axis interact. 
+Different methods take distinct approaches to these design choices, and often introduce several new techniques at once. Many of these techniques can be transferred to other recipes. Some cannot. And even when a technique transfers, it is unclear whether the underlying mechanism, or its effect, stays the same.
 
-## Scope: What is this Codebase? 
+The goal of this blog and the accompanying codebase is to frame a diffusion recipe as answering three core questions: how do we represent information, and the corruption of that information, in a way the model can understand; how do we train the model to recover information from noisy inputs; and how do we generate new information at inference. The codebase makes these decisions interchangeable at the implementation level. This captures how combinatorial the design space truly is, and makes it easier to study how decisions along different axes interact.
 
+This is a side project, run on an academic budget. The models are small (8 layers, width 512), the tasks are small, and most results come from a single training seed. We think small, controlled experiments are still worth running, as long as we are careful about what they can and cannot tell us. Each experiment below ends with a short note on exactly that.
 
-As hopefully emphasized by the name, this codebase does not capture all the design choices present within the DLM landscape. In fact, it captures a very narrow slice: all methods in this codebase have the following properties: 
-1. They work with **factorized** representations
-2. They do not alter the **tokenization** process
-3. The training loop is **simulation free**, except for the extra pass needed for self conditioning.
+## Scope: What is this Codebase?
 
-Below we expand on what each of these constraints mean, and what works they exclude. The exclusion is for no other reason than time -- each of the directions mentioned are important directions for DLM research and not including them is a current flaw of the codebase. 
+As the title hopefully emphasizes, this codebase does not capture every design choice in the DLM landscape. It captures a narrow slice. Every method in it has three properties:
 
-### What this Codebase and Blog Is Not
+1. It works with **factorized** representations.
+2. It does not alter the **tokenization** process.
+3. Its training loop is **simulation free**, except for the extra pass needed for self conditioning.
 
-### Factorized Representations 
+Below we explain what each constraint means and which works it excludes. They are excluded for no reason other than time. Each excluded direction is important for DLM research, and leaving it out is a current flaw of the codebase.
 
-### Tokenizer Agnostic 
+### Factorized Representations
+
+Every position in the sequence gets its own state, and the forward process corrupts each position given only its own clean token. The state can be a mask, a random token, a point on the simplex, a noisy embedding, or a point on a sphere, but it always belongs to one token. The model still sees the whole sequence; only the noise is applied per position.
+
+This rules out methods that diffuse in a compressed, sequence-level latent space, where one latent vector can describe many tokens at once [@lovelace2023latent; @meshchaninov2026cosmoscompressedsmoothlatent; @shen2026codar]. Those methods change what "one step of denoising" even means, and comparing them fairly against per-token methods needs its own protocol.
+
+{/* TODO(Patrick): core/modifiers/latent_autoencoder is a contextual latent autoencoder. Either say it is experimental and unused here, or soften the claim above. */}
+
+### Tokenizer Agnostic
+
+The tokenizer is fixed before diffusion starts. Every recipe sees the same token sequence, and the diffusion process never merges, splits, or learns tokens. This lets us swap tokenizers as an experimental variable (we do this below, from raw bytes up to a 10k-token BPE vocabulary) without changing anything else in the recipe.
+
+It rules out methods that learn their own segmentation or work on dynamic patches. The insertion and deletion modifier changes sequence length, but it inserts and deletes whole tokens from the same fixed vocabulary.
 
 ### Simulation Free
 
+Training never runs the model's own sampler. Each training example is built in closed form: sample a time, corrupt the clean sequence with the forward process, and ask the model to undo it. The one exception is self conditioning, which runs one extra forward pass to produce the feedback it trains on.
+
+This rules out distillation, consistency, and flow map methods that train on the model's own trajectories [@roos2026categoricalflowmaps; @lee2026onesteplanguagemodelingcontinuous], as well as RL-style fine-tuning. These methods matter a lot for fast sampling. They are also expensive to train, and their results depend on the base model they start from, which makes them hard to compare at this scale.
+
+### What this Codebase and Blog Is Not
+
+It is not a leaderboard. The tasks and model sizes are chosen so that a single question can be answered with a few dozen small runs, not so that any method looks its best. It is not large-scale pretraining. And it is not a faithful reproduction of every paper it borrows from: where our configs differ from a paper, the docs say so.
+
 ## The design space
+
+The figure below is a map of the parts of a recipe. The top half shows how the parts connect, split into the three questions above: the information path, the denoising task, and inference. The bottom half follows five tokens through every part, one layer at a time. Each option has a "See it in the code" button that shows where it lives in the codebase.
 
 <div className="fig-bleed">
   <iframe
@@ -62,85 +88,232 @@ Below we expand on what each of these constraints mean, and what works they excl
   ></iframe>
 </div>
 
+Switch to "Paper recipes" at the top to see how published methods fill in the map. Boxes that change across a family of recipes are highlighted. Many well-known methods differ in only one or two boxes, which is exactly what makes it tempting to swap parts between them.
+
 ## The Experimental Pipeline
- 
-I spent some time thinking about how to show what this codebase do -- if I am releasing a codebase meant to further research, it should be accompanied by some actual research. At first, I thought of doing a grid search over all the potential recipe's that can be run. I decided against it for the following reasons: 
-1. That is at least 3,000 different recipes -- and that is excluding different samplers, modifiers, and completely ignoring architectural modifications. I simply don't have the compute or patience to run that many in a reasonable amount of time. 
-2. Anyone's agent could run a massive grid search; and the idea of research being reduced to supervising agents as they run sweeps is not appealing to me.
 
-To show how this codebase could be used to ask more specific questions about the ingredients of a diffusion recipe, I thought it would make sense to do exactly that. So the next part can be considered an explanation as to how the codebase organizes experiments, as well as a showcase of some interesting results regarding self conditioning. I will first explain the core question and what we want to investigate; and then the workflow for running the experiment and interpreting the results.
+In total, this codebase supports about 3,000 recipes, not counting samplers, modifiers, and architectural changes. A grid search over all of them is simply impractical. Instead, the codebase is built for targeted experiments that vary a few design choices at a time.
 
-## Continuous Noise Schedules 
-How should we design noise schedules for cDLMs? 
+<Pipeline client:visible />
+
+The pipeline figure shows how we go from a question to an answer. First, given a question, we define a protocol: the variations of a recipe we want to compare, and the tasks we want to compare them on. Each variation is trained once, which gives us one checkpoint. Each checkpoint is then tuned over inference settings. We pick the sampler with the best validation score, and only that winner is scored on held-out test examples with fresh seeds.
+
+A large part of this approach is inspired by [@rowell2025modelfactory], specifically the way design choices are quickly translated into reliable downstream performance numbers. Given the enormous difference in scale and goal (training models versus studying diffusion methods), this project ended up being substantially different.
+
+### Training Pipeline and Supported Tasks
+
+All models in this post share one backbone: a diffusion transformer with 8 layers, width 512, and 8 heads. Unless noted, every model trains for 20,000 updates at batch size 256, with learning rate 3e-4 and 2,500 warmup steps. Where a paper gives a loss weighting or a training time distribution, we use the paper's choice.
+
+We use three tasks, each with a metric computed on generated samples rather than on the training loss:
+
+- **Sudoku (hard split):** fill in a puzzle given its clues. Metric: the share of puzzles solved exactly.
+- **text8:** unconditional character-level generation on Wikipedia text. Metric: unique valid words per sample.
+- **TinyStories:** short children's stories, with either raw bytes or a BPE vocabulary of 500 to 10,000 tokens. Metric: corpus BLEU against held-out reference stories.
+
+The codebase also includes OpenWebText (generative perplexity) and TinyGSM (math word problems), but we do not use them here.
+
+### A note on BLEU
+
+Corpus BLEU has two parts. The first counts how many word sequences in the model's continuations also appear in the real endings. The second is a brevity penalty: if the continuations are shorter overall than the real endings, the score is multiplied by a factor below one.
+
+On TinyStories, that penalty matters more than we expected. Every story is generated in a fixed-length canvas, and the model decides where to end it. Masked diffusion models end their stories early, at 76 to 92% of the real length, and the penalty takes 8 to 27% off their score. Most other runs write stories close to the real length and lose little; the exceptions are simplex without SC, the block diffusion models, and a few uniform runs. So a ranking by BLEU is partly a ranking by story length.
+
+Whether ending early should count against a model is a judgment call. So every TinyStories BLEU in this post can be shown both ways, and the switch in the figure below sets all of them at once. Where the choice changes a conclusion, the text says so. For the tokenizer ladder, we also asked a judge model to read the stories; it sides with the penalty-free ranking (see "A second opinion from a judge model" below).
+
+<BleuLength client:visible />
+
+<ExpandableSection title="Why we do not tune training settings" client:load>
+
+We keep training settings at paper defaults across methods. This is not ideal: we apply these methods to tasks the original papers did not cover, and the defaults could misrepresent an otherwise good method.
+
+The reason is cost. For diffusion models, the settings that matter most are not only the learning rate. The loss weighting and the distribution over training times also matter a lot. But changing the loss weighting changes the objective itself, so two models trained with different weightings have validation losses that measure different things. They cannot be ranked by validation loss.
+
+The only fair way to compare training settings is downstream: tune the sampler for each candidate, then compare sample quality. That turns every training run into a full round of inference tuning. A single question in this post already takes 10 to 50 training runs. Tuning training settings on top of that would multiply the cost several times over.
+
+So our claims are scoped to this protocol: paper-default training, a shared budget, and inference tuned per model on validation data. Most work at this scale also uses default training settings; the inference tuning is the part we add.
+
+</ExpandableSection>
+
+### Inference Pipeline
+
+Unless noted, every diffusion model gets 128 network evaluations (NFE) per sequence. Every sampler starts from the model's prediction of the clean tokens at each step; they differ in how they use it:
+
+- **Native** takes one step of the method's own reverse process, using the model's softmax at a tuned temperature as the clean estimate. For Gaussian diffusion, that means the expected embedding under the softmax, followed by a draw from the Gaussian reverse step. For masked diffusion, each masked position unmasks with the schedule's probability and gets a token sampled from the softmax.
+- **Native greedy** is the same step with the argmax token as the clean estimate.
+- **EB greedy** commits argmax tokens wherever the model's entropy is below a tuned bound.
+- **Renoise** draws a full clean sequence (sampled or argmax), then corrupts it again with the forward process down to the next noise level.
+
+Each sampler's own settings, such as the temperature or the entropy bound, are tuned with a small automatic search on validation data. As the next sections show, the best sampler often depends on the rest of the recipe, so tuning it per model is not optional.
+
+To give an example of how this pipeline can be used to ask more precise questions, the rest of this post works through three of them: what self conditioning does, how continuous methods spend their training time, and where depth matters in block diffusion.
+
+## Self Conditioning: What does it do?
+
+Self conditioning has emerged as a necessary part of continuous diffusion language models (cDLMs). First introduced in [@Chen_Zhang_Hinton_2023], it has proven effective across a wide range of cDLM recipes [@dieleman2022continuous; @strudel2022self; @batzolis2026towards; @yang2026continuousdiffusionscalescompetitively]. Some works have tried to remove it because of its added cost at training and inference [@davis2026design]. Others have embraced it and leaned further in [@deschenauxLoopholingAllWay2026a; @yooSelfconditionedFlowMap2026a]. Either way, there is almost no debate about whether self conditioning works. The open question is why.
+
+Several works offer reasonable answers:
+
+1. In [@pynadath2025candihybriddiscretecontinuousdiffusion], we hypothesized that self conditioning anchors the model, because discrete and continuous corruption are imbalanced.
+2. In [@yooSelfconditionedFlowMap2026a], the authors show that self-conditioned flows are equivalent to a fixed point iteration.
+3. In [@davis2026design; @shabalinWhyGaussianDiffusion2026], the authors argue that self conditioning fixes a mismatch between training and inference.
+
+These answers are fairly convincing. But it is unclear whether they capture the full picture. [@joLoopholingDiscreteDiffusion2026] shows that loopholing also improves discrete diffusion with uniform and masked corruption, and [@deschenauxLoopholingAllWay2026a] shows that self conditioning alone is a fairly strong generative method. None of the three hypotheses explains these results, since each depends on properties of continuous diffusion. If self conditioning helps discrete diffusion, where those reasons do not apply, do the theories fully explain why it works in the continuous case? We test three narrower questions below.
+
+In all of these experiments, "SC" means the model receives the expected embedding under its previous prediction.
+
+### Is self conditioning just a deeper network?
+
+Self conditioning runs the network twice during training, so a fair question is whether it only adds depth. We compare an 8-layer model with SC against a 16-layer model without it, for Gaussian, masked, and uniform corruption on all three tasks. TinyStories uses the 10k-token BPE vocabulary, and those runs come from a second, independent run on different hardware. Everything else is held fixed.
+
+The first figure puts both options on the same axes. Each mark shows how much SC and how much extra depth improve on the same 8-layer baseline. Marks above the diagonal are cases where SC beats doubling the depth.
+
+<HeadToHead client:visible />
+
+For Gaussian corruption, the answer is clear. SC beats 16 layers on every task: 92.8% of Sudoku puzzles solved against 84.6%, 14.4 valid words against 13.7 on text8, and 7.9 BLEU against 7.2 on TinyStories (7.9 against 7.3 without the length penalty). Doubling depth helps a Gaussian model, but SC helps more, without adding a single parameter.
+
+The discrete methods are mixed, and the next figure shows why it is worth looking at each cell rather than the average. Each row is one method on one task; the grey ring is the 8-layer baseline.
+
+<Dumbbells client:visible />
+
+Uniform corruption mostly follows the Gaussian pattern: SC beats depth on Sudoku (94.3% against 89.7%) and on TinyStories (7.4 against 6.7 BLEU, or 7.7 against 7.3 without the length penalty). Masked corruption does not. On Sudoku, the 8-layer masked model already solves 96.9% of puzzles, and SC drops it to 93.0%. On TinyStories, all three masked models land within seed noise of each other under standard BLEU. Without the length penalty, the 16-layer masked model is clearly ahead: 9.0 against 7.8 for both 8-layer models. It writes the shortest stories of the three (78% of the real length), and the penalty hides its lead.
+
+text8 is the odd one out: SC is the worst option for both discrete methods. The gap grid below collects every cell in one place, which makes the text8 column stand out.
+
+<GapGrid client:visible />
+
+**How sure are we?** The Gaussian result is solid: the gap is large and holds on all three tasks. The discrete results are suggestive at best. They rest on one training seed, and several of the gaps are small.
+
+{/* TODO(Patrick): on Sudoku and text8, several SC runs were trained separately from their 8- and 16-layer rivals. Confirm the setups match, or rerun them together. */}
+
+### Does self conditioning change how the model should be sampled?
+
+The text8 result looks like SC hurting discrete models. The sampler tells a different story. Every model above was tuned with all five samplers, and the next figure shows which one won for each model.
+
+<SamplerChoice client:visible />
+
+On text8, renoising wins for every Gaussian, masked, and uniform model without SC. With SC, renoising stops working: the masked SC model drops to under 1 valid word per sample with renoising, compared with 13.2 with the native sampler. So the SC models fall back on the native sampler, while their no-SC rivals keep the renoising boost.
+
+If we restrict every model to the native sampler, the text8 picture flips. On validation, SC beats both the 8- and 16-layer masked models (13.2 against 12.2 and 12.8), and lands between them for uniform (14.3 against 13.8 and 14.5). In other words, much of the "SC hurts discrete models" result on text8 is really "SC models cannot use the renoising sampler."
+
+We do not yet know why. One guess is that renoising throws away the noisy state the SC feedback was built from, so the feedback no longer matches the state the model sees. That is untested.
+
+**How sure are we?** The sampler flip is clear in the validation numbers, but it comes from one task and one seed. It is a good reason to never compare SC and no-SC models under a single fixed sampler.
+
+### Does the tokenizer change the picture?
+
+{/* MOCKUP: tokenizer ladder. Data in src/data/vocab_ladder.json (portable-v2-mi210 + ladder-nosc archives). */}
+
+Most language models use subword tokenizers, while most small diffusion experiments use characters or bytes. A mechanism that depends on how hard it is to identify a noisy token could easily change with vocabulary size. So we repeat the comparison on TinyStories with BPE vocabularies of 260 (bytes), 500, 1k, 5k, and 10k tokens, with and without SC. An autoregressive (AR) model of the same size serves as a reference, and every model is tuned with the same five samplers.
+
+<VocabLadder client:visible />
+
+The ladder shows four things:
+
+- **SC helps at every vocabulary size.** With the native sampler, SC raises all 15 method and vocabulary cells. The gain is largest at small vocabularies: for Gaussian, it is +1.9 BLEU at 260 tokens and +0.4 at 10k.
+- **Without SC, larger vocabularies help.** With the native sampler, all three methods gain 1.0 to 1.3 BLEU from 260 to 10k tokens. With SC, Gaussian and uniform stay flat, and masked still gains 0.9. (A judge model disagrees: it sees every method improve with vocabulary size; see below.)
+- **The best sampler depends on the method.** Gaussian needs sampled clean estimates: EB greedy scores near zero, and greedy renoising trails far behind. Masked does best with native and loses 0.5 to 1.3 BLEU with sampled renoising. Uniform is the only method where EB greedy works, and it wins 5 of the 10 uniform cells.
+- **AR still leads.** It sits 0.9 to 1.5 BLEU above the best diffusion model at every vocabulary size.
+
+These bullets use validation BLEU with the length penalty, because that is what the samplers were tuned on. The chosen sampler's test score can also be shown without the penalty (**Compare methods → Chosen · test**), and two things change there. Masked, which writes the shortest stories, becomes the strongest diffusion method in 7 of the 10 vocabulary-and-SC comparisons. And the gap to AR shrinks: masked with SC comes within 0.1 BLEU of AR at 260 tokens and passes it at 1k (9.2 against 9.1).
+
+The first two points fit together. SC helps most where the tokenizer helps least, as if SC and a larger vocabulary are partly buying the same thing. We find this the most interesting thread in the post, and also the one we are least able to explain.
+
+**How sure are we?** The direction of the SC effect is solid: it holds in all 15 cells. The exact sizes come from one training seed, and the TinyStories gaps between methods are often within half a BLEU point.
+
+### A second opinion from a judge model
+
+BLEU compares word sequences with one real ending, and as the note on BLEU shows, it also rewards length. It cannot tell a story that wanders off from one that stays on track. So we tried a different kind of evaluator: [Jev](https://docs.typesafe.ai/concepts/system-one), a model from TypeSafe that answers typed questions (yes or no, pick one of several, place on a scale) with probabilities instead of writing text.
+
+We were mostly playing with it as a tool for evaluating language, and two things made it useful. First, it lets us break "is this a good story?" into narrow questions and ask each one separately. Second, it is fast and cheap enough to ask a lot of them: about 160,000 judgments of the ladder's test stories (512 per model) took under 15 minutes and cost under $10. We asked:
+
+- **Best of three.** Given an opening and three endings from Gaussian, masked, and uniform diffusion (all with SC, or all without), which ending is best for coherence and staying on topic?
+- **SC or not.** The same method with and without SC: which ending is better?
+- **Real or model.** The model's ending next to the real one: which did the original author write? 50% would mean Jev cannot tell them apart.
+- **Ratings.** Coherence and fluency on a fixed scale. The real endings are rated the same way, so scores can be read relative to them.
+- **Garbled words.** One yes or no question per distinct word: is it misspelled, made up, a fragment, or two words fused?
+
+Every pairwise question was asked twice, with the order of the options swapped, and the answers averaged.
+
+<JevLadder client:visible />
+
+Jev's view of the ladder:
+
+- **It agrees with BLEU without the length penalty, not with standard BLEU.** Its pick for the best method matches the penalty-free ranking in 7 of the 10 vocabulary-and-SC comparisons, and the standard ranking in 2. Masked comes out first or close to it; Gaussian comes out last.
+- **AR is far ahead, by much more than BLEU shows.** Jev mistakes AR's endings for the original author's 34 to 45% of the time, against 9 to 20% for the diffusion models. Head to head, a diffusion model beats AR at most 12% of the time.
+- **SC helps.** Jev prefers the SC version of a model 63 to 85% of the time, in every cell but one (uniform at 1k, which looks like a weak checkpoint on every measure).
+- **Every method improves with vocabulary size.** Coherence rises and garbled words mostly disappear from 5k tokens up.
+- **Gaussian without SC falls further behind AR as the vocabulary grows.** Relative to AR at the same vocabulary size, the rate at which Jev mistakes it for the original author drops from 0.31 to 0.22 (**÷ AR at same vocab**). It is the only method that loses ground. Its errors also change form: at 260 tokens it writes 6.4 garbled words per 100, at 10k only 0.5, but the words it picks are often wrong in context. SC removes the decline: Gaussian with SC stays between 0.28 and 0.35 of AR's rate.
+
+**How sure are we?** Jev is one judge, and we have not checked it against human ratings. Some of its yes or no questions misfire on the real stories: it flags 32% of real endings as repetitive, so we do not report that flag. When it picks among five or more options, it slightly favors the middle position, so we only report two- and three-way comparisons. And every model here is still one training run. We read these results as a second opinion that points the same way as BLEU without the length penalty, not as ground truth.
+
+## Continuous Noise Schedules
+
+How should we design noise schedules for cDLMs? For masked diffusion, the schedule mostly changes the variance of training, not the objective [@Sahoo_Arriola_Schiff_Gokaslan_Marroquin_Chiu_Rush_Kuleshov_2024]. For continuous methods, the schedule decides how much training time goes to each noise level, and a bad choice can waste most of it.
 
 {/* MOCKUP: CDCD schedule figures. Data in src/data/cdcd_schedules.json and cdcd_performance.json. */}
 
-*Draft mockup.* Each pure continuous recipe here (Gaussian embeddings, simplex, spherical, vMF) learns its noise schedule with CDCD [@dieleman2022continuous]. We check three things on the final checkpoints: that the learned clock does its job, what the clocks look like, and how each method performs with and without self conditioning. We focus on text8 and TinyStories. The schedule figures use byte-level TinyStories checkpoints; the performance figure uses a 10k-token BPE run, which is closer to how real language models tokenize. The Sudoku models overfit their training puzzles, so their clocks do not match held-out loss; we keep them behind a toggle for completeness.
+Every pure continuous recipe here (Gaussian embeddings, simplex, spherical, vMF) learns its noise schedule with CDCD [@dieleman2022continuous]. CDCD fits the expected loss as a function of noise level and samples training times through its inverse, so that every stretch of the warped time $u$ carries the same share of the loss. We check three things on the final checkpoints: whether the learned clock does its job, what the clocks look like, and how each method performs with and without SC. The schedule figures use text8 and byte-level TinyStories checkpoints.
+
+The first check is simple. If the clock is right, measured loss should climb in a straight line in $u$.
 
 <CdcdLinearity client:visible />
 
+On both text tasks, it does. A straight line explains at least 99.8% of the variation in the measured loss, on training data and on held-out data, for every method. On Sudoku, it does not, even on training data. The Sudoku models overfit their training puzzles, so their clocks do not describe held-out loss. We keep them behind a toggle for completeness.
+
+Next, the clocks themselves. Each line below is the schedule CDCD learned for one method on one task.
+
 <CdcdSchedules client:visible />
+
+The raw noise parameters are hard to compare across methods, since a noise level of 0.5 means something different for a Gaussian embedding than for a point on the simplex. So the next figure measures corruption in two units every method shares: how often the nearest embedding is the wrong token, and where the true token ranks among all candidates.
 
 <CdcdCorruption client:visible />
 
+The two measures disagree sharply. On text8, the nearest token is already wrong more than half the time within the first 12% of the learned clock. Yet the true token's rank is still only halfway to chance at about 75% of the clock for Gaussian, spherical, and vMF, and at about 95% for simplex. On byte-level TinyStories, the gap is even wider. So the learned clocks spend most of training at noise levels where the token's identity is gone, but its rank is not.
+
+This matches the picture of token identifiability from CANDI [@pynadath2025candihybriddiscretecontinuousdiffusion], where Gaussian noise destroys a token's identity and its rank at very different rates. Here, the learned clocks arrive at that split on their own. SC barely changes the clocks on the text tasks: the point where rank information runs out moves by about 0.02 in $u$.
+
+Last, performance. Each pair below is the same 8-layer model and the same learned clock, with and without SC.
+
 <CdcdPerformance client:visible />
 
-## Poor-man's Contextual Representation
-Can we define the corruption process to entangle positions across the sequence? 
+SC helps every continuous method on every task. The largest gains are on text8 for spherical (9.6 to 13.1 valid words) and vMF (10.0 to 13.2). On TinyStories BPE, SC helps simplex most under standard BLEU, from 6.3 to 8.5. Most of that jump is length: without SC, simplex ends its stories at 80% of the real length, and without the length penalty the gain shrinks to 8.1 to 8.5. Simplex with SC scores 8.5 either way. That makes it the strongest diffusion model here, ahead of spherical with SC (8.3, or 8.5 without the penalty) and Gaussian with SC (7.9). The autoregressive model of the same size scores 8.9 (9.0 without the penalty).
 
+Put together with the clocks, this is a little puzzling. SC improves every method a lot while leaving its learned clock almost unchanged. Whatever SC fixes, it does not show up as a change in where the loss is spent.
 
+**How sure are we?** The clock checks on text are solid. The performance gains are large compared with seed noise and hold across tasks, but each comes from one training seed. The Sudoku numbers should not be read at all.
 
 ## Block Diffusion: Scale the Encoder or the Decoder?
 
 {/* MOCKUP: block diffusion figure. Data in src/data/block_scaling.json (portable-v2-mi210 snapshot). */}
 
-*Draft mockup.* Block diffusion generates a sequence one block at a time. Each block is denoised while the model reads the blocks already written. Ordinary block diffusion [@arriola2025block] uses one transformer for both jobs. E2D2 [@arriola2025e2d2] splits them: an encoder reads the clean context, and a decoder denoises the current block. The encoder runs once per block. The decoder runs at every denoising step. So the two sides have very different costs, and we can ask which one is worth making deeper.
+Block diffusion generates a sequence one block at a time. Each block is denoised while the model reads the blocks already written. Ordinary block diffusion [@arriola2025block] uses one transformer for both jobs. E2D2 [@arriola2025e2d2] splits them: an encoder reads the clean context, and a decoder denoises the current block. The encoder runs once per block, while the decoder runs at every denoising step. So the two sides have very different costs, and we can ask which one is worth making deeper.
 
 The design map above shows how the weights are split: pick block diffusion, then **Weights → Encoder + decoder (E2D2)** under Sequence modifiers.
 
-We train E2D2 with the decoder fixed at 8 layers and the encoder at 1, 2, 4 or 8, and with the encoder fixed at 8 and the decoder at 1, 2, 4 or 8. We also train a model with no encoder at all, where the decoder reads the raw context embeddings, and ordinary block diffusion with one shared 8-layer transformer.
+We train E2D2 with the decoder fixed at 8 layers and the encoder at 1, 2, 4, or 8, and with the encoder fixed at 8 and the decoder at 1, 2, 4, or 8. We also train a model with no encoder at all, where the decoder reads the raw context embeddings, and ordinary block diffusion with one shared 8-layer transformer. That is 9 models per task and 27 in total, which took about 233 GPU hours of training (6 to 14 hours per run).
 
 <BlockEncDec client:visible />
 
-What the runs show so far:
+The runs show five things:
 
-- **Decoder depth matters.** On text8, going from 1 to 8 decoder layers raises the score from 5.6 to 9.8. On TinyStories it rises from 6.2 to 7.0, with most of the gain by 4 layers.
+- **Decoder depth matters.** On text8, going from 1 to 8 decoder layers raises the score from 5.6 to 9.8. On TinyStories, it rises from 6.2 to 7.0, with most of the gain by 4 layers (7.7 to 8.8 without the length penalty, with all of the gain by 2 layers).
 - **Encoder depth does not.** With an 8-layer decoder, 1 to 8 encoder layers stay within seed noise on both tasks. On text8, even no encoder at all scores the same.
-- **One encoder layer is enough here.** On TinyStories, the first encoder layer helps over raw embeddings (6.5 to 7.0). Layers after that add nothing.
-- **Splitting does not beat sharing.** One shared 8-layer transformer matches E2D2 8/8 on both tasks, with half the layers.
-- **Encoder layers are cheap at inference, decoder layers are not.** Inference time barely changes with encoder depth, but roughly doubles from 1 to 8 decoder layers.
+- **One encoder layer is enough here.** On TinyStories, the first encoder layer helps over raw embeddings (6.5 to 7.0, or 7.8 to 8.7 without the length penalty). Layers after that add nothing.
+- **Splitting does not beat sharing, at least by standard BLEU.** One shared 8-layer transformer matches E2D2 8/8 on both tasks, with half the layers. On TinyStories this depends on the metric: the shared model writes longer stories than any E2D2 model (88% of the real length against 79 to 82%), and without the length penalty E2D2 8/8 is clearly ahead (8.8 against 7.9).
+- **Encoder layers are cheap at inference; decoder layers are not.** Inference time barely changes with encoder depth, but more than doubles from 1 to 8 decoder layers on TinyStories (18 to 44 seconds).
 
-## Self Conditioning: What does it do? 
+At this scale, the practical advice is simple. Put the layers in the decoder, keep the encoder shallow, and expect a single shared transformer to do just as well. The encoder only needs to summarize context that is already clean, which may be an easy job at these sequence lengths.
 
-Self conditioning has emerged as a necessary part of continuous diffusion language models (cDLMs). First introduced in [@Chen_Zhang_Hinton_2023], it was shown to be generally effective across a wide range of different cDLM recipes [@dieleman2022continuous; @strudel2022self; @batzolis2026towards; @yang2026continuousdiffusionscalescompetitively]. Some works have attempted to get rid of self conditioning due to its added cost at training and added cost at inference [@davis2026design]. Other works have embraced self conditioning and leaned further into it [@deschenauxLoopholingAllWay2026a; @yooSelfconditionedFlowMap2026a]. Regardless, there is almost no debate as to the effectiveness of self conditioning. 
+**How sure are we?** The decoder trend is solid: the gaps are far larger than seed noise. The encoder result is suggestive. These block models were tuned with the native samplers only, come from one training seed, and use short sequences. Longer contexts could easily give the encoder more to do. The Sudoku block models barely learned the task, so we leave them out of every claim.
 
-There have been many works posing reasonable answers to this exact question. We summarize a few of them below. 
-1. In [@pynadath2025candihybriddiscretecontinuousdiffusion], we hypothesized that self conditioning acted as anchoring for the model, due to the imbalance between discrete and continuous corruption. 
-2. In [@yooSelfconditionedFlowMap2026a], they show that self conditioned flows are equivalent to a fixed point iteration. 
-3. In [@davis2026design; @shabalinWhyGaussianDiffusion2026], they hypothesize that self conditioning alleviates an inference-training mismatch. 
+## Takeaways
 
-These answers are fairly convincing. However, it is unclear whether these capture the full picture. For instance, [@joLoopholingDiscreteDiffusion2026] demonstrates that loopholing also improves discrete diffusion models based on uniform and masked corruption, and [@deschenauxLoopholingAllWay2026a] shows that self conditioning on its own is a fairly performant generative method. All three hypothesis do not explain these latter results as they are dependent on properties of continuous diffusion. If self conditioning helps in discrete diffusion, where these reasons do not apply, then do these theories fully explain why self conditioning works in the continuous case? We articulate a few questions below. 
+Three of the results above changed how we think about these models:
 
-{/* MOCKUP: SC vs depth figures. Data in src/data/sc_depth_results.json (from candi docs/handoffs/performance-index-2026-11-01.csv). */}
+- Self conditioning is not just a deeper network, at least for Gaussian corruption. It beats doubling the depth on every task.
+- Comparing two recipes under one fixed sampler can reverse the result. SC models and no-SC models want different samplers.
+- Learned continuous clocks spend most of training where token identity is gone but rank is not, and SC barely moves them.
 
-### Is self conditioning just a deeper network?
+Each of these took a few dozen small training runs, and each leaves an open question we cannot yet answer. That is the kind of result the codebase is built for: cheap enough to run on an academic budget, controlled enough to trust within its scope, and specific enough to point at the next experiment.
 
-*Draft mockup.* Self conditioning runs the network twice in training, so a fair question is whether it only adds depth. We compare an 8-layer model with SC against a 16-layer model without it, for Gaussian, masked and uniform corruption on Sudoku, text8 and TinyStories. For TinyStories we use a 10k-token BPE vocabulary rather than raw bytes, since most language models use subword tokenizers. Those runs come from a second, independent run on different hardware. Everything else is held fixed: width 512, 20k updates, 128 NFE. Each model uses whichever sampler scored best on validation.
-
-<HeadToHead client:visible />
-
-<Dumbbells client:visible />
-
-<GapGrid client:visible />
-
-### Does self conditioning change how the model should be sampled?
-
-<SamplerChoice client:visible />
-
-
-### Training Pipeline and Supported Tasks
-
-### Inference Pipeline 
-
-
-To give an example as to how this codebase can be used to ask more precise questions, 
+{/* TODO(Patrick): add the link to the renamed repository and the commit these results come from. */}

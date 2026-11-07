@@ -1376,7 +1376,14 @@
      }
     }
    ],
-   "renoise_tried": true
+   "renoise_tried": true,
+   "score_nobp": 6.8119,
+   "seeds_nobp": [
+    6.8149,
+    6.809
+   ],
+   "bp": 1.0,
+   "len_ratio": 1.0272
   },
   {
    "task": "tinystories",
@@ -1449,7 +1456,14 @@
      }
     }
    ],
-   "renoise_tried": true
+   "renoise_tried": true,
+   "score_nobp": 7.327,
+   "seeds_nobp": [
+    7.2876,
+    7.3665
+   ],
+   "bp": 0.9795,
+   "len_ratio": 0.9797
   },
   {
    "task": "tinystories",
@@ -1522,7 +1536,14 @@
      }
     }
    ],
-   "renoise_tried": true
+   "renoise_tried": true,
+   "score_nobp": 7.9335,
+   "seeds_nobp": [
+    8.1138,
+    7.7531
+   ],
+   "bp": 0.9911,
+   "len_ratio": 0.9943
   },
   {
    "task": "tinystories",
@@ -1595,7 +1616,14 @@
      }
     }
    ],
-   "renoise_tried": true
+   "renoise_tried": true,
+   "score_nobp": 7.8328,
+   "seeds_nobp": [
+    7.9908,
+    7.6748
+   ],
+   "bp": 0.8518,
+   "len_ratio": 0.8618
   },
   {
    "task": "tinystories",
@@ -1668,7 +1696,14 @@
      }
     }
    ],
-   "renoise_tried": true
+   "renoise_tried": true,
+   "score_nobp": 9.0293,
+   "seeds_nobp": [
+    9.2743,
+    8.7843
+   ],
+   "bp": 0.7494,
+   "len_ratio": 0.7761
   },
   {
    "task": "tinystories",
@@ -1741,7 +1776,14 @@
      }
     }
    ],
-   "renoise_tried": true
+   "renoise_tried": true,
+   "score_nobp": 7.7618,
+   "seeds_nobp": [
+    7.7315,
+    7.7921
+   ],
+   "bp": 0.89,
+   "len_ratio": 0.8957
   },
   {
    "task": "tinystories",
@@ -1814,7 +1856,14 @@
      }
     }
    ],
-   "renoise_tried": true
+   "renoise_tried": true,
+   "score_nobp": 7.4531,
+   "seeds_nobp": [
+    7.7938,
+    7.1125
+   ],
+   "bp": 0.8894,
+   "len_ratio": 0.8952
   },
   {
    "task": "tinystories",
@@ -1887,7 +1936,14 @@
      }
     }
    ],
-   "renoise_tried": true
+   "renoise_tried": true,
+   "score_nobp": 7.2678,
+   "seeds_nobp": [
+    7.3553,
+    7.1803
+   ],
+   "bp": 0.9155,
+   "len_ratio": 0.9189
   },
   {
    "task": "tinystories",
@@ -1960,7 +2016,14 @@
      }
     }
    ],
-   "renoise_tried": true
+   "renoise_tried": true,
+   "score_nobp": 7.7317,
+   "seeds_nobp": [
+    7.4711,
+    7.9924
+   ],
+   "bp": 0.953,
+   "len_ratio": 0.954
   }
  ]
 }

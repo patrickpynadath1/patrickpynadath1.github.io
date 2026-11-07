@@ -6,13 +6,15 @@
 import { useMemo, useState } from "react";
 import { P, withVizTheme } from "./vizTheme.js";
 import DATA from "../data/sc_depth_results.json";
+import { useBleuMode, BleuPills, withMode, metricName } from "./bleuMode.jsx";
 
 export const FONT = "'JetBrains Mono', 'Fira Code', 'SF Mono', monospace";
 
 // ─── Data ─────────────────────────────────────────────────────────────────────
 const IDX = {};
 for (const r of DATA.rows) IDX[`${r.task}|${r.method}|${r.arm}`] = r;
-const get = (task, method, arm) => IDX[`${task}|${method}|${arm}`];
+// mode "nobp" swaps TinyStories test BLEU for BLEU without the length penalty.
+const get = (task, method, arm, mode) => withMode(IDX[`${task}|${method}|${arm}`], mode);
 const rel = (v, base) => (v / base - 1) * 100;
 
 const METHODS = [
@@ -26,7 +28,7 @@ const TASKS = [
   { id: "text8", label: "text8", metric: "unique valid words / sample", fmt: (v) => v.toFixed(1),
     domain: [0, 18], ticks: [0, 3, 6, 9, 12, 15, 18], tick: (v) => `${v}` },
   { id: "tinystories", label: "TinyStories BPE", metric: "reference BLEU", fmt: (v) => v.toFixed(2),
-    domain: [4, 9], ticks: [4, 5, 6, 7, 8, 9], tick: (v) => `${v}` },
+    domain: [4, 10], ticks: [4, 5, 6, 7, 8, 9, 10], tick: (v) => `${v}` },
 ];
 const ARMS = [
   { id: "none", label: "8 layers", long: "8 layers, no SC", color: () => P.dim2 },
@@ -103,6 +105,7 @@ const POLICY = {
 // x = gain from doubling depth, y = gain from SC, both vs the 8-layer no-SC
 // model. Signed square-root axes so small and large effects are both readable.
 function HeadToHeadInner() {
+  const [mode] = useBleuMode();
   const [hover, setHover] = useState(null);
   const [focus, setFocus] = useState(null);
 
@@ -117,15 +120,15 @@ function HeadToHeadInner() {
   const points = useMemo(() => {
     const out = [];
     for (const t of TASKS) for (const m of METHODS) {
-      const base = get(t.id, m.id, "none").score;
+      const base = get(t.id, m.id, "none", mode).score;
       out.push({
         key: `${t.id}|${m.id}`, task: t.id, method: m.id,
-        dx: rel(get(t.id, m.id, "depth").score, base),
-        dy: rel(get(t.id, m.id, "sc").score, base),
+        dx: rel(get(t.id, m.id, "depth", mode).score, base),
+        dy: rel(get(t.id, m.id, "sc", mode).score, base),
       });
     }
     return out;
-  }, []);
+  }, [mode]);
 
   const wins = points.filter((p) => p.dy > p.dx).length;
   const hp = hover && points.find((p) => p.key === hover);
@@ -137,7 +140,8 @@ function HeadToHeadInner() {
       kicker="Figure A · the headline"
       title="Does self conditioning buy what doubling depth buys?"
       subtitle="Each mark is one corruption type on one task. Both axes show the change over the same 8-layer model without SC. Above the diagonal, 8 layers + SC beats 16 layers."
-      note="Final held-out scores. Each model uses the sampler that scored best on validation. Axes use a signed square-root scale. One training seed per cell. TinyStories uses a 10k-token BPE vocabulary and comes from a second, independent run (AMD MI210, new data splits); Sudoku and text8 come from the original run."
+      controls={<BleuPills />}
+      note="The switch changes only the TinyStories marks. Final held-out scores. Each model uses the sampler that scored best on validation. Axes use a signed square-root scale. One training seed per cell. TinyStories uses a 10k-token BPE vocabulary and was trained separately from Sudoku and text8, on different GPUs."
     >
       <svg viewBox="0 0 720 440" style={{ width: "100%", height: "auto", display: "block", fontFamily: FONT }}>
         <polygon points={`${L},${T + S} ${L},${T} ${L + S},${T}`} fill={rgba(P.candi, 0.07)} />
@@ -190,12 +194,12 @@ function HeadToHeadInner() {
           <rect y={198} width={238} height={190} rx={10} fill={P.inset} stroke={P.line} />
           {hp ? (() => {
             const m = methodOf(hp.method), t = taskOf(hp.task);
-            const rows = ARMS.map((a) => ({ a, r: get(hp.task, hp.method, a.id) }));
+            const rows = ARMS.map((a) => ({ a, r: get(hp.task, hp.method, a.id, mode) }));
             const base = rows[0].r.score;
             return (
               <g transform="translate(14, 222)">
                 <text fill={m.color()} fontSize={13} fontWeight={700}>{m.label} <tspan fill={P.text}>· {t.label}</tspan></text>
-                <text y={17} fill={P.dim} fontSize={10}>{t.metric}</text>
+                <text y={17} fill={P.dim} fontSize={10}>{t.id === "tinystories" ? metricName(mode) : t.metric}</text>
                 {rows.map(({ a, r }, i) => (
                   <g key={a.id} transform={`translate(0, ${44 + i * 34})`}>
                     <circle cx={4} cy={-4} r={4} fill={a.color()} />
@@ -228,6 +232,7 @@ function HeadToHeadInner() {
 
 // ─── Figure B: raw scores as dumbbells ────────────────────────────────────────
 function DumbbellsInner() {
+  const [mode] = useBleuMode();
   const [task, setTask] = useState("sudoku_hard");
   const t = taskOf(task);
   const L = 112, R = 560, T = 34, rowH = 70;
@@ -239,8 +244,11 @@ function DumbbellsInner() {
       kicker="Figure B · the raw scores"
       title="Where each model lands, per task"
       subtitle="Grey ring: 8 layers. Gold diamond: 16 layers. Green dot: 8 layers + SC. Thin bars show the two evaluation seeds."
-      controls={<Pills value={task} onChange={setTask} options={TASKS.map((tk) => ({ id: tk.id, label: tk.label }))} />}
-      note={`Metric: ${t.metric}. Gains on the right are relative to the 8-layer model. Hover a marker for the sampler it used.`}
+      controls={<>
+        <Pills value={task} onChange={setTask} options={TASKS.map((tk) => ({ id: tk.id, label: tk.label }))} />
+        {task === "tinystories" && <BleuPills />}
+      </>}
+      note={`Metric: ${task === "tinystories" ? metricName(mode) : t.metric}. Gains on the right are relative to the 8-layer model. Hover a marker for the sampler it used.`}
     >
       <svg viewBox={`0 0 720 ${H}`} style={{ width: "100%", height: "auto", display: "block", fontFamily: FONT }}>
         {t.ticks.map((v) => (
@@ -253,7 +261,7 @@ function DumbbellsInner() {
         <text x={R + 110} y={T - 14} fill={P.dim} fontSize={9.5} letterSpacing="0.08em">+ SC</text>
         {METHODS.map((m, i) => {
           const cy = T + i * rowH + rowH / 2 - 10;
-          const r = Object.fromEntries(ARMS.map((a) => [a.id, get(task, m.id, a.id)]));
+          const r = Object.fromEntries(ARMS.map((a) => [a.id, get(task, m.id, a.id, mode)]));
           const vals = ARMS.map((a) => r[a.id].score);
           const lo = Math.min(...vals), hi = Math.max(...vals);
           const gd = rel(r.depth.score, r.none.score), gs = rel(r.sc.score, r.none.score);
@@ -292,11 +300,12 @@ function DumbbellsInner() {
 
 // ─── Figure C: the gap as a grid ──────────────────────────────────────────────
 function GapGridInner() {
+  const [mode] = useBleuMode();
   const [hover, setHover] = useState(null);
   const cw = 150, ch = 58, gx = 150, T = 30;
   const cells = [];
   METHODS.forEach((m, mi) => TASKS.forEach((t, ti) => {
-    const sc = get(t.id, m.id, "sc"), d = get(t.id, m.id, "depth");
+    const sc = get(t.id, m.id, "sc", mode), d = get(t.id, m.id, "depth", mode);
     cells.push({ key: `${m.id}|${t.id}`, m, t, sc, d, v: rel(sc.score, d.score), x: gx + ti * cw, y: T + mi * ch });
   }));
   const h = hover && cells.find((c) => c.key === hover);
@@ -306,6 +315,7 @@ function GapGridInner() {
       kicker="Figure C · the gap at a glance"
       title="How much better is 8 layers + SC than 16 layers?"
       subtitle="Each cell is SC's score relative to the 16-layer score. Green means SC is ahead; gold means depth is ahead."
+      controls={<BleuPills />}
     >
       <svg viewBox="0 0 720 250" style={{ width: "100%", height: "auto", display: "block", fontFamily: FONT }}>
         {TASKS.map((t, ti) => (
@@ -396,7 +406,7 @@ function SamplerChoiceInner() {
         <Pills value={view} onChange={setView} options={[{ id: "map", label: "Winner map" }, { id: "grid", label: "All samplers" }]} />
         {view === "grid" && <Pills value={task} onChange={setTask} options={TASKS.map((tk) => ({ id: tk.id, label: tk.label }))} />}
       </>}
-      note="Lead = winner's validation score over the runner-up sampler's. Small leads (under 2%, in yellow) mean the choice is close to a coin flip. Renoising sends committed tokens back through the forward process during generation. TinyStories: BPE-10k run on MI210 GPUs."
+      note="Lead = winner's validation score over the runner-up sampler's. Small leads (under 2%, in yellow) mean the choice is close to a coin flip. Renoising sends committed tokens back through the forward process during generation. TinyStories uses a 10k-token BPE vocabulary; its numbers here are standard BLEU, since the validation samples needed to recompute them without the length penalty were not kept."
     >
       {stat}
       {view === "map" ? <WinnerMap hover={hover} setHover={setHover} /> : <SamplerGrid task={task} />}

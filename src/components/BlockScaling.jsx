@@ -6,6 +6,7 @@ import { useMemo, useState } from "react";
 import { P, withVizTheme } from "./vizTheme.js";
 import { FONT, Frame, Pills, rgba } from "./SelfCondDepth.jsx";
 import DATA from "../data/block_scaling.json";
+import { useBleuMode, BleuPills, withMode, metricName } from "./bleuMode.jsx";
 
 const TASKS = [
   { id: "text8", label: "text8", metric: "unique valid words / sample", fmt: (v) => v.toFixed(2), tick: (v) => v.toFixed(0) },
@@ -18,13 +19,11 @@ const POLICY = { native: "native", native_greedy: "native greedy" };
 const SERIES = [
   { id: "dec", label: "Scale the decoder", sub: "encoder fixed at 8", color: () => P.highlight },
   { id: "enc", label: "Scale the encoder", sub: "decoder fixed at 8", color: () => P.duo },
-  { id: "kv", label: "Encoder-K/V mixture", sub: "reads all encoder layers", color: () => P.accent },
 ];
 
 const describe = (r) => {
   if (r.kind === "shared") return "Shared transformer, 8 layers";
   if (r.kind === "raw") return "No encoder (raw context) · decoder 8";
-  if (r.kind === "kv") return `K/V mixture · encoder ${r.enc} · decoder ${r.dec}`;
   return `Encoder ${r.enc} · decoder ${r.dec}`;
 };
 
@@ -40,18 +39,18 @@ function niceTicks(lo, hi, n = 5) {
 const move = (x, y) => ({ transform: `translate(${x}px, ${y}px)`, transition: "transform 700ms cubic-bezier(.2,.8,.2,1)" });
 
 function BlockEncDecInner() {
+  const [mode] = useBleuMode();
   const [task, setTask] = useState("text8");
   const [view, setView] = useState("layers");
   const [hover, setHover] = useState(null);
   const T0 = TASKS.find((t) => t.id === task);
 
-  const rows = useMemo(() => DATA.rows.filter((r) => r.task === task && r.status === "completed"), [task]);
+  const rows = useMemo(() => DATA.rows.filter((r) => r.task === task && r.status === "completed").map((r) => withMode(r, mode)), [task, mode]);
   const pending = DATA.rows.filter((r) => r.task === task && r.status !== "completed");
   const shared = rows.find((r) => r.kind === "shared");
   // E2D2 8/8 is the top of both scaling paths.
   const dec = rows.filter((r) => r.kind === "e2d2" && r.enc === 8).sort((a, b) => a.dec - b.dec);
   const enc = rows.filter((r) => (r.kind === "e2d2" && r.dec === 8) || r.kind === "raw").sort((a, b) => a.enc - b.enc);
-  const kv = rows.filter((r) => r.kind === "kv");
 
   const L = 58, T = 16, W = 430, H = 300;
   const vals = rows.flatMap((r) => [r.score, ...r.seeds]);
@@ -88,8 +87,8 @@ function BlockEncDecInner() {
         {shape === "diamond"
           ? <rect x={-5} y={-5} width={10} height={10} transform="rotate(45)" fill={P.bg} stroke={color} strokeWidth={2} />
           : <circle r={on ? 6.5 : 5} fill={r.kind === "raw" ? P.bg : color} stroke={color} strokeWidth={2} />}
-        {view === "time" && (side === "dec" || r.kind === "kv") && (
-          <text x={8} y={-7} fill={color} fontSize={9.5}>{r.kind === "kv" ? `K/V enc ${r.enc}` : `dec ${r.dec}`}</text>
+        {view === "time" && side === "dec" && (
+          <text x={8} y={-7} fill={color} fontSize={9.5}>{`dec ${r.dec}`}</text>
         )}
       </g>
     );
@@ -103,6 +102,7 @@ function BlockEncDecInner() {
       controls={<>
         <Pills value={task} onChange={(v) => { setTask(v); setHover(null); }} options={TASKS.map((t) => ({ id: t.id, label: t.label }))} />
         <Pills value={view} onChange={setView} options={[{ id: "layers", label: "By layer count" }, { id: "time", label: "By inference time" }]} />
+        {task === "tinystories" && <BleuPills />}
       </>}
       note={<>
         Final test scores on 256 held-out examples. Bars span the two evaluation seeds; there is one training seed, so gaps smaller than a bar are noise.
@@ -132,7 +132,7 @@ function BlockEncDecInner() {
         <text x={L + W / 2} y={T + H + 34} fill={P.muted} fontSize={10.5} textAnchor="middle">
           {view === "time" ? "inference time for 256 samples (lower is cheaper)" : "layers in the side being scaled (other side fixed at 8)"}
         </text>
-        <text transform={`translate(14, ${T + H / 2}) rotate(-90)`} fill={P.muted} fontSize={10.5} textAnchor="middle">{T0.metric}</text>
+        <text transform={`translate(14, ${T + H / 2}) rotate(-90)`} fill={P.muted} fontSize={10.5} textAnchor="middle">{task === "tinystories" ? metricName(mode) : T0.metric}</text>
 
         {shared && view === "layers" && (
           <g pointerEvents="none">
@@ -156,7 +156,6 @@ function BlockEncDecInner() {
         )}
         {enc.map((r) => point(r, "enc", P.duo))}
         {dec.map((r) => point(r, "dec", P.highlight))}
-        {kv.map((r) => point(r, "enc", P.accent, "diamond"))}
         {view === "time" && enc.length > 0 && (() => {
           const top = Math.max(...enc.map((r) => r.score));
           const xs = enc.map((r) => xTime(r.eval_seconds));
@@ -169,24 +168,22 @@ function BlockEncDecInner() {
         })()}
 
         <g transform={`translate(${RX}, ${T + 4})`} fontSize={10.5}>
-          {SERIES.filter((s) => s.id !== "kv" || kv.length).map((s, i) => (
+          {SERIES.map((s, i) => (
             <g key={s.id} transform={`translate(0, ${i * 32})`}>
-              {s.id === "kv"
-                ? <rect x={3} y={-8} width={8} height={8} transform="rotate(45 7 -4)" fill={P.bg} stroke={s.color()} strokeWidth={2} />
-                : <line x1={0} x2={16} y1={-4} y2={-4} stroke={s.color()} strokeWidth={2.4} />}
+              <line x1={0} x2={16} y1={-4} y2={-4} stroke={s.color()} strokeWidth={2.4} />
               <text x={22} fill={s.color()} fontWeight={650}>{s.label}</text>
               <text x={22} y={13} fill={P.dim} fontSize={9.5}>{s.sub}</text>
             </g>
           ))}
           {shared && (
-            <g transform={`translate(0, ${(kv.length ? 3 : 2) * 32})`}>
+            <g transform={`translate(0, ${2 * 32})`}>
               <line x1={0} x2={16} y1={-4} y2={-4} stroke={P.candi} strokeWidth={1.8} strokeDasharray="5 4" />
               <text x={22} fill={P.candi} fontWeight={650}>Shared block (8 layers)</text>
               <text x={22} y={13} fill={P.dim} fontSize={9.5}>one transformer for both</text>
             </g>
           )}
 
-          <g transform={`translate(0, ${(kv.length ? 4 : 3) * 32 + 8})`}>
+          <g transform={`translate(0, ${3 * 32 + 8})`}>
             <line x1={0} x2={190} y1={-12} y2={-12} stroke={P.line2} />
             {h ? (
               <>

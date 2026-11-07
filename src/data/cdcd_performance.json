@@ -1,5 +1,5 @@
 {
- "source": "per-sampler validation (inference/<policy>/selected.json) and final/result.json from feedback-depth-cdcd-20k-20261030 and feedback-renoising-128nfe-20261031 on ruqi6000, 2026-11-01; sampler chosen by validation; TinyStories rows replaced by portable-v2-mi210 TinyStories BPE-10k",
+ "source": "per-sampler validation (inference/<policy>/selected.json) and final/result.json from feedback-depth-cdcd-20k-20261030 and feedback-renoising-128nfe-20261031 on ruqi6000, 2026-11-01; sampler chosen by validation; TinyStories rows replaced by portable-v2-mi210 TinyStories BPE-10k; TinyStories rows replaced by portable-v2-mi210 TinyStories BPE-10k",
  "rows": [
   {
    "task": "sudoku_hard",
@@ -296,7 +296,14 @@
      }
     }
    ],
-   "renoise_tried": true
+   "renoise_tried": true,
+   "score_nobp": 6.8119,
+   "seeds_nobp": [
+    6.8149,
+    6.809
+   ],
+   "bp": 1.0,
+   "len_ratio": 1.0272
   },
   {
    "task": "tinystories",
@@ -369,23 +376,182 @@
      }
     }
    ],
-   "renoise_tried": true
+   "renoise_tried": true,
+   "score_nobp": 7.9335,
+   "seeds_nobp": [
+    8.1138,
+    7.7531
+   ],
+   "bp": 0.9911,
+   "len_ratio": 0.9943
   },
   {
    "task": "tinystories",
    "method": "simplex",
    "arm": "none",
-   "pending": true,
+   "score": 6.3277,
+   "validation": 6.2151,
+   "seeds": [
+    6.3418,
+    6.3135
+   ],
+   "policy": "native",
+   "campaign": "portable-v2-mi210 (TinyStories BPE-10k)",
    "case": "tinystories-bpe-10000-simplex-none-seed-1",
-   "campaign": "portable-v2-mi210 (TinyStories BPE-10k)"
+   "samplers": [
+    {
+     "policy": "native",
+     "validation": 6.2151,
+     "seeds": [
+      6.4772,
+      5.9531
+     ],
+     "params": {
+      "temperature": 1.101
+     }
+    },
+    {
+     "policy": "native_greedy",
+     "validation": 1.8638,
+     "seeds": [
+      1.9278,
+      1.7999
+     ],
+     "params": {
+      "final_denoise": "greedy"
+     }
+    },
+    {
+     "policy": "eb_greedy",
+     "validation": 3.6032,
+     "seeds": [
+      3.4965,
+      3.71
+     ],
+     "params": {
+      "temperature": 1.362,
+      "entropy_bound": 0.032
+     }
+    },
+    {
+     "policy": "renoise_sample",
+     "validation": 6.2151,
+     "seeds": [
+      6.4772,
+      5.9531
+     ],
+     "params": {
+      "temperature": 1.101
+     }
+    },
+    {
+     "policy": "renoise_greedy",
+     "validation": 1.8281,
+     "seeds": [
+      1.78,
+      1.8762
+     ],
+     "params": {
+      "final_denoise": "sample"
+     }
+    }
+   ],
+   "renoise_tried": true,
+   "tie": [
+    "native",
+    "renoise_sample"
+   ],
+   "score_nobp": 8.0798,
+   "seeds_nobp": [
+    8.1419,
+    8.0176
+   ],
+   "bp": 0.7832,
+   "len_ratio": 0.8036
   },
   {
    "task": "tinystories",
    "method": "simplex",
    "arm": "sc",
-   "pending": true,
+   "score": 8.5016,
+   "validation": 8.2766,
+   "seeds": [
+    8.4661,
+    8.5371
+   ],
+   "policy": "native",
+   "campaign": "portable-v2-mi210 (TinyStories BPE-10k)",
    "case": "tinystories-bpe-10000-simplex-expected_embedding-seed-1",
-   "campaign": "portable-v2-mi210 (TinyStories BPE-10k)"
+   "samplers": [
+    {
+     "policy": "native",
+     "validation": 8.2766,
+     "seeds": [
+      8.3968,
+      8.1564
+     ],
+     "params": {
+      "temperature": 1.059
+     }
+    },
+    {
+     "policy": "native_greedy",
+     "validation": 6.5524,
+     "seeds": [
+      6.4106,
+      6.6941
+     ],
+     "params": {
+      "final_denoise": "sample"
+     }
+    },
+    {
+     "policy": "eb_greedy",
+     "validation": 7.6307,
+     "seeds": [
+      7.4195,
+      7.8419
+     ],
+     "params": {
+      "temperature": 1.307,
+      "entropy_bound": 0.063
+     }
+    },
+    {
+     "policy": "renoise_sample",
+     "validation": 8.2766,
+     "seeds": [
+      8.3968,
+      8.1564
+     ],
+     "params": {
+      "temperature": 1.059
+     }
+    },
+    {
+     "policy": "renoise_greedy",
+     "validation": 6.5817,
+     "seeds": [
+      6.5266,
+      6.6368
+     ],
+     "params": {
+      "final_denoise": "greedy"
+     }
+    }
+   ],
+   "renoise_tried": true,
+   "tie": [
+    "native",
+    "renoise_sample"
+   ],
+   "score_nobp": 8.5016,
+   "seeds_nobp": [
+    8.4661,
+    8.5371
+   ],
+   "bp": 1.0,
+   "len_ratio": 1.0197
   },
   {
    "task": "tinystories",
@@ -458,7 +624,14 @@
      }
     }
    ],
-   "renoise_tried": true
+   "renoise_tried": true,
+   "score_nobp": 7.7345,
+   "seeds_nobp": [
+    7.7318,
+    7.7372
+   ],
+   "bp": 0.9765,
+   "len_ratio": 0.9768
   },
   {
    "task": "tinystories",
@@ -531,7 +704,14 @@
      }
     }
    ],
-   "renoise_tried": true
+   "renoise_tried": true,
+   "score_nobp": 8.4735,
+   "seeds_nobp": [
+    8.4632,
+    8.4838
+   ],
+   "bp": 0.976,
+   "len_ratio": 0.9763
   },
   {
    "task": "tinystories",
@@ -604,7 +784,14 @@
      }
     }
    ],
-   "renoise_tried": true
+   "renoise_tried": true,
+   "score_nobp": 7.3557,
+   "seeds_nobp": [
+    7.187,
+    7.5244
+   ],
+   "bp": 0.96,
+   "len_ratio": 0.9608
   },
   {
    "task": "tinystories",
@@ -677,7 +864,14 @@
      }
     }
    ],
-   "renoise_tried": true
+   "renoise_tried": true,
+   "score_nobp": 7.667,
+   "seeds_nobp": [
+    7.9296,
+    7.4045
+   ],
+   "bp": 1.0,
+   "len_ratio": 1.0403
   }
  ]
 }

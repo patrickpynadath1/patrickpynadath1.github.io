@@ -1,6 +1,6 @@
 {
- "source": "portable-v2-mi210-partial-20261105-0000",
- "note": "portable-v2-mi210 partial snapshot; final test scores, 2 eval seeds, one training seed; block cases tuned native/native_greedy only",
+ "source": "portable-v2-mi210-partial-20261106-0013",
+ "note": "portable-v2-mi210 partial snapshot; final test scores, 2 eval seeds, one training seed; block cases tuned native/native_greedy only; encoder-K/V mixture runs omitted",
  "rows": [
   {
    "task": "sudoku_hard",
@@ -126,60 +126,6 @@
    "policy": "native",
    "train_hours": 10.21,
    "eval_seconds": 21.95606430899352,
-   "nfe": 84.0
-  },
-  {
-   "task": "sudoku_hard",
-   "kind": "kv",
-   "enc": 2,
-   "dec": 8,
-   "name": "sudoku_hard-encoder-kv-2-decoder-8-seed-1",
-   "status": "completed",
-   "score": 0.009765625,
-   "validation": 0.03125,
-   "seeds": [
-    0.0078125,
-    0.01171875
-   ],
-   "policy": "native",
-   "train_hours": 12.04,
-   "eval_seconds": 30.731617502868176,
-   "nfe": 84.0
-  },
-  {
-   "task": "sudoku_hard",
-   "kind": "kv",
-   "enc": 4,
-   "dec": 8,
-   "name": "sudoku_hard-encoder-kv-4-decoder-8-seed-1",
-   "status": "completed",
-   "score": 0.03515625,
-   "validation": 0.05078125,
-   "seeds": [
-    0.03515625,
-    0.03515625
-   ],
-   "policy": "native",
-   "train_hours": 13.45,
-   "eval_seconds": 30.567482136189938,
-   "nfe": 84.0
-  },
-  {
-   "task": "sudoku_hard",
-   "kind": "kv",
-   "enc": 8,
-   "dec": 8,
-   "name": "sudoku_hard-encoder-kv-8-decoder-8-seed-1",
-   "status": "completed",
-   "score": 0.021484375,
-   "validation": 0.05859375,
-   "seeds": [
-    0.01953125,
-    0.0234375
-   ],
-   "policy": "native",
-   "train_hours": 14.64,
-   "eval_seconds": 32.709262154996395,
    "nfe": 84.0
   },
   {
@@ -346,40 +292,6 @@
   },
   {
    "task": "text8",
-   "kind": "kv",
-   "enc": 2,
-   "dec": 8,
-   "name": "text8-encoder-kv-2-decoder-8-seed-1",
-   "status": "completed",
-   "score": 10.056640625,
-   "validation": 10.19140625,
-   "seeds": [
-    10.21484375,
-    9.8984375
-   ],
-   "policy": "native",
-   "train_hours": 13.95,
-   "eval_seconds": 57.28471111506224,
-   "nfe": 128.0
-  },
-  {
-   "task": "text8",
-   "kind": "kv",
-   "enc": 4,
-   "dec": 8,
-   "name": "text8-encoder-kv-4-decoder-8-seed-1",
-   "status": "tuning"
-  },
-  {
-   "task": "text8",
-   "kind": "kv",
-   "enc": 8,
-   "dec": 8,
-   "name": "text8-encoder-kv-8-decoder-8-seed-1",
-   "status": "training"
-  },
-  {
-   "task": "text8",
    "kind": "raw",
    "enc": 0,
    "dec": 8,
@@ -430,7 +342,14 @@
    "policy": "native_greedy",
    "train_hours": 10.32,
    "eval_seconds": 40.76454411447048,
-   "nfe": 128.0
+   "nfe": 128.0,
+   "score_nobp": 8.7298,
+   "seeds_nobp": [
+    8.9077,
+    8.552
+   ],
+   "bp": 0.7969,
+   "len_ratio": 0.815
   },
   {
    "task": "tinystories",
@@ -448,7 +367,14 @@
    "policy": "native_greedy",
    "train_hours": 10.82,
    "eval_seconds": 40.30385376885533,
-   "nfe": 128.0
+   "nfe": 128.0,
+   "score_nobp": 8.7883,
+   "seeds_nobp": [
+    8.8093,
+    8.7673
+   ],
+   "bp": 0.7829,
+   "len_ratio": 0.8034
   },
   {
    "task": "tinystories",
@@ -466,7 +392,14 @@
    "policy": "native_greedy",
    "train_hours": 11.87,
    "eval_seconds": 42.36186273396015,
-   "nfe": 128.0
+   "nfe": 128.0,
+   "score_nobp": 8.6424,
+   "seeds_nobp": [
+    8.6439,
+    8.6409
+   ],
+   "bp": 0.808,
+   "len_ratio": 0.8243
   },
   {
    "task": "tinystories",
@@ -484,7 +417,14 @@
    "policy": "native_greedy",
    "train_hours": 8.22,
    "eval_seconds": 18.24097498699848,
-   "nfe": 128.0
+   "nfe": 128.0,
+   "score_nobp": 7.7209,
+   "seeds_nobp": [
+    7.7717,
+    7.6701
+   ],
+   "bp": 0.7974,
+   "len_ratio": 0.8154
   },
   {
    "task": "tinystories",
@@ -502,7 +442,14 @@
    "policy": "native_greedy",
    "train_hours": 9.01,
    "eval_seconds": 22.342096010994283,
-   "nfe": 128.0
+   "nfe": 128.0,
+   "score_nobp": 8.7731,
+   "seeds_nobp": [
+    8.5136,
+    9.0326
+   ],
+   "bp": 0.7725,
+   "len_ratio": 0.7948
   },
   {
    "task": "tinystories",
@@ -520,7 +467,14 @@
    "policy": "native_greedy",
    "train_hours": 10.62,
    "eval_seconds": 28.983885146008106,
-   "nfe": 128.0
+   "nfe": 128.0,
+   "score_nobp": 8.633,
+   "seeds_nobp": [
+    8.7669,
+    8.4991
+   ],
+   "bp": 0.7992,
+   "len_ratio": 0.8169
   },
   {
    "task": "tinystories",
@@ -538,31 +492,14 @@
    "policy": "native_greedy",
    "train_hours": 13.72,
    "eval_seconds": 43.69847087189555,
-   "nfe": 128.0
-  },
-  {
-   "task": "tinystories",
-   "kind": "kv",
-   "enc": 2,
-   "dec": 8,
-   "name": "tinystories-bpe-10000-encoder-kv-2-decoder-8-seed-1",
-   "status": "training"
-  },
-  {
-   "task": "tinystories",
-   "kind": "kv",
-   "enc": 4,
-   "dec": 8,
-   "name": "tinystories-bpe-10000-encoder-kv-4-decoder-8-seed-1",
-   "status": "training"
-  },
-  {
-   "task": "tinystories",
-   "kind": "kv",
-   "enc": 8,
-   "dec": 8,
-   "name": "tinystories-bpe-10000-encoder-kv-8-decoder-8-seed-1",
-   "status": "training"
+   "nfe": 128.0,
+   "score_nobp": 8.7844,
+   "seeds_nobp": [
+    8.9874,
+    8.5813
+   ],
+   "bp": 0.7946,
+   "len_ratio": 0.8131
   },
   {
    "task": "tinystories",
@@ -580,7 +517,14 @@
    "policy": "native",
    "train_hours": 9.9,
    "eval_seconds": 39.63428400736302,
-   "nfe": 128.0
+   "nfe": 128.0,
+   "score_nobp": 7.7959,
+   "seeds_nobp": [
+    7.9027,
+    7.6891
+   ],
+   "bp": 0.838,
+   "len_ratio": 0.8498
   },
   {
    "task": "tinystories",
@@ -598,7 +542,14 @@
    "policy": "native",
    "train_hours": 12.95,
    "eval_seconds": 44.49523515626788,
-   "nfe": 128.0
+   "nfe": 128.0,
+   "score_nobp": 7.8854,
+   "seeds_nobp": [
+    8.1136,
+    7.6572
+   ],
+   "bp": 0.8743,
+   "len_ratio": 0.8816
   }
  ]
 }

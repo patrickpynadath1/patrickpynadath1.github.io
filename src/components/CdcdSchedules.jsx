@@ -7,6 +7,7 @@ import { P, withVizTheme } from "./vizTheme.js";
 import { FONT, Frame, Pills, rgba } from "./SelfCondDepth.jsx";
 import SCHED from "../data/cdcd_schedules.json";
 import PERF from "../data/cdcd_performance.json";
+import { useBleuMode, BleuPills, withMode, metricName } from "./bleuMode.jsx";
 
 const METHODS = [
   { id: "gaussian", label: "Gaussian", color: () => P.accent },
@@ -395,11 +396,12 @@ function CorruptionInner() {
 
 // ─── Figure G: performance with and without SC ───────────────────────────────
 function PerformanceInner() {
+  const [mode] = useBleuMode();
   const [task, setTask] = useState("text8");
   const t = TASKS.find((tk) => tk.id === task);
   const L = 150, R = 490, T = 30, rowH = 52;
   const x = (v) => L + ((v - t.domain[0]) / (t.domain[1] - t.domain[0])) * (R - L);
-  const get = (m, arm) => PERF.rows.find((r) => r.task === task && r.method === m && r.arm === arm);
+  const get = (m, arm) => withMode(PERF.rows.find((r) => r.task === task && r.method === m && r.arm === arm), mode);
   const H = T + rowH * METHODS.length + 30;
 
   return (
@@ -407,8 +409,11 @@ function PerformanceInner() {
       kicker="Figure G · performance"
       title="How much SC adds to each continuous method"
       subtitle="Grey ring: no SC. Green dot: with SC. Same 8-layer backbone, same learned CDCD clock, best sampler on validation."
-      controls={<Pills value={task} onChange={setTask} options={TASKS.map((tk) => ({ id: tk.id, label: tk.id === "tinystories" ? "TinyStories BPE" : tk.overfit ? `${tk.label} (overfit)` : tk.label }))} />}
-      note={`${t.overfit ? "Sudoku models overfit the training puzzles, so their learned clocks do not match held-out loss; shown for completeness. " : ""}Metric: ${t.metric}. Final held-out scores; thin bars show the two evaluation seeds. ${task === "tinystories" ? "TinyStories: 10k-token BPE run on MI210 GPUs (a second, independent run); all five samplers tried. Simplex is still training." : task === "text8" ? "Renoising samplers were not run for simplex, spherical and vMF on text8." : ""}`}
+      controls={<>
+        <Pills value={task} onChange={setTask} options={TASKS.map((tk) => ({ id: tk.id, label: tk.id === "tinystories" ? "TinyStories BPE" : tk.overfit ? `${tk.label} (overfit)` : tk.label }))} />
+        {task === "tinystories" && <BleuPills />}
+      </>}
+      note={`${t.overfit ? "Sudoku models overfit the training puzzles, so their learned clocks do not match held-out loss; shown for completeness. " : ""}Metric: ${task === "tinystories" ? metricName(mode) : t.metric}. Final held-out scores; thin bars show the two evaluation seeds. ${task === "tinystories" ? "TinyStories: 10k-token BPE vocabulary, trained separately; all five samplers tried. For simplex, the native step already redraws the state from the forward process, so native and renoise sample are the same sampler and score identically." : task === "text8" ? "Renoising samplers were not run for simplex, spherical and vMF on text8." : ""}`}
     >
       <svg viewBox={`0 0 720 ${H}`} style={{ width: "100%", height: "auto", display: "block", fontFamily: FONT }}>
         {t.ticks.map((v) => (
