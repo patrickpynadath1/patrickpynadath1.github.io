@@ -2,7 +2,7 @@
 title: "Some design choices in a diffusion language model"
 description: "An interactive map of the parts of a diffusion language model, a codebase for swapping them, and a few small experiments on how they interact."
 pubDate: 2026-10-28T12:00:00.000Z
-author: "Patrick Pynadath"
+author: "Patrick Pynadath, Ruqi Zhang"
 tags: ["diffusion", "language models"]
 wip: true
 ---
@@ -20,7 +20,7 @@ import ExpandableSection from "../../components/ExpandableSection.jsx"
 
 # A Few Design Choices for Diffusion Language Models (And a Codebase)
 
-Patrick Pynadath<sup>1</sup>
+Patrick Pynadath<sup>1</sup>, Ruqi Zhang<sup>1</sup>
 
 <sup>1</sup> Purdue Department of Computer Science
 
@@ -52,9 +52,9 @@ Below we explain what each constraint means and which works it excludes. They ar
 
 ### Factorized Representations
 
-Every position in the sequence gets its own state, and the forward process corrupts each position given only its own clean token. The state can be a mask, a random token, a point on the simplex, a noisy embedding, or a point on a sphere, but it always belongs to one token. The model still sees the whole sequence; only the noise is applied per position.
+Every method here corrupts a representation with a one-to-one mapping to the tokens of the original sequence. Position $i$ has its own state, and its clean value depends on token $i$ alone: a one-hot vector or a point on the simplex, a learned embedding of that token, or a point on a sphere. Discrete methods use the token itself. Given a token, you know its clean representation; given the clean representation, you can read the token back. The forward process then corrupts each position from its own clean value, and the noisy state can be a mask, a random token, or a noisy point in that space. The model still sees the whole sequence when it denoises. Only the representation and the noise are per token.
 
-This rules out methods that diffuse in a compressed, sequence-level latent space, where one latent vector can describe many tokens at once [@lovelace2023latent; @meshchaninov2026cosmoscompressedsmoothlatent; @shen2026codar]. Those methods change what "one step of denoising" even means, and comparing them fairly against per-token methods needs its own protocol.
+This rules out contextual representations, even ones that keep one vector per token. The hidden state of a BERT model or a T5 encoder at position $i$ depends on every token in the input. The same token gets a different vector in every sentence, and the vector at position $i$ carries information about its neighbors. Corrupting that vector corrupts a mixture of the whole sequence, not one token, and there is no fixed way to read token $i$ back from it. The same goes for compressed, sequence-level latent spaces, where one latent vector describes many tokens at once [@lovelace2023latent; @meshchaninov2026cosmoscompressedsmoothlatent; @shen2026codar]. Both change what "one step of denoising" means, and comparing them fairly against per-token methods needs its own protocol.
 
 {/* TODO(Patrick): core/modifiers/latent_autoencoder is a contextual latent autoencoder. Either say it is experimental and unused here, or soften the claim above. */}
 
