@@ -25,6 +25,8 @@ Patrick Pynadath<sup>1</sup>, Ruqi Zhang<sup>1</sup>
 
 <sup>1</sup> Purdue Department of Computer Science
 
+**Code:** [github.com/patrickpynadath1/sddc](https://github.com/patrickpynadath1/sddc). Every experiment below can be rerun from it.
+
 ## Introduction
 
 Diffusion language models have grown into a rapidly evolving field, with recent releases demonstrating diffusion's potential at scale. However, this does not mean the field has arrived at a single recipe for diffusion language models.
@@ -37,7 +39,7 @@ Past this, we still have choices to make about the inputs the model sees in addi
 
 Different methods take distinct approaches to these design choices, and often introduce several new techniques at once. Many of these techniques can be transferred to other recipes. Some cannot. And even when a technique transfers, it is unclear whether the underlying mechanism, or its effect, stays the same.
 
-The goal of this blog and the accompanying codebase is to frame a diffusion recipe as answering three core questions: how do we represent information, and the corruption of that information, in a way the model can understand; how do we train the model to recover information from noisy inputs; and how do we generate new information at inference. The codebase makes these decisions interchangeable at the implementation level. This captures how combinatorial the design space truly is, and makes it easier to study how decisions along different axes interact.
+The goal of this blog and the [accompanying codebase](https://github.com/patrickpynadath1/sddc) is to frame a diffusion recipe as answering three core questions: how do we represent information, and the corruption of that information, in a way the model can understand; how do we train the model to recover information from noisy inputs; and how do we generate new information at inference. The codebase makes these decisions interchangeable at the implementation level. This captures how combinatorial the design space truly is, and makes it easier to study how decisions along different axes interact.
 
 This is a side project, run on an academic budget. The models are small (8 layers, width 512), the tasks are small, and most results come from a single training seed. We think small, controlled experiments are still worth running, as long as we are careful about what they can and cannot tell us. Each experiment below ends with a short note on exactly that.
 
