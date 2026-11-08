@@ -30,9 +30,9 @@ Patrick Pynadath<sup>1</sup>, Ruqi Zhang<sup>1</sup>
 
 ## Introduction
 
-Diffusion language models (DLMs) now cover almost any method that turns noise into text. Every recipe has to decide how tokens are represented and corrupted, what the network predicts and how it is trained, and how the trained model generates. Each published method answers all of these at once, often changing several answers in the same paper. Some of its techniques carry over to other recipes and some do not. Even when one carries over, it is unclear whether it does the same job there.
+Diffusion language models (DLMs) now cover almost any method that turns noise into text, and every recipe makes many design choices. Each published method makes them all at once, often changing several in the same paper. Some of its techniques carry over to other recipes and some do not. Even when one carries over, it is unclear whether it does the same job there.
 
-Image diffusion went through the same phase. EDM [@karras2022elucidating] split diffusion methods into separate parts (the noise schedule, the network's preconditioning, the training noise distribution and the sampler), showed that several published methods were particular settings of those parts, and then studied each part on its own. SDDC (Some DLM Design Choices) tries to do the same for diffusion language models. In one [codebase](https://github.com/patrickpynadath1/sddc), the representation, corruption process, noise schedule, objective, network, modifiers and sampler are separate pieces that can be swapped across recipes.
+Image diffusion went through the same phase. EDM [@karras2022elucidating] split diffusion methods into separate parts (the noise schedule, the network's preconditioning, the training noise distribution and the sampler), showed that several published methods were particular settings of those parts, and then studied each part on its own. SDDC (Some DLM Design Choices) tries to do the same for diffusion language models. Its [codebase](https://github.com/patrickpynadath1/sddc) splits every recipe into three parts: the **information path** (how tokens are represented and corrupted, and on what schedule), the **denoising task** (what the network predicts and how it is trained), and **inference** (how the trained model generates). Each part is made of pieces, such as the representation, the corruption process or the sampler, that can be swapped across recipes.
 
 The core claim fits in one sentence: treat the parts as swappable so you can measure how they interact.
 
@@ -88,7 +88,16 @@ Was AI used to build this codebase and write this post? Yes, extensively. Codex,
 
 ## The design space
 
-The figure below is a map of the parts of a recipe. The top half shows how the parts connect, split into the three parts of a recipe: the information path, the denoising task, and inference. The bottom half follows five tokens through every part, one layer at a time. Each option has a "See it in the code" button that shows where it lives in the codebase.
+Each part of a recipe answers one question and is made of a few pieces. Modifiers sit across the parts, because each one touches more than one of them.
+
+| Part | Question | Pieces, with examples |
+| --- | --- | --- |
+| Information path | What does the model observe at each noise level? | **Representation** (tokens, one-hot vectors, learned embeddings, points on the simplex or the sphere), **corruption process** (masking, uniform replacement, Gaussian, Dirichlet, spherical, vMF, blurring), **noise schedule** (fixed, rank-calibrated, or learned like CDCD) |
+| Denoising task | What must the model predict, and how is it trained? | **Network** (one transformer with swappable input, time-conditioning and output slots), **parameterization** (clean-token posterior, plug-in estimate, score), **objective** (cross-entropy, ELBO-weighted losses, score entropy), **training time sampler** (uniform or learned) |
+| Inference | How do predictions become a generated sequence? | **Initialization**, the **time grid**, the **update rule** (the method's own reverse step, renoising, entropy-bounded commitment, ODE solvers) and **terminal decoding** |
+| Modifiers | Cut across the parts | **Self conditioning**, **block diffusion** (including encoder-decoder splits), **hybrid views** that corrupt the same tokens several ways, **insertion and deletion** |
+
+The figure below is a map of these parts. The top half shows how the parts connect, split into the three parts of a recipe: the information path, the denoising task, and inference. The bottom half follows five tokens through every part, one layer at a time. Each option has a "See it in the code" button that shows where it lives in the codebase.
 
 <div className="fig-bleed">
   <iframe
