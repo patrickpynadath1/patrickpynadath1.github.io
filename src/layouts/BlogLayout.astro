@@ -2,6 +2,7 @@
 import 'katex/dist/katex.min.css';
 import '../styles/post.css';
 import lightImages from '../data/light_images.json';
+import TocList from '../components/layout/TocList.astro';
 
 interface Heading { depth: number; slug: string; text: string }
 interface Props {
@@ -14,7 +15,20 @@ interface Props {
 }
 
 const { title, description, publishDate, tags = [], headings = [], wip = false } = Astro.props as Props;
-const sections = headings.filter((h) => h.depth === 2);
+// Sections (##) hold subsections (###), which hold their parts (####).
+// A #### directly under a ## (no ### yet) is listed as a subsection.
+type Node = Heading & { children: Node[] };
+const sections: Node[] = [];
+for (const h of headings) {
+  const node: Node = { ...h, children: [] };
+  const section = sections[sections.length - 1];
+  if (h.depth === 2) sections.push(node);
+  else if (h.depth === 3 && section) section.children.push(node);
+  else if (h.depth === 4 && section) {
+    const sub = section.children[section.children.length - 1];
+    (sub && sub.depth === 3 ? sub : section).children.push(node);
+  }
+}
 const formattedDate = publishDate
   ? new Intl.DateTimeFormat('en', { dateStyle: 'long' }).format(publishDate)
   : null;
@@ -63,12 +77,14 @@ const formattedDate = publishDate
         {sections.length > 0 && (
           <nav class="toc" aria-label="Contents">
             <span class="label">Contents</span>
-            <ol>
-              {sections.map((h, i) => (
-                <li><a href={`#${h.slug}`} data-target={h.slug}><span class="toc-num">{i + 1}</span>{h.text}</a></li>
-              ))}
-            </ol>
+            <TocList sections={sections} />
           </nav>
+        )}
+        {sections.length > 0 && (
+          <details class="toc-mobile" id="toc-mobile">
+            <summary>Contents</summary>
+            <TocList sections={sections} />
+          </details>
         )}
         <article class="prose" id="article">
           <slot />
@@ -130,8 +146,16 @@ const formattedDate = publishDate
           var current = 0;
           targets.forEach(function (t, i) { if (t && t.getBoundingClientRect().top < innerHeight * 0.3) current = i; });
           links.forEach(function (a, i) { a.classList.toggle('active', i === current); });
+          // Expand the section and subsection being read.
+          var here = links[current];
+          document.querySelectorAll('.toc li').forEach(function (li) { li.classList.toggle('open', !!here && li.contains(here)); });
         }
         addEventListener('scroll', onScroll, { passive: true });
+        // On narrow screens, close the contents panel after jumping to a heading.
+        var mobileToc = document.getElementById('toc-mobile');
+        if (mobileToc) mobileToc.querySelectorAll('a').forEach(function (a) {
+          a.addEventListener('click', function () { mobileToc.open = false; });
+        });
         addEventListener('resize', onScroll);
         onScroll();
 

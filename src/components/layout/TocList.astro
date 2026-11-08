@@ -1,0 +1,31 @@
+---
+// Nested contents list: sections (##), subsections (###) and their parts (####).
+// Used by the desktop sidebar and the mobile contents panel in BlogLayout.
+interface Heading { depth: number; slug: string; text: string }
+type Node = Heading & { children: Node[] };
+interface Props { sections: Node[] }
+const { sections } = Astro.props as Props;
+---
+<ol>
+  {sections.map((h, i) => (
+    <li>
+      <a href={`#${h.slug}`} data-target={h.slug}><span class="toc-num">{i + 1}</span>{h.text}</a>
+      {h.children.length > 0 && (
+        <ol class="toc-sub">
+          {h.children.map((c, j) => (
+            <li>
+              <a href={`#${c.slug}`} data-target={c.slug}><span class="toc-num">{i + 1}.{j + 1}</span>{c.text}</a>
+              {c.children.length > 0 && (
+                <ol class="toc-sub">
+                  {c.children.map((d) => (
+                    <li><a href={`#${d.slug}`} data-target={d.slug}>{d.text}</a></li>
+                  ))}
+                </ol>
+              )}
+            </li>
+          ))}
+        </ol>
+      )}
+    </li>
+  ))}
+</ol>

@@ -120,6 +120,13 @@ We use three tasks, each with a metric computed on generated samples rather than
 
 The codebase also includes OpenWebText (generative perplexity) and TinyGSM (math word problems), but we do not use them here.
 
+<div className="callout">
+<span className="callout-label">Why no likelihoods?</span>
+
+Every number in this post is computed on generated samples, never on a likelihood or a bound on it. Most recipes here train on a variational bound (an ELBO), but each corruption process gives a different bound with its own unknown gap to the true likelihood, so comparing bounds across, say, masked and Gaussian diffusion compares their slack as much as their models. Several recipes do not train on a bound at all, so their validation loss is only a training signal. And even an exact likelihood says little about samples at this scale, where generation is the end goal: a model can have a good likelihood and poor samples, or the reverse [@theis2016noteevaluationgenerativemodels]. Sample-based metrics have their own trap, since a single sampler setting can trade diversity for quality and decide a comparison on its own, which is why every model here is scored with its own tuned sampler. We make the full argument in [Generative Frontiers](/blog/eval_methodology/) [@pynadath2026generativefrontiers].
+
+</div>
+
 ### A note on BLEU
 
 Corpus BLEU has two parts. The first counts how many word sequences in the model's continuations also appear in the real endings. The second is a brevity penalty: if the continuations are shorter overall than the real endings, the score is multiplied by a factor below one.
@@ -154,6 +161,13 @@ Unless noted, every diffusion model gets 128 network evaluations (NFE) per seque
 Each sampler's own settings, such as the temperature or the entropy bound, are tuned with a small automatic search on validation data. As the next sections show, the best sampler often depends on the rest of the recipe, so tuning it per model is not optional.
 
 To give an example of how this pipeline can be used to ask more precise questions, the rest of this post works through three of them: what self conditioning does, how continuous methods spend their training time, and where depth matters in block diffusion.
+
+<div className="callout">
+<span className="callout-label">Before the results</span>
+
+Every experiment below is small: 8-layer models trained for 20,000 steps on small tasks, mostly with a single training seed and shared training settings. Each section ends with how sure we are, and the [limitations](#limitations) at the end of the post spell out what these results can and cannot tell us.
+
+</div>
 
 ## Self Conditioning: What does it do?
 
@@ -201,7 +215,9 @@ text8 is the odd one out: SC is the worst option for both discrete methods. The 
 
 <GapGrid client:visible />
 
-**How sure are we?** The Gaussian result is solid: the gap is large and holds on all three tasks. The discrete results are suggestive at best. They rest on one training seed, and several of the gaps are small.
+#### How sure are we?
+
+The Gaussian result is solid: the gap is large and holds on all three tasks. The discrete results are suggestive at best. They rest on one training seed, and several of the gaps are small.
 
 {/* TODO(Patrick): on Sudoku and text8, several SC runs were trained separately from their 8- and 16-layer rivals. Confirm the setups match, or rerun them together. */}
 
@@ -229,7 +245,9 @@ If we restrict every model to the native sampler, the text8 picture flips. On va
 
 We do not yet know why. One guess is that renoising throws away the noisy state the SC feedback was built from, so the feedback no longer matches the state the model sees. That is untested.
 
-**How sure are we?** The sampler flip is clear in the validation numbers, but it comes from one task and one seed. It is a good reason to never compare SC and no-SC models under a single fixed sampler.
+#### How sure are we?
+
+The sampler flip is clear in the validation numbers, but it comes from one task and one seed. It is a good reason to never compare SC and no-SC models under a single fixed sampler.
 
 ### Does self conditioning help every continuous method?
 
@@ -251,7 +269,9 @@ SC helps every continuous method on Sudoku and TinyStories. On text8 the picture
 
 SC also leaves each method's learned clock almost unchanged, as the noise schedule section shows. Whatever it fixes, it does not show up as a change in where the training loss is spent.
 
-**How sure are we?** The gains are large compared with seed noise and hold across tasks, but each comes from one training seed. The text8 result for spherical and vMF depends on the sampler, as above. We would not lean on the Sudoku pairs: those models overfit their training puzzles.
+#### How sure are we?
+
+The gains are large compared with seed noise and hold across tasks, but each comes from one training seed. The text8 result for spherical and vMF depends on the sampler, as above. We would not lean on the Sudoku pairs: those models overfit their training puzzles.
 
 ### Does the tokenizer change the picture?
 
@@ -282,7 +302,9 @@ These bullets use validation BLEU with the length penalty, because that is what 
 
 So SC does not stop mattering at realistic vocabulary sizes. What it fixes does seem to change, though, and BLEU is too coarse to show it. The judge model below makes it visible.
 
-**How sure are we?** The direction of the SC effect is solid: it holds in all 15 cells. Its size, and whether it shrinks with vocabulary, depends on the sampler and the metric, and comes from one training seed. The TinyStories gaps between methods are often within half a BLEU point.
+#### How sure are we?
+
+The direction of the SC effect is solid: it holds in all 15 cells. Its size, and whether it shrinks with vocabulary, depends on the sampler and the metric, and comes from one training seed. The TinyStories gaps between methods are often within half a BLEU point.
 
 ### A second opinion from a judge model
 
@@ -293,6 +315,13 @@ BLEU compares word sequences with one real ending, and as the note on BLEU shows
 #### The experiment
 
 So we tried a different kind of evaluator. Using a language model as a judge of generated text is now common [@zheng2023judging; @liu2023geval]: the judge reads an output and answers a question about it, such as which of two responses is better or how coherent a passage is. The usual catch is that the judge answers in free text, so its verdict has to be parsed out of the response, and an answer in the wrong format has to be retried or dropped. [Jev](https://docs.typesafe.ai/concepts/system-one), a model from TypeSafe, is an LLM judge without that step. It answers typed questions (yes or no, pick one of several, place on a scale) and returns each answer as a probability over the allowed options. Nothing needs to be extracted, and every answer comes with a confidence [@li2026jevjudge].
+
+<div className="callout">
+<span className="callout-label">Disclosure</span>
+
+We are not sponsored by TypeSafe. We used Jev because typed, probability-valued answers suited the narrow questions below.
+
+</div>
 
 We were mostly playing with it as a tool for evaluating language, and two things made it useful. First, it lets us break "is this a good story?" into narrow questions and ask each one separately. Second, it is fast and cheap enough to ask a lot of them: about 160,000 judgments of the ladder's test stories (512 per model) took under 15 minutes and cost under $10. We asked:
 
@@ -316,9 +345,13 @@ Jev's view of the ladder:
 - **It agrees with BLEU without the length penalty, not with standard BLEU.** Its pick for the best method matches the penalty-free ranking in 7 of the 10 vocabulary-and-SC comparisons, and the standard ranking in 2. Masked comes out first or close to it; Gaussian comes out last.
 - **AR is far ahead, by much more than BLEU shows.** Jev mistakes AR's endings for the original author's 34 to 45% of the time, against 9 to 20% for the diffusion models. Head to head, a diffusion model beats AR at most 12% of the time.
 
-**How sure are we?** Jev is one judge, and we have not checked it against human ratings. Some of its yes or no questions misfire on the real stories: it flags 32% of real endings as repetitive, so we do not report that flag. When it picks among five or more options, it slightly favors the middle position, so we only report two- and three-way comparisons. And every model here is still one training run. We read these results as a second opinion that points the same way as BLEU without the length penalty, not as ground truth.
+#### How sure are we?
+
+Jev is one judge, and we have not checked it against human ratings. Some of its yes or no questions misfire on the real stories: it flags 32% of real endings as repetitive, so we do not report that flag. When it picks among five or more options, it slightly favors the middle position, so we only report two- and three-way comparisons. And every model here is still one training run. We read these results as a second opinion that points the same way as BLEU without the length penalty, not as ground truth.
 
 ## Continuous Noise Schedules
+
+### Where do learned clocks spend training?
 
 #### The question
 
@@ -356,9 +389,13 @@ This matches the picture of token identifiability from CANDI [@pynadath2025candi
 
 Last, SC. The clock is adaptive: it is fit to the model's own loss, so anything that changes how hard each noise level is for the model should move it. SC gives the model its previous prediction at every step, which could plausibly make high noise levels easier. Figure I draws each clock with SC (solid) and without (dashed). On the text tasks the two nearly coincide: the point where rank information runs out moves by about 0.02 in $u$. This is a little puzzling next to the scores, where SC changes most methods a lot (see [Does self conditioning help every continuous method?](#does-self-conditioning-help-every-continuous-method)). Whatever SC fixes, it does not show up as a change in where the loss is spent.
 
-**How sure are we?** The clock checks on text are solid, and so is the small effect of SC on the clocks: it holds for every method on both text tasks. Each clock comes from one training seed. The Sudoku clocks do not describe held-out loss, so we leave them out of every claim. The clocks here and the scores in the self conditioning section come from two separate training runs of the same recipes.
+#### How sure are we?
 
-## Block Diffusion: Scale the Encoder or the Decoder?
+The clock checks on text are solid, and so is the small effect of SC on the clocks: it holds for every method on both text tasks. Each clock comes from one training seed. The Sudoku clocks do not describe held-out loss, so we leave them out of every claim. The clocks here and the scores in the self conditioning section come from two separate training runs of the same recipes.
+
+## Block Diffusion
+
+### Scale the encoder or the decoder?
 
 #### The question
 
@@ -388,7 +425,9 @@ The runs show five things:
 
 At this scale, the practical advice is simple. Put the layers in the decoder, keep the encoder shallow, and expect a single shared transformer to do just as well. The encoder only needs to summarize context that is already clean, which may be an easy job at these sequence lengths.
 
-**How sure are we?** The decoder trend is solid: the gaps are far larger than seed noise. The encoder result is suggestive. These block models were tuned with the native samplers only, come from one training seed, and use short sequences. Longer contexts could easily give the encoder more to do. The Sudoku block models barely learned the task, so we leave them out of every claim.
+#### How sure are we?
+
+The decoder trend is solid: the gaps are far larger than seed noise. The encoder result is suggestive. These block models were tuned with the native samplers only, come from one training seed, and use short sequences. Longer contexts could easily give the encoder more to do. The Sudoku block models barely learned the task, so we leave them out of every claim.
 
 ## Takeaways
 
