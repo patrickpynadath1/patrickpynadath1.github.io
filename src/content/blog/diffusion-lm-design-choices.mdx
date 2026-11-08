@@ -21,11 +21,12 @@ import RunConfig from "../../components/RunConfig.jsx"
 
 # A Few Design Choices for Diffusion Language Models (And a Codebase)
 
+<a href="https://github.com/patrickpynadath1/sddc" target="_blank" rel="noopener" aria-label="SDDC code on GitHub" style={{ display: "inline-flex", alignItems: "center", gap: 8, padding: "7px 16px", margin: "4px 0 18px", borderRadius: 999, background: "var(--fg)", color: "var(--bg)", fontWeight: 600, fontSize: 15, textDecoration: "none" }}><svg width="18" height="18" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/></svg>Code on GitHub</a>
+
+
 Patrick Pynadath<sup>1</sup>, Ruqi Zhang<sup>1</sup>
 
 <sup>1</sup> Purdue Department of Computer Science
-
-**Code:** [github.com/patrickpynadath1/sddc](https://github.com/patrickpynadath1/sddc). Every experiment below can be rerun from it.
 
 ## Introduction
 
@@ -76,6 +77,10 @@ This rules out distillation, consistency, and flow map methods that train on the
 ### What this Codebase and Blog Is Not
 
 It is not a leaderboard. The tasks and model sizes are chosen so that a single question can be answered with a few dozen small runs, not so that any method looks its best. It is not large-scale pretraining. And it is not a faithful reproduction of every paper it borrows from: where our configs differ from a paper, the docs say so.
+
+## AI usage
+
+Was AI used to build this codebase and write this post? Yes, extensively. Codex, and later Claude Code, wrote much of the code. That does not make the codebase slop. The project took several months, and the agents did not choose the questions or decide what the results mean. They did most of the typing. Because so much of the code was written by agents, the code is built to check itself: more than 1,500 tests run on every commit, and every experiment in this post is a worked example whose analysis script rebuilds the reported numbers from the stored runs. Without agentic coding, a codebase this broad would not have been feasible for one person on a side-project budget.
 
 ## The design space
 
@@ -387,15 +392,72 @@ At this scale, the practical advice is simple. Put the layers in the decoder, ke
 
 ## Takeaways
 
-Three of the results above changed how we think about these models:
+This post introduces **SDDC** (**S**ome **D**LM **D**esign **C**hoices), a codebase built on the idea that most design choices in a diffusion language model should be swappable across recipes. Using it, a few dozen small runs per question gave these results.
 
-- Self conditioning is not just a deeper network, at least for Gaussian corruption. It beats doubling the depth on every task.
-- Comparing two recipes under one fixed sampler can reverse the result. SC models and no-SC models want different samplers.
-- Learned continuous clocks spend most of training where token identity is gone but rank is not, and SC barely moves them.
+### Self conditioning
 
-Each of these took a few dozen small training runs, and each leaves an open question we cannot yet answer. That is the kind of result the codebase is built for: cheap enough to run on an academic budget, controlled enough to trust within its scope, and specific enough to point at the next experiment.
+- **For Gaussian corruption, SC is more than extra capacity.** An 8-layer model with SC beats a 16-layer model without it on all three tasks, without adding a parameter.
+- **It does not help every method equally.** SC improves all four continuous methods (Gaussian, simplex, spherical and vMF) on Sudoku and TinyStories. For masked diffusion its effect is modest at best: it lowers Sudoku accuracy from 96.9% to 92.6%, and its TinyStories gains are small.
+- **SC can change which sampler is best.** On text8, models without SC do best with renoising, while models with SC cannot use it. Comparing SC and no-SC models under one fixed sampler can reverse the result.
+- **The effect survives larger vocabularies.** From 260 to 10k BPE tokens, SC improves every method at every size. What it fixes changes: at small vocabularies it removes garbled words; at large ones it puts real words in the right place.
 
-The code is at [github.com/patrickpynadath1/sddc](https://github.com/patrickpynadath1/sddc) (commit [`3836162`](https://github.com/patrickpynadath1/sddc/tree/383616271af4bb858cdba117387dc24928ad7a58)). Each experiment in this post is a [worked example](https://github.com/patrickpynadath1/sddc/tree/383616271af4bb858cdba117387dc24928ad7a58/experiments) there, with its sweep, the evaluation splits, the numbers reported here and the analysis that rebuilds these figures. The runs themselves used an earlier internal version of the code; the worked examples follow the same protocol, so a rerun should give close numbers, not identical ones.
+### Continuous noise schedules
+
+- **A clock that is linear in loss is not linear in corruption.** CDCD's learned clocks do make the loss climb linearly, as designed. But they spend most of training at noise levels where a token's identity is already gone while its rank is not. Equalizing the loss does not equalize how much information the model can still recover.
+- **Gaussian, spherical and vMF corrupt tokens alike; simplex does not.** For the first three, the true token's rank is halfway to chance at about 75% of the clock. For simplex, it takes about 95%.
+- **SC barely moves the clock.** Even where SC changes the scores a lot, the clocks learned with and without it nearly coincide.
+
+### Block diffusion: encoder or decoder?
+
+- **Spend layers on the decoder.** Decoder depth drives quality. With an 8-layer decoder, encoder depth from 1 to 8 layers stays within seed noise. E2D2's premise also holds: encoder layers are cheap at inference, and decoder layers are not [@arriola2025e2d2].
+- **One encoder layer is enough here.** And one shared 8-layer transformer matches E2D2 8/8 under standard BLEU.
+
+### Limitations
+
+These claims come with clear limits:
+
+- **Scale.** Every model is small (8 layers of width 512, or 16 for the depth comparison) and trained for 20,000 steps on small tasks. Whether the results hold at realistic scale is an open question.
+- **One seed, shared training settings.** Each cell is a single training run. Training hyperparameters are shared across methods rather than tuned for each one; only the inference settings were tuned, on validation data.
+- **The tasks are not ordinary language modeling.** In Sudoku, the nine digits appear equally often in every solution, while language tokens follow a heavily skewed, Zipf-like distribution. text8 and TinyStories are small and simple corpora.
+- **The metrics are coarse.** BLEU rewards length, and the judge model is a single judge we have not checked against human ratings.
+- **The runs used an earlier internal version of the code.** Each experiment is a [worked example](https://github.com/patrickpynadath1/sddc/tree/383616271af4bb858cdba117387dc24928ad7a58/experiments) in the public repo with the same protocol, so a rerun should give close numbers, not identical ones.
+
+## Future directions
+
+This project will keep changing as we find new questions to ask. The codebase also covers a narrow slice of current DLM research (see [the scope](#scope-what-is-this-codebase)). These are the directions where we would most welcome contributions.
+
+### Hybrid methods
+
+Every experiment in this post uses a single corruption process. That leaves out one of the most promising directions: hybrids that corrupt the same tokens with a discrete and a continuous process at once [@pynadath2025candihybriddiscretecontinuousdiffusion; @zheng2025continuously; @davis2026design; @zhou2025coevolutionary]. The codebase already supports a large space of them. A hybrid is a set of views of the same tokens, each with its own representation, corruption process and noise schedule, read by one shared network. Any discrete view (masked or uniform) can be paired with any continuous one (Gaussian embeddings, simplex, spherical or vMF), and more than two views can be combined. Hybrids can also be layered rather than placed side by side. SemiCat [@davis2026design] combines all three kinds of corruption: a Gaussian interpolant wrapped around a corruption on the simplex, plus discrete reveals that switch each position to its clean token at a random time. That construction is not in the codebase yet, but it fits the same split into information path, denoising task and inference. None of these combinations is studied here. Which pairings work best, and whether the results above (SC beating depth, the sampler flip, where learned clocks spend training) carry over to hybrids, are open questions the codebase can already answer.
+
+### Sampler distillation
+
+Distillation, consistency and flow map methods [@roos2026categoricalflowmaps; @lee2026onesteplanguagemodelingcontinuous] are among the most active areas of DLM research, and the codebase leaves them out because they train on the model's own trajectories. SDDC treats many recipes as settings of one skeleton. A shared framework of the same kind for distillation methods would make them far easier to compare.
+
+### Insertion and deletion
+
+The codebase can insert and delete tokens, including a FlexMDM-style recipe [@kim2026any], but the implementation is basic. There is much more room to explore how these modifiers interact with the rest of a recipe, and to make them work well rather than merely work.
+
+### Latent diffusion and other representations
+
+Latent diffusion for language has made real progress [@lovelace2023latent; @meshchaninov2026cosmoscompressedsmoothlatent; @shen2026codar]. Bringing compressed and contextual latent spaces into the same framework, along with representations that split tokens into smaller units, such as CoBit's bitstreams [@batzolis2026towards], would show which of the results here depend on per-token representations.
+
+These are only a few directions, and we are sure we are missing others.
+
+## A small ask for compute
+
+Everything in this post was run on an academic budget: the worked examples took about 675 GPU-hours in total, on a handful of GPUs shared with the rest of our lab. That is why the models are small and most cells have a single seed. The questions were not the limit; the compute was.
+
+With more compute, the next experiments are clear:
+
+- **Seeds.** Three or more training runs per cell, so every comparison in this post gets error bars.
+- **Scale.** The self conditioning, sampler and block diffusion experiments at 4 to 10 times the model size and training length, to see which results survive.
+- **Realistic vocabularies and data.** The tokenizer ladder at 32k to 50k tokens, on corpora larger than TinyStories.
+- **The open questions above.** Why SC leaves the learned clock unchanged, whether a deeper encoder pays off on longer contexts. 
+- **Hybrids.** The discrete and continuous pairings the codebase already supports, run through the same experiments as the single-process methods.
+- **The directions the codebase leaves out.** Distillation, latent representations and better insertion methods, all under the same framework.
+
+If these questions interest you and you have compute to share, whether GPU-hours, cloud credits or a cluster that could run one of the worked examples, please get in touch at [ppynadat@purdue.edu](mailto:ppynadat@purdue.edu). The code and protocols are open, so you can also run an experiment yourself.
 
 ## Acknowledgements
 
