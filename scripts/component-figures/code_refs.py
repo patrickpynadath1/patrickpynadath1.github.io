@@ -1,16 +1,16 @@
 """Build the "See it in the code" snippets for the component figures.
 
-Reads YAML configs and core source from a checkout of the candi repo at a pinned
+Reads YAML configs and core source from a checkout of the SDDC repo at a pinned
 commit and writes code_refs.json: one entry per figure option, each with the config
 file, the Hydra override that selects it, and short code excerpts with GitHub links.
 
-Usage:  python3 code_refs.py /path/to/candi > code_refs.json
+Usage:  python3 code_refs.py /path/to/sddc > code_refs.json
 Rerun after the code changes, then paste the JSON into the page (see build step).
 """
 import ast, json, subprocess, sys, pathlib
 
-REPO = pathlib.Path(sys.argv[1] if len(sys.argv) > 1 else '../candi-src')
-GH = 'https://github.com/patrickpynadath1/candi/blob/{sha}/{path}'
+REPO = pathlib.Path(sys.argv[1] if len(sys.argv) > 1 else '../sddc')
+GH = 'https://github.com/patrickpynadath1/sddc/blob/{sha}/{path}'
 MAX_LINES = 42
 
 # key -> spec. Keys are "<choice key>:<option>", optionally "@<qualifier>" for a variant
@@ -22,7 +22,7 @@ MAX_LINES = 42
 SPEC = {
     # Representation
     'rep:tokens': dict(cfg=['configs/process/absorbing.yaml'], ov='process=absorbing',
-                       code=[('core/models/components.py', 'TokenInput')],
+                       code=[('core/models/modular.py', 'TokenInput')],
                        note='Discrete processes keep token IDs; the network looks them up in its own embedding table.'),
     'rep:onehot': dict(cfg=['configs/representation/one_hot.yaml'], ov='representation=one_hot',
                        code=[('core/representations/one_hot.py', 'OneHotRepresentation')]),
@@ -70,21 +70,21 @@ SPEC = {
                                 note='Two fully adaptive options: CDCD’s loss-fitted clock, or RePlaid’s learned −log SNR (noise_schedule=learned_log_snr).'),
     # Network
     'attn:bi': dict(cfg=['configs/model/dit.yaml'], ov='model=dit',
-                    code=[('core/models/dit.py', 'DiT.__init__')]),
+                    code=[('core/models/modular.py', 'ModularDiT.__init__')]),
     'attn:causal': dict(cfg=['configs/model/causal_dit.yaml'], ov='model=causal_dit',
                         code=[('core/models/causal.py', 'CausalDiT.forward')]),
     'tcond:none': dict(cfg=['configs/model/dit.yaml'], ov='model=dit',
-                       code=[('core/models/dit.py', 'DiT.prepare_hidden')],
-                       note='With adaLN: false the time embedding is never computed, so the network gets no t.'),
+                       code=[('core/models/modular.py', 'TimeConditioning.forward')],
+                       note='With adaLN: false the time slot returns no condition, so the network gets no t.'),
     'tcond:on': dict(cfg=['configs/model/dit_conditioned.yaml'], ov='model=dit_conditioned',
-                     code=[('core/models/dit.py', 'DiT.prepare_hidden')],
+                     code=[('core/models/modular.py', 'TimeConditioning.forward')],
                      note='adaLN: true turns the time t into a conditioning vector that modulates every block.'),
     'self:off': dict(cfg=['configs/sc/off.yaml'], ov='sc=off', code=[]),
     'self:mean': dict(cfg=['configs/sc/on.yaml', ('configs/config.yaml', 'self_conditioning')], ov='sc=on self_conditioning.source=posterior_mean',
-                      code=[('core/modifiers/self_conditioning/sources.py', 'posterior_mean'), ('core/models/dit.py', 'DiT.prepare_hidden')],
+                      code=[('core/modifiers/self_conditioning/sources.py', 'posterior_mean'), ('core/models/modular.py', 'ModularDiT.prepare')],
                       note='softmax(logits) @ E: the previous pass’s probabilities average the embedding table.'),
     'self:hidden': dict(cfg=['configs/sc/on.yaml', ('configs/config.yaml', 'self_conditioning')], ov='sc=on self_conditioning.source=hidden',
-                        code=[('core/modifiers/self_conditioning/sources.py', 'final_hidden'), ('core/models/dit.py', 'DiT.prepare_hidden')],
+                        code=[('core/modifiers/self_conditioning/sources.py', 'final_hidden'), ('core/models/modular.py', 'ModularDiT.prepare')],
                         note='The raw hidden stream is taken before the LM head and fed back.'),
     # Output
     'param:posterior': dict(cfg=['configs/parameterization/posterior.yaml'], ov='parameterization=posterior',

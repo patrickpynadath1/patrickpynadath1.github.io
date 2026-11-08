@@ -1,7 +1,8 @@
 // Learned CDCD noise schedules for the continuous recipes: a loss-linearity
 // check, the schedules themselves, and final scores with / without SC.
-// Data: src/data/cdcd_schedules.json (candi scripts/analysis/cdcd_schedule_report.py,
-// final 20k checkpoints) and src/data/cdcd_performance.json (final results).
+// Data: src/data/cdcd_schedules.json (scripts/analysis/cdcd_schedule_report.py in the pre-release codebase; now experiments/continuous-schedules/schedule_report.py in SDDC,
+// final 20k ruqi6000 checkpoints) and src/data/cdcd_performance.json (final
+// results, portable-v2-mi210-partial-20261106-0013).
 import { useState } from "react";
 import { P, withVizTheme } from "./vizTheme.js";
 import { FONT, Frame, Pills, rgba } from "./SelfCondDepth.jsx";
@@ -38,7 +39,7 @@ function linearityGap(bins) {
 
 const path = (xs, ys, x, y) => xs.map((v, i) => `${i ? "L" : "M"}${x(v).toFixed(1)},${y(ys[i]).toFixed(1)}`).join("");
 
-// ─── Figure E: does CDCD linearize the loss? ─────────────────────────────────
+// ─── Figure H: does CDCD linearize the loss? ─────────────────────────────────
 function LinearityInner() {
   const [method, setMethod] = useState("gaussian");
   const [view, setView] = useState("loss");
@@ -52,7 +53,7 @@ function LinearityInner() {
 
   return (
     <Frame
-      kicker="Figure E · does the learned clock work?"
+      kicker="Figure H · does the learned clock work?"
       title="Does the learned clock make loss rise in a straight line?"
       subtitle="CDCD fits the expected loss as a function of noise level and samples time through its inverse. If the fit is right, measured loss climbs linearly in the warped time u, so every stretch of u carries the same share of the loss."
       controls={<>
@@ -187,7 +188,7 @@ function LinearityTable({ bins: BINS, split }) {
   );
 }
 
-// ─── Figure F: the learned schedules ─────────────────────────────────────────
+// ─── Figure I: the learned schedules ─────────────────────────────────────────
 const PARAM = {
   gaussian: { key: "sigma", label: "noise level σ", domain: [0, 1] },
   simplex: { key: "t", label: "physical time t (α = 1 − t)", domain: [0, 1] },
@@ -222,7 +223,7 @@ function SchedulesInner() {
 
   return (
     <Frame
-      kicker="Figure F · the learned schedules"
+      kicker="Figure I · the learned schedules"
       title="Where each method spends its training time"
       subtitle="Each line is a schedule learned by CDCD for one task. Dashed: no SC. Solid: with SC. A steep early rise means the model is pushed to high noise quickly, so most training happens at heavy corruption."
       controls={<>
@@ -291,7 +292,7 @@ function SchedulesInner() {
   );
 }
 
-// ─── Figure F2: schedules in token terms ─────────────────────────────────────
+// ─── Figure J: schedules in token terms ─────────────────────────────────────
 // Corruption measured with each path's own forward kernel and learned codebook
 // along its learned clock: argmax decoding error and normalized clean-token rank.
 const METRICS = {
@@ -319,7 +320,7 @@ function CorruptionInner() {
 
   return (
     <Frame
-      kicker="Figure F2 · the schedules in token terms"
+      kicker="Figure J · the schedules in token terms"
       title="How fast does each method destroy the token?"
       subtitle="Two ways to measure corruption along each learned clock. Token error: how often the nearest embedding is the wrong token. Clean-token rank: where the true token sits among all candidates (0 = top, 0.5 = no information). The dashed diagonal is a schedule that would spend equal time at every level."
       controls={<>
@@ -394,7 +395,7 @@ function CorruptionInner() {
   );
 }
 
-// ─── Figure G: performance with and without SC ───────────────────────────────
+// ─── Figure E: performance with and without SC ───────────────────────────────
 function PerformanceInner() {
   const [mode] = useBleuMode();
   const [task, setTask] = useState("text8");
@@ -406,14 +407,14 @@ function PerformanceInner() {
 
   return (
     <Frame
-      kicker="Figure G · performance"
+      kicker="Figure E · performance"
       title="How much SC adds to each continuous method"
       subtitle="Grey ring: no SC. Green dot: with SC. Same 8-layer backbone, same learned CDCD clock, best sampler on validation."
       controls={<>
         <Pills value={task} onChange={setTask} options={TASKS.map((tk) => ({ id: tk.id, label: tk.id === "tinystories" ? "TinyStories BPE" : tk.overfit ? `${tk.label} (overfit)` : tk.label }))} />
         {task === "tinystories" && <BleuPills />}
       </>}
-      note={`${t.overfit ? "Sudoku models overfit the training puzzles, so their learned clocks do not match held-out loss; shown for completeness. " : ""}Metric: ${task === "tinystories" ? metricName(mode) : t.metric}. Final held-out scores; thin bars show the two evaluation seeds. ${task === "tinystories" ? "TinyStories: 10k-token BPE vocabulary, trained separately; all five samplers tried. For simplex, the native step already redraws the state from the forward process, so native and renoise sample are the same sampler and score identically." : task === "text8" ? "Renoising samplers were not run for simplex, spherical and vMF on text8." : ""}`}
+      note={`${t.overfit ? "Sudoku models overfit the training puzzles, so their learned clocks do not match held-out loss; shown for completeness. " : ""}Metric: ${task === "tinystories" ? metricName(mode) : t.metric}. Final held-out scores; thin bars show the two evaluation seeds. ${task === "tinystories" ? "TinyStories: 10k-token BPE vocabulary. All five samplers tried. For simplex, the native step already redraws the state from the forward process, so native and renoise sample are the same sampler and score identically." : task === "text8" ? "All five samplers tried. Spherical and vMF without SC use renoising; with SC, they use the native sampler." : ""}`}
     >
       <svg viewBox={`0 0 720 ${H}`} style={{ width: "100%", height: "auto", display: "block", fontFamily: FONT }}>
         {t.ticks.map((v) => (

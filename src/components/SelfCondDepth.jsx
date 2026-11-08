@@ -1,8 +1,7 @@
 // Self conditioning vs doubling depth: four linked mockup figures.
-// Data: src/data/sc_depth_results.json, built from candi
-// docs/handoffs/performance-index-2026-11-01.csv for Sudoku and text8, and the
-// portable-v2-mi210 snapshot for TinyStories BPE-10k (final held-out scores, one
-// training seed, two evaluation seeds, 128 NFE). Each cell uses the sampler with the best validation score.
+// Data: src/data/sc_depth_results.json, built from the
+// portable-v2-mi210-partial-20261106-0013 archive for all three tasks (final
+// held-out scores, one training seed, two evaluation seeds, 128 NFE). Each cell uses the sampler with the best validation score.
 import { useMemo, useState } from "react";
 import { P, withVizTheme } from "./vizTheme.js";
 import DATA from "../data/sc_depth_results.json";
@@ -141,7 +140,7 @@ function HeadToHeadInner() {
       title="Does self conditioning buy what doubling depth buys?"
       subtitle="Each mark is one corruption type on one task. Both axes show the change over the same 8-layer model without SC. Above the diagonal, 8 layers + SC beats 16 layers."
       controls={<BleuPills />}
-      note="The switch changes only the TinyStories marks. Final held-out scores. Each model uses the sampler that scored best on validation. Axes use a signed square-root scale. One training seed per cell. TinyStories uses a 10k-token BPE vocabulary and was trained separately from Sudoku and text8, on different GPUs."
+      note="The switch changes only the TinyStories marks. Final held-out scores. Each model uses the sampler that scored best on validation. Axes use a signed square-root scale. One training seed per cell. TinyStories uses a 10k-token BPE vocabulary."
     >
       <svg viewBox="0 0 720 440" style={{ width: "100%", height: "auto", display: "block", fontFamily: FONT }}>
         <polygon points={`${L},${T + S} ${L},${T} ${L + S},${T}`} fill={rgba(P.candi, 0.07)} />

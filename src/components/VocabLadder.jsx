@@ -234,7 +234,7 @@ function VocabLadderInner() {
   const [hover, setHover] = useState(null);
   return (
     <Frame
-      kicker="Figure I · tokenizer ladder"
+      kicker="Figure F · tokenizer ladder"
       title="How each sampler does as the vocabulary grows"
       subtitle={view === "methods" && pick === "test"
         ? "TinyStories with BPE tokenizers from 260 tokens (bytes) to 10k. Each model's chosen sampler, scored on the test split."

@@ -96,7 +96,7 @@ function BlockEncDecInner() {
 
   return (
     <Frame
-      kicker="Figure H · encoder or decoder?"
+      kicker="Figure K · encoder or decoder?"
       title="Decoder depth drives quality. Encoder depth barely moves it."
       subtitle="E2D2 splits block diffusion into an encoder that reads the clean context and a decoder that denoises the current block. Orange: decoder depth grows with an 8-layer encoder. Blue: encoder depth grows with an 8-layer decoder. Both paths end at the same 8/8 model. Dashed line: ordinary block diffusion with one shared 8-layer transformer."
       controls={<>

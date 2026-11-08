@@ -1,0 +1,651 @@
+{
+ "sha": "383616271af4bb858cdba117387dc24928ad7a58",
+ "short": "3836162",
+ "github": "https://github.com/patrickpynadath1/sddc",
+ "questions": [
+  {
+   "id": "sc-vs-depth",
+   "question": "Is self conditioning just a deeper network?",
+   "dir": "experiments/sc-vs-depth",
+   "dir_url": "https://github.com/patrickpynadath1/sddc/tree/383616271af4bb858cdba117387dc24928ad7a58/experiments/sc-vs-depth",
+   "run": "# 0. Data the published runs used that is too large to commit (see \"How a rerun can differ\").\npython scripts/prepare_data.py text8 --parquet PATH/afmck-text8/data \\\n  --raw-dir $SDDC_STORAGE_ROOT/data_cache/text8/raw\npython scripts/prepare_data.py tinystories --parquet PATH/roneneldan-TinyStories/data \\\n  --output $SDDC_STORAGE_ROOT/data_cache/tinystories_bpe/allowed_ids.json\n# 1. Expand the 27 cases (no training).\nuv run --locked --extra tuning --extra scoring python -m core.sweeps.prepare -m \\\n  +sweep=sc_vs_depth preparation.output=$SDDC_STORAGE_ROOT/plans/sc-vs-depth\nuv run --locked --extra tuning python -m core.sweeps.prepare collect $SDDC_STORAGE_ROOT/plans/sc-vs-depth\n# 2. Train and tune every case on Ray; only each case's winner sees the test split.\nuv run --locked --extra tuning --extra scoring python -m core.sweeps.nested_tuning \\\n  $SDDC_STORAGE_ROOT/plans/sc-vs-depth/manifest.json \\\n  --output $SDDC_STORAGE_ROOT/runs/sc-vs-depth --address auto --case-concurrency 4\n# 3. The post's table (writes sc_depth_results.json, compares with expected.csv).\nuv run --locked --extra scoring python experiments/sc-vs-depth/analyze.py \\\n  $SDDC_STORAGE_ROOT/runs/sc-vs-depth --output $SDDC_STORAGE_ROOT/runs/sc-vs-depth/analysis\n",
+   "fixed": [
+    "20k training steps, batch 256, 8 layers \u00d7 512 wide unless the axis says 16L",
+    "128 NFE per sequence; five samplers (native, native greedy, EB greedy, renoise, renoise greedy), each tuned on validation",
+    "one training seed; the validation winner is scored once on the test split (seeds 1041, 1042)",
+    "masked uses the ELBO weighting; Gaussian uses the CDCD learned clock"
+   ],
+   "notes": [
+    "In hybrid_renoising.yaml the renoise policies are named renoising and renoising_greedy; the post calls them renoise sample and renoise greedy."
+   ],
+   "see": null,
+   "axes": [
+    {
+     "axis": "Task",
+     "key": "task",
+     "values": [
+      {
+       "name": "Sudoku-hard",
+       "value": "battery/sudoku_hard"
+      },
+      {
+       "name": "text8",
+       "value": "battery/text8"
+      },
+      {
+       "name": "TinyStories BPE",
+       "value": "battery/tinystories_bpe"
+      }
+     ]
+    },
+    {
+     "axis": "Corruption",
+     "key": "ablation_path",
+     "values": [
+      {
+       "name": "Gaussian (CDCD clock)",
+       "value": "gaussian_cdcd"
+      },
+      {
+       "name": "masked (ELBO)",
+       "value": "masked_elbo"
+      },
+      {
+       "name": "uniform",
+       "value": "uniform"
+      }
+     ]
+    },
+    {
+     "axis": "Depth / SC",
+     "key": "feedback",
+     "values": [
+      {
+       "name": "8L",
+       "value": "none"
+      },
+      {
+       "name": "8L + SC",
+       "value": "expected_embedding"
+      },
+      {
+       "name": "16L",
+       "value": "double_depth"
+      }
+     ]
+    }
+   ],
+   "sweep": {
+    "path": "configs/sweep/sc_vs_depth.yaml",
+    "url": "https://github.com/patrickpynadath1/sddc/blob/383616271af4bb858cdba117387dc24928ad7a58/configs/sweep/sc_vs_depth.yaml",
+    "text": "# @package _global_\n# Is self-conditioning just a deeper network? (experiments/sc-vs-depth)\n# {Gaussian (CDCD clock), masked, uniform} x {8 layers, 8 layers + SC, 16 layers}\n# x {Sudoku-hard, text8, TinyStories BPE-10k} = 27 cases, each tuned with five\n# sampler policies at 128 NFE. experiments/sc-sampler-choice reads the same runs.\ndefaults:\n- /experiment: corruption_factorial\n- common\n- /ablation_path: gaussian_cdcd\n- /feedback: none\n- /inference_policies: hybrid_renoising\n- override /task: battery/sudoku_hard\n- _self_\ncheckpoint:\n  every_n_steps: 1000\ndata:\n  # Read only by TinyStories: the story cohort the evaluation indices refer to.\n  # Build it with scripts/prepare_data.py.\n  allowed_ids_path: ${data.cache_dir}/allowed_ids.json\npreparation:\n  name: sc-vs-depth\n  output: ${oc.env:SDDC_STORAGE_ROOT,${oc.env:HOME}/.cache/sddc}/plans/sc-vs-depth\n  evaluation_file: experiments/sc-vs-depth/evaluation/${preparation.task_name}.json\n  family: sc_vs_depth\n  recipe_name: ${preparation.path_name}-${preparation.feedback_name}\n  wandb:\n    project: sc-vs-depth\nhydra:\n  sweeper:\n    params:\n      task: battery/sudoku_hard,battery/text8,battery/tinystories_bpe\n      ablation_path: gaussian_cdcd,masked_elbo,uniform\n      feedback: none,expected_embedding,double_depth\n"
+   },
+   "groups": [
+    {
+     "label": "Defaults",
+     "files": [
+      {
+       "path": "configs/sweep/common.yaml",
+       "url": "https://github.com/patrickpynadath1/sddc/blob/383616271af4bb858cdba117387dc24928ad7a58/configs/sweep/common.yaml",
+       "text": "# Excerpt: trainer, loader, training, lr_scheduler, optimizer, preparation.evaluation (135 lines in full; the rest sets W&B, Ray resources,\n# the three native/EB sampler policies and Hydra output paths).\ntrainer:\n  max_steps: 20000\n  accumulate_grad_batches: 4\n  precision: bf16-mixed\n  val_check_interval: 4000\n  num_sanity_val_steps: 0\n  enable_progress_bar: false\nloader:\n  global_batch_size: 256\n  eval_batch_size: 8\n  num_workers: 2\ntraining:\n  warmup_steps: 2500\n  ema: 0.9999\n  performance:\n    compile:\n      enabled: true\n      backend: inductor\n      dynamic: true\nlr_scheduler:\n  _target_: core.training.schedules.constant_warmup\n  warmup_steps: 2500\noptimizer:\n  lr: 0.0003\npreparation:\n  evaluation:\n    nfe: 128\n    seeds:\n    - 41\n    - 42\n    test_seeds:\n    - 1041\n    - 1042\n",
+       "excerpt": true
+      },
+      {
+       "path": "configs/experiment/corruption_factorial.yaml",
+       "url": "https://github.com/patrickpynadath1/sddc/blob/383616271af4bb858cdba117387dc24928ad7a58/configs/experiment/corruption_factorial.yaml",
+       "text": "# @package _global_\n# Common training assembly: one noisy view, one posterior, one CE objective.\ndefaults:\n- override /algorithm: hybrid_diffusion\n- override /model: single_view\n- override /sampler: hybrid\n- override /parameterization: unconstrained_posterior\n- override /objective: cross_entropy\n- override /time_sampler: antithetic\n\nmodel:\n  time:\n    coordinate: time\nself_conditioning:\n  source: hidden\n  probability: 0.9\n  evaluation_probability: 1.0\ntrainer:\n  max_steps: 10000\n  val_check_interval: 1000\n  # Use one precision across families (including the simplex recipe).\n  precision: bf16-mixed\n  enable_progress_bar: false\ncheckpoint:\n  every_n_steps: 1000\n  save_top_k: 1\n# Periodic generation uses isolated RNG and EMA weights.\ncallback:\n  every_n_steps: 1000\n  subset_size: 128\nsampler:\n  steps: 127\n  final_denoise: greedy\n"
+      }
+     ]
+    },
+    {
+     "label": "Corruption",
+     "files": [
+      {
+       "path": "configs/ablation_path/gaussian_cdcd.yaml",
+       "url": "https://github.com/patrickpynadath1/sddc/blob/383616271af4bb858cdba117387dc24928ad7a58/configs/ablation_path/gaussian_cdcd.yaml",
+       "text": "# @package _global_\n# Gaussian embedding diffusion whose continuous clock is learned with the CDCD\n# loss-CDF fitter: ablation_path=gaussian with path_schedule=cdcd, as one choice\n# so a sweep can cross it with the discrete paths.\ndefaults:\n- /gaussian_state: embedding\n- /path_schedule: cdcd\npreparation:\n  path_name: gaussian_embedding\n"
+      },
+      {
+       "path": "configs/ablation_path/masked_elbo.yaml",
+       "url": "https://github.com/patrickpynadath1/sddc/blob/383616271af4bb858cdba117387dc24928ad7a58/configs/ablation_path/masked_elbo.yaml",
+       "text": "# @package _global_\n# Masked (absorbing) diffusion trained on the ELBO (keep-rate hazard weighting), as one\n# choice so a sweep can cross it with the other paths. Case names say \"masked\".\ndefaults:\n- /content_view: masked\n- override /objective: masked_elbo\npreparation:\n  path_name: masked\n"
+      },
+      {
+       "path": "configs/ablation_path/uniform.yaml",
+       "url": "https://github.com/patrickpynadath1/sddc/blob/383616271af4bb858cdba117387dc24928ad7a58/configs/ablation_path/uniform.yaml",
+       "text": "# @package _global_\ndefaults:\n- /content_view: uniform\npreparation:\n  path_name: uniform_posterior_ce\n"
+      },
+      {
+       "path": "configs/objective/masked_elbo.yaml",
+       "url": "https://github.com/patrickpynadath1/sddc/blob/383616271af4bb858cdba117387dc24928ad7a58/configs/objective/masked_elbo.yaml",
+       "text": "# Masked-diffusion ELBO: token cross-entropy weighted by the keep-rate hazard\n# -alpha'(t) / (1 - alpha(t)) of the content view's schedule (MDLM's weighting).\n_target_: core.objectives.cross_entropy.CrossEntropy\nlabel_smoothing: 0.0\nweighting:\n  _target_: core.objectives.weighting.KeepRateHazardWeighting\n  schedule: ${model.views.content.schedule}\n"
+      },
+      {
+       "path": "configs/path_schedule/cdcd.yaml",
+       "url": "https://github.com/patrickpynadath1/sddc/blob/383616271af4bb858cdba117387dc24928ad7a58/configs/path_schedule/cdcd.yaml",
+       "text": "# @package _global_\n# Learn the continuous view's quantile map with the CDCD loss-CDF fitter.\n# The shared/discrete clock remains uniform; no legacy AdaptiveTimeMap is used.\ndefaults:\n- override /time_sampler: cdcd\nalgorithm:\n  adaptive_time_views: [0]\ntime_sampler:\n  adaptive: true\n  epsilon: 0.001\npreparation:\n  schedule_name: cdcd\n"
+      }
+     ]
+    },
+    {
+     "label": "Depth / SC",
+     "files": [
+      {
+       "path": "configs/feedback/none.yaml",
+       "url": "https://github.com/patrickpynadath1/sddc/blob/383616271af4bb858cdba117387dc24928ad7a58/configs/feedback/none.yaml",
+       "text": "# @package _global_\nself_conditioning:\n  enabled: false\n  source: posterior_mean\nmodel:\n  n_blocks: 8\npreparation:\n  feedback_name: none\n"
+      },
+      {
+       "path": "configs/feedback/expected_embedding.yaml",
+       "url": "https://github.com/patrickpynadath1/sddc/blob/383616271af4bb858cdba117387dc24928ad7a58/configs/feedback/expected_embedding.yaml",
+       "text": "# @package _global_\nself_conditioning:\n  enabled: true\n  source: posterior_mean\nmodel:\n  n_blocks: 8\npreparation:\n  feedback_name: expected_embedding\n"
+      },
+      {
+       "path": "configs/feedback/double_depth.yaml",
+       "url": "https://github.com/patrickpynadath1/sddc/blob/383616271af4bb858cdba117387dc24928ad7a58/configs/feedback/double_depth.yaml",
+       "text": "# @package _global_\nself_conditioning:\n  enabled: false\n  source: posterior_mean\nmodel:\n  n_blocks: 16\npreparation:\n  feedback_name: double_depth\n"
+      }
+     ]
+    },
+    {
+     "label": "Samplers",
+     "files": [
+      {
+       "path": "configs/inference_policies/hybrid_renoising.yaml",
+       "url": "https://github.com/patrickpynadath1/sddc/blob/383616271af4bb858cdba117387dc24928ad7a58/configs/inference_policies/hybrid_renoising.yaml",
+       "text": "# @package _global_\n# Sampler policies for single-view diffusion recipes: the native (ancestral) sampler,\n# its greedy variant, entropy-bounded greedy decoding and forward re-noising (sampled\n# and greedy). Each is tuned on validation; only the best one sees the test split.\npreparation:\n  inference:\n  - name: native\n    space:\n      algorithm.predictor.temperature: {type: float, low: 0.5, high: 1.5}\n    initial_points:\n    - algorithm.predictor.temperature: 1.0\n    trials: 16\n    budget_parameter: steps\n  - name: native_greedy\n    space:\n      sampler.final_denoise: [greedy, sample]\n    trials: 2\n    budget_parameter: steps\n    sampler_overrides:\n      greedy_clean_estimate: true\n  - name: eb_greedy\n    sampler:\n      _target_: core.samplers.parallel_entropy_bounded.ParallelEntropyBoundedSampler\n      steps: 127\n      freeze: true\n      greedy_clean_estimate: true\n      entropy_bound: 0.1\n    space:\n      algorithm.predictor.temperature: {type: float, low: 0.5, high: 1.5}\n      sampler.entropy_bound: {type: float, low: 0.02, high: 0.5, log: true}\n    initial_points:\n    - algorithm.predictor.temperature: 1.0\n      sampler.entropy_bound: 0.1\n    trials: 16\n    budget_parameter: steps\n  - name: renoising\n    sampler:\n      _target_: core.samplers.forward_resampling.ForwardResamplingSampler\n      steps: 127\n      epsilon: 1.0e-5\n      greedy_clean_estimate: false\n      final_denoise: greedy\n    space:\n      algorithm.predictor.temperature: {type: float, low: 0.5, high: 1.5}\n    initial_points:\n    - algorithm.predictor.temperature: 1.0\n    trials: 16\n    budget_parameter: steps\n  - name: renoising_greedy\n    sampler:\n      _target_: core.samplers.forward_resampling.ForwardResamplingSampler\n      steps: 127\n      epsilon: 1.0e-5\n      greedy_clean_estimate: true\n      final_denoise: greedy\n    space:\n      sampler.final_denoise: [greedy, sample]\n    trials: 2\n    budget_parameter: steps\n"
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "id": "sc-sampler-choice",
+   "question": "Does self conditioning change how the model should be sampled?",
+   "dir": "experiments/sc-sampler-choice",
+   "dir_url": "https://github.com/patrickpynadath1/sddc/tree/383616271af4bb858cdba117387dc24928ad7a58/experiments/sc-sampler-choice",
+   "run": "# After running sc-vs-depth (see its README):\nuv run --locked python experiments/sc-sampler-choice/analyze.py \\\n  $SDDC_STORAGE_ROOT/runs/sc-vs-depth --output $SDDC_STORAGE_ROOT/runs/sc-vs-depth/analysis\n",
+   "fixed": [
+    "no new training: reads the validation score of every sampler in the sc-vs-depth runs",
+    "test split untouched here; it is used once per model inside sc-vs-depth"
+   ],
+   "notes": [
+    "In hybrid_renoising.yaml the renoise policies are named renoising and renoising_greedy; the post calls them renoise sample and renoise greedy."
+   ],
+   "see": "sc-vs-depth",
+   "axes": [],
+   "sweep": null,
+   "groups": []
+  },
+  {
+   "id": "tokenizer-ladder",
+   "question": "Does the tokenizer change the picture?",
+   "dir": "experiments/tokenizer-ladder",
+   "dir_url": "https://github.com/patrickpynadath1/sddc/tree/383616271af4bb858cdba117387dc24928ad7a58/experiments/tokenizer-ladder",
+   "run": "export SDDC_STORAGE_ROOT=~/.cache/sddc   # or your storage volume\nEXTRAS=(--extra tuning --extra scoring --extra tracking)\n\n# 0. TinyStories parquet shards, then the shared story cohort. The script exits\n#    non-zero unless its sha256 is f16da32a..., the cohort the committed indices use.\nhuggingface-cli download roneneldan/TinyStories --repo-type dataset \\\n  --revision f54c09fd23315a6f9c86f9dc80f725de7d8f9c64 --include 'data/*' \\\n  --local-dir $SDDC_STORAGE_ROOT/tinystories\nexport TINYSTORIES_DATA_DIR=$SDDC_STORAGE_ROOT/tinystories/data\nuv run --locked \"${EXTRAS[@]}\" python scripts/prepare_data.py tinystories \\\n  --parquet $TINYSTORIES_DATA_DIR \\\n  --output $SDDC_STORAGE_ROOT/data_cache/tinystories_bpe/allowed_ids.json\n\n# 1. Expand the sweep into 35 cases (no training).\nuv run --locked \"${EXTRAS[@]}\" python -m core.sweeps.prepare -m \\\n  +sweep=tokenizer_ladder preparation.output=$SDDC_STORAGE_ROOT/plans/tokenizer-ladder\nuv run --locked \"${EXTRAS[@]}\" python -m core.sweeps.prepare collect \\\n  $SDDC_STORAGE_ROOT/plans/tokenizer-ladder\n# 2. Train each case, tune its samplers on validation, test the winner.\nuv run --locked \"${EXTRAS[@]}\" python -m core.sweeps.nested_tuning \\\n  $SDDC_STORAGE_ROOT/plans/tokenizer-ladder/manifest.json \\\n  --output $SDDC_STORAGE_ROOT/runs/tokenizer-ladder --address auto --case-concurrency 4\n# 3. The post's table (vocab_ladder.json) and a comparison with expected.csv.\nuv run --locked \"${EXTRAS[@]}\" python experiments/tokenizer-ladder/analyze.py \\\n  $SDDC_STORAGE_ROOT/runs/tokenizer-ladder --output results/tokenizer-ladder\n",
+   "fixed": [
+    "20k training steps, batch 256, 8 layers \u00d7 512 wide; sequence length set per vocabulary so every story fits",
+    "128 NFE for diffusion; five samplers (native, native greedy, EB greedy, renoise, renoise greedy); AR tunes temperature sampling and greedy decoding, one call per token",
+    "one training seed; the validation winner is scored once on the test split (seeds 1041, 1042)",
+    "masked uses the ELBO weighting; Gaussian uses the CDCD learned clock"
+   ],
+   "notes": [
+    "Each ladder recipe composes configs/sweep/common.yaml itself (see the sc-vs-depth panel for its settings).",
+    "Tokenizers: artifacts/tokenizers/tinystories-bpe/ holds bpe-{260,500,1000,5000,10000}.json with SHA256SUMS.",
+    "In hybrid_renoising.yaml the renoise policies are named renoising and renoising_greedy; the post calls them renoise sample and renoise greedy."
+   ],
+   "see": null,
+   "axes": [
+    {
+     "axis": "Task",
+     "key": "task",
+     "values": [
+      {
+       "name": "TinyStories BPE",
+       "value": "battery/tinystories_bpe"
+      }
+     ]
+    },
+    {
+     "axis": "Vocabulary",
+     "key": "bpe.vocabulary_size",
+     "values": [
+      {
+       "name": "260",
+       "value": "260"
+      },
+      {
+       "name": "500",
+       "value": "500"
+      },
+      {
+       "name": "1000",
+       "value": "1000"
+      },
+      {
+       "name": "5000",
+       "value": "5000"
+      },
+      {
+       "name": "10000",
+       "value": "10000"
+      }
+     ]
+    },
+    {
+     "axis": "Recipe",
+     "key": "ladder_recipe",
+     "values": [
+      {
+       "name": "Gaussian",
+       "value": "gaussian"
+      },
+      {
+       "name": "Gaussian + SC",
+       "value": "gaussian_sc"
+      },
+      {
+       "name": "masked",
+       "value": "masked"
+      },
+      {
+       "name": "masked + SC",
+       "value": "masked_sc"
+      },
+      {
+       "name": "uniform",
+       "value": "uniform"
+      },
+      {
+       "name": "uniform + SC",
+       "value": "uniform_sc"
+      },
+      {
+       "name": "autoregressive",
+       "value": "ar"
+      }
+     ]
+    }
+   ],
+   "sweep": {
+    "path": "configs/sweep/tokenizer_ladder.yaml",
+    "url": "https://github.com/patrickpynadath1/sddc/blob/383616271af4bb858cdba117387dc24928ad7a58/configs/sweep/tokenizer_ladder.yaml",
+    "text": "# @package _global_\n# Does the tokenizer change the picture? TinyStories with byte-level BPE at five\n# vocabulary sizes x seven recipes (Gaussian embedding, masked ELBO and uniform\n# posterior-CE diffusion, each without and with self-conditioning, plus an\n# autoregressive model) = 35 cases. See experiments/tokenizer-ladder/README.md.\ndefaults:\n- /ladder_recipe: masked\n- override /task: battery/tinystories_bpe\n- _self_\nbpe:\n  vocabulary_size: 10000\n  # Sequence capacity per vocabulary: every story of the shared cohort\n  # (data.allowed_ids_path) fits at every vocabulary.\n  capacity:\n    '260': 1024\n    '500': 768\n    '1000': 512\n    '5000': 512\n    '10000': 512\ntask:\n  length: ${oc.select:'bpe.capacity.${bpe.vocabulary_size}'}\n  calculate_bleu: true\n  num_eval_samples: 100000000\ndata:\n  # The story cohort the evaluation indices refer to; build it with\n  # scripts/prepare_data.py tinystories (see the README).\n  allowed_ids_path: ${data.cache_dir}/allowed_ids.json\ncheckpoint:\n  every_n_steps: 1000\npreparation:\n  name: tokenizer-ladder\n  output: ${oc.env:SDDC_STORAGE_ROOT,${oc.env:HOME}/.cache/sddc}/plans/tokenizer-ladder\n  family: tokenizer_ladder\n  evaluation_file: experiments/tokenizer-ladder/evaluation/${preparation.task_name}.json\n  wandb:\n    project: tokenizer-ladder\nhydra:\n  sweeper:\n    params:\n      task: battery/tinystories_bpe\n      bpe.vocabulary_size: 260,500,1000,5000,10000\n      ladder_recipe: gaussian,gaussian_sc,masked,masked_sc,uniform,uniform_sc,ar\n"
+   },
+   "groups": [
+    {
+     "label": "Recipes",
+     "files": [
+      {
+       "path": "configs/ladder_recipe/gaussian.yaml",
+       "url": "https://github.com/patrickpynadath1/sddc/blob/383616271af4bb858cdba117387dc24928ad7a58/configs/ladder_recipe/gaussian.yaml",
+       "text": "# @package _global_\n# Gaussian diffusion on learned token embeddings with a CDCD-fitted time sampler,\n# no self-conditioning.\ndefaults:\n- /experiment: corruption_factorial\n- /sweep/common\n- /ablation_path: gaussian\n- /feedback: none\n- /inference_policies: hybrid_renoising\n- override /path_schedule: cdcd\n- _self_\npreparation:\n  recipe_name: ${preparation.path_name}-${preparation.feedback_name}\n"
+      },
+      {
+       "path": "configs/ladder_recipe/gaussian_sc.yaml",
+       "url": "https://github.com/patrickpynadath1/sddc/blob/383616271af4bb858cdba117387dc24928ad7a58/configs/ladder_recipe/gaussian_sc.yaml",
+       "text": "# @package _global_\n# Gaussian embedding diffusion (CDCD time sampler) with posterior-mean self-conditioning.\ndefaults:\n- gaussian\n- override /feedback: expected_embedding\n- _self_\n"
+      },
+      {
+       "path": "configs/ladder_recipe/masked.yaml",
+       "url": "https://github.com/patrickpynadath1/sddc/blob/383616271af4bb858cdba117387dc24928ad7a58/configs/ladder_recipe/masked.yaml",
+       "text": "# @package _global_\n# Masked (absorbing) diffusion trained on the ELBO, no self-conditioning.\ndefaults:\n- /experiment: corruption_factorial\n- /sweep/common\n- /ablation_path: masked\n- /feedback: none\n- /inference_policies: hybrid_renoising\n- override /objective: masked_elbo\n- _self_\npreparation:\n  recipe_name: ${preparation.path_name}-${preparation.feedback_name}\n"
+      },
+      {
+       "path": "configs/ladder_recipe/masked_sc.yaml",
+       "url": "https://github.com/patrickpynadath1/sddc/blob/383616271af4bb858cdba117387dc24928ad7a58/configs/ladder_recipe/masked_sc.yaml",
+       "text": "# @package _global_\n# Masked diffusion (ELBO) with posterior-mean self-conditioning.\ndefaults:\n- masked\n- override /feedback: expected_embedding\n- _self_\n"
+      },
+      {
+       "path": "configs/ladder_recipe/uniform.yaml",
+       "url": "https://github.com/patrickpynadath1/sddc/blob/383616271af4bb858cdba117387dc24928ad7a58/configs/ladder_recipe/uniform.yaml",
+       "text": "# @package _global_\n# Uniform-noise discrete diffusion with a posterior cross-entropy, no self-conditioning.\ndefaults:\n- /experiment: corruption_factorial\n- /sweep/common\n- /ablation_path: uniform\n- /feedback: none\n- /inference_policies: hybrid_renoising\n- _self_\npreparation:\n  recipe_name: ${preparation.path_name}-${preparation.feedback_name}\n"
+      },
+      {
+       "path": "configs/ladder_recipe/uniform_sc.yaml",
+       "url": "https://github.com/patrickpynadath1/sddc/blob/383616271af4bb858cdba117387dc24928ad7a58/configs/ladder_recipe/uniform_sc.yaml",
+       "text": "# @package _global_\n# Uniform-noise diffusion (posterior CE) with posterior-mean self-conditioning.\ndefaults:\n- uniform\n- override /feedback: expected_embedding\n- _self_\n"
+      },
+      {
+       "path": "configs/ladder_recipe/ar.yaml",
+       "url": "https://github.com/patrickpynadath1/sddc/blob/383616271af4bb858cdba117387dc24928ad7a58/configs/ladder_recipe/ar.yaml",
+       "text": "# @package _global_\n# Eight-layer causal transformer with cached sequential decoding. One model call per\n# token, so the evaluation NFE is the sequence length.\ndefaults:\n- /experiment: autoregressive\n- /sweep/common\n- /inference_policies: autoregressive\n- _self_\nmodel:\n  n_blocks: 8\nself_conditioning:\n  enabled: false\npreparation:\n  recipe_name: ar-8\n  evaluation:\n    nfe: ${task.length}\n"
+      }
+     ]
+    },
+    {
+     "label": "Samplers",
+     "files": [
+      {
+       "path": "configs/inference_policies/hybrid_renoising.yaml",
+       "url": "https://github.com/patrickpynadath1/sddc/blob/383616271af4bb858cdba117387dc24928ad7a58/configs/inference_policies/hybrid_renoising.yaml",
+       "text": "# @package _global_\n# Sampler policies for single-view diffusion recipes: the native (ancestral) sampler,\n# its greedy variant, entropy-bounded greedy decoding and forward re-noising (sampled\n# and greedy). Each is tuned on validation; only the best one sees the test split.\npreparation:\n  inference:\n  - name: native\n    space:\n      algorithm.predictor.temperature: {type: float, low: 0.5, high: 1.5}\n    initial_points:\n    - algorithm.predictor.temperature: 1.0\n    trials: 16\n    budget_parameter: steps\n  - name: native_greedy\n    space:\n      sampler.final_denoise: [greedy, sample]\n    trials: 2\n    budget_parameter: steps\n    sampler_overrides:\n      greedy_clean_estimate: true\n  - name: eb_greedy\n    sampler:\n      _target_: core.samplers.parallel_entropy_bounded.ParallelEntropyBoundedSampler\n      steps: 127\n      freeze: true\n      greedy_clean_estimate: true\n      entropy_bound: 0.1\n    space:\n      algorithm.predictor.temperature: {type: float, low: 0.5, high: 1.5}\n      sampler.entropy_bound: {type: float, low: 0.02, high: 0.5, log: true}\n    initial_points:\n    - algorithm.predictor.temperature: 1.0\n      sampler.entropy_bound: 0.1\n    trials: 16\n    budget_parameter: steps\n  - name: renoising\n    sampler:\n      _target_: core.samplers.forward_resampling.ForwardResamplingSampler\n      steps: 127\n      epsilon: 1.0e-5\n      greedy_clean_estimate: false\n      final_denoise: greedy\n    space:\n      algorithm.predictor.temperature: {type: float, low: 0.5, high: 1.5}\n    initial_points:\n    - algorithm.predictor.temperature: 1.0\n    trials: 16\n    budget_parameter: steps\n  - name: renoising_greedy\n    sampler:\n      _target_: core.samplers.forward_resampling.ForwardResamplingSampler\n      steps: 127\n      epsilon: 1.0e-5\n      greedy_clean_estimate: true\n      final_denoise: greedy\n    space:\n      sampler.final_denoise: [greedy, sample]\n    trials: 2\n    budget_parameter: steps\n"
+      },
+      {
+       "path": "configs/inference_policies/autoregressive.yaml",
+       "url": "https://github.com/patrickpynadath1/sddc/blob/383616271af4bb858cdba117387dc24928ad7a58/configs/inference_policies/autoregressive.yaml",
+       "text": "# @package _global_\n# Autoregressive decoding: tuned-temperature sampling and greedy decoding. AR makes one\n# model call per token, so its NFE is the sequence length and no steps are budgeted.\npreparation:\n  sampler_budget_parameter: null\n  inference:\n  - name: native\n    space:\n      algorithm.predictor.commitment: [sample]\n      algorithm.predictor.temperature: {type: float, low: 0.5, high: 1.5}\n    initial_points:\n    - algorithm.predictor.commitment: sample\n      algorithm.predictor.temperature: 1.0\n    trials: 16\n    budget_parameter: null\n  - name: native_greedy\n    space:\n      algorithm.predictor.commitment: [greedy]\n    trials: 1\n    budget_parameter: null\n"
+      }
+     ]
+    },
+    {
+     "label": "Tokenizers",
+     "files": [
+      {
+       "path": "configs/task/battery/tinystories_bpe.yaml",
+       "url": "https://github.com/patrickpynadath1/sddc/blob/383616271af4bb858cdba117387dc24928ad7a58/configs/task/battery/tinystories_bpe.yaml",
+       "text": "# @package _global_\n# TinyStories with a saved byte-level BPE tokenizer (artifacts/tokenizers/tinystories-bpe).\ndefaults:\n- /task/battery/tinystories\n- override /token_space@token_space: tinystories\n- _self_\nbpe:\n  vocabulary_size: 10000\n  # Relative paths resolve against the repository root (artifacts/ is versioned).\n  tokenizer_path: artifacts/tokenizers/tinystories-bpe/bpe-${bpe.vocabulary_size}.json\ntask:\n  vocab_size: ${bpe.vocabulary_size}\n  length: 512\n  tokenizer:\n    _target_: core.data.tinystories.StoryBPETokenizer\n    path: ${bpe.tokenizer_path}\ndata:\n  parquet_dir: ${oc.env:TINYSTORIES_DATA_DIR,null}\n  allowed_ids_path: null\n  max_train_examples: 2119719\n  max_validation_examples: 21990\n  cache_dir: ${oc.env:SDDC_STORAGE_ROOT,${oc.env:HOME}/.cache/sddc}/data_cache/tinystories_bpe\npreparation:\n  task_name: tinystories-bpe-${bpe.vocabulary_size}\n"
+      },
+      {
+       "path": "artifacts/tokenizers/tinystories-bpe/README.md",
+       "url": "https://github.com/patrickpynadath1/sddc/blob/383616271af4bb858cdba117387dc24928ad7a58/artifacts/tokenizers/tinystories-bpe/README.md",
+       "text": "# TinyStories BPE tokenizers\n\nThe five byte-level BPE tokenizers used by the tokenizer-ladder and BPE-10k experiments\n(vocabularies 260, 500, 1000, 5000, 10000). They are versioned here so a clone has them;\n`task=battery/tinystories_bpe` loads `bpe-<vocabulary_size>.json` from this directory by\ndefault.\n\n- Trained on all four training shards of `roneneldan/TinyStories` at revision\n  `f54c09fd23315a6f9c86f9dc80f725de7d8f9c64` (`source-manifest.json` lists the shard hashes).\n- Nested prefixes of one learned merge sequence; case and Unicode preserved; 260 is the\n  minimum lossless byte alphabet plus four specials.\n- PAD/BOS/EOS/MASK ids are 0/1/2/3; BOS/EOS are not inserted automatically.\n\nVerify the files with `shasum -a 256 -c SHA256SUMS` (or `sha256sum -c SHA256SUMS`).\n\nThey were built with [`scripts/build_bpe_tokenizers.py`](../../../scripts/build_bpe_tokenizers.py), which also\naudits full-story lengths at each vocabulary size.\n"
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "id": "continuous-schedules",
+   "question": "Continuous Noise Schedules",
+   "dir": "experiments/continuous-schedules",
+   "dir_url": "https://github.com/patrickpynadath1/sddc/tree/383616271af4bb858cdba117387dc24928ad7a58/experiments/continuous-schedules",
+   "run": "# 0. Data the published runs used that is too large to commit (see the caveats).\npython scripts/prepare_data.py text8 --parquet PATH/afmck-text8/data \\\n  --raw-dir $SDDC_STORAGE_ROOT/data_cache/text8/raw\npython scripts/prepare_data.py tinystories --parquet PATH/roneneldan-TinyStories/data \\\n  --output $SDDC_STORAGE_ROOT/data_cache/tinystories_bpe/allowed_ids.json\n# 1. Prepare the 24 cases (no training).\nuv run --locked --extra tuning --extra scoring python -m core.sweeps.prepare -m \\\n  +sweep=continuous_schedules preparation.output=$SDDC_STORAGE_ROOT/plans/continuous-schedules\nuv run --locked --extra tuning --extra scoring python -m core.sweeps.prepare collect \\\n  $SDDC_STORAGE_ROOT/plans/continuous-schedules\n# 2. Train and tune; only the validation winner sees the test split.\nuv run --locked --extra tuning --extra scoring python -m core.sweeps.nested_tuning \\\n  $SDDC_STORAGE_ROOT/plans/continuous-schedules/manifest.json \\\n  --output $SDDC_STORAGE_ROOT/runs/continuous-schedules --address auto --case-concurrency 4\n# 3. Tables. With checkpoints present this also measures the schedules (one GPU: minutes;\n#    CPU works but is slow for TinyStories). --no-schedules skips that part.\nuv run --locked --extra scoring python experiments/continuous-schedules/analyze.py \\\n  $SDDC_STORAGE_ROOT/runs/continuous-schedules --output $SDDC_STORAGE_ROOT/analysis/continuous-schedules\n",
+   "fixed": [
+    "20k training steps, batch 256, 8 layers \u00d7 512 wide",
+    "128 NFE per sequence; five samplers (native, native greedy, EB greedy, renoise, renoise greedy), each tuned on validation",
+    "one training seed; the validation winner is scored once on the test split (seeds 1041, 1042)",
+    "every recipe learns its clock with CDCD"
+   ],
+   "notes": [
+    "The schedule panels (Figures H, I, J) come from experiments/continuous-schedules/schedule_report.py and corruption_report.py, measured on the earlier ruqi6000 checkpoints of the same recipes. The scores in Figure E come from the run above.",
+    "In hybrid_renoising.yaml the renoise policies are named renoising and renoising_greedy; the post calls them renoise sample and renoise greedy."
+   ],
+   "see": null,
+   "axes": [
+    {
+     "axis": "Task",
+     "key": "task",
+     "values": [
+      {
+       "name": "Sudoku-hard",
+       "value": "battery/sudoku_hard"
+      },
+      {
+       "name": "text8",
+       "value": "battery/text8"
+      },
+      {
+       "name": "TinyStories BPE",
+       "value": "battery/tinystories_bpe"
+      }
+     ]
+    },
+    {
+     "axis": "Corruption",
+     "key": "ablation_path",
+     "values": [
+      {
+       "name": "Gaussian",
+       "value": "gaussian"
+      },
+      {
+       "name": "simplex",
+       "value": "simplex"
+      },
+      {
+       "name": "spherical",
+       "value": "spherical"
+      },
+      {
+       "name": "vMF",
+       "value": "spherical_vmf"
+      }
+     ]
+    },
+    {
+     "axis": "SC",
+     "key": "feedback",
+     "values": [
+      {
+       "name": "no SC",
+       "value": "none"
+      },
+      {
+       "name": "SC",
+       "value": "expected_embedding"
+      }
+     ]
+    }
+   ],
+   "sweep": {
+    "path": "configs/sweep/continuous_schedules.yaml",
+    "url": "https://github.com/patrickpynadath1/sddc/blob/383616271af4bb858cdba117387dc24928ad7a58/configs/sweep/continuous_schedules.yaml",
+    "text": "# @package _global_\n# Worked example experiments/continuous-schedules: how CDCD learned schedules\n# spend training, and what self-conditioning does to continuous methods.\n# 4 continuous paths x {no SC, SC} x 3 tasks = 24 cases, all with the CDCD\n# learned clock, the 8-layer / 512-wide backbone and 20k training steps.\ndefaults:\n- /experiment: corruption_factorial\n- common\n- /ablation_path: gaussian\n- /feedback: none\n- /inference_policies: hybrid_renoising\n- override /path_schedule: cdcd\n- override /task: battery/sudoku_hard\n- _self_\ncheckpoint:\n  every_n_steps: 1000\ndata:\n  # Read only by TinyStories: the story cohort the evaluation indices refer to.\n  # Build it with scripts/prepare_data.py.\n  allowed_ids_path: ${data.cache_dir}/allowed_ids.json\npreparation:\n  name: continuous-schedules\n  output: ${oc.env:SDDC_STORAGE_ROOT,${oc.env:HOME}/.cache/sddc}/plans/continuous-schedules\n  family: continuous_schedules\n  recipe_name: ${preparation.path_name}-${preparation.feedback_name}\n  evaluation_file: experiments/continuous-schedules/evaluation/${preparation.task_name}.json\n  wandb:\n    project: continuous-schedules\nhydra:\n  sweeper:\n    params:\n      task: battery/sudoku_hard,battery/text8,battery/tinystories_bpe\n      ablation_path: gaussian,simplex,spherical,spherical_vmf\n      feedback: none,expected_embedding\n"
+   },
+   "groups": [
+    {
+     "label": "Defaults",
+     "files": [
+      {
+       "path": "configs/sweep/common.yaml",
+       "url": "https://github.com/patrickpynadath1/sddc/blob/383616271af4bb858cdba117387dc24928ad7a58/configs/sweep/common.yaml",
+       "text": "# Excerpt: trainer, loader, training, lr_scheduler, optimizer, preparation.evaluation (135 lines in full; the rest sets W&B, Ray resources,\n# the three native/EB sampler policies and Hydra output paths).\ntrainer:\n  max_steps: 20000\n  accumulate_grad_batches: 4\n  precision: bf16-mixed\n  val_check_interval: 4000\n  num_sanity_val_steps: 0\n  enable_progress_bar: false\nloader:\n  global_batch_size: 256\n  eval_batch_size: 8\n  num_workers: 2\ntraining:\n  warmup_steps: 2500\n  ema: 0.9999\n  performance:\n    compile:\n      enabled: true\n      backend: inductor\n      dynamic: true\nlr_scheduler:\n  _target_: core.training.schedules.constant_warmup\n  warmup_steps: 2500\noptimizer:\n  lr: 0.0003\npreparation:\n  evaluation:\n    nfe: 128\n    seeds:\n    - 41\n    - 42\n    test_seeds:\n    - 1041\n    - 1042\n",
+       "excerpt": true
+      },
+      {
+       "path": "configs/experiment/corruption_factorial.yaml",
+       "url": "https://github.com/patrickpynadath1/sddc/blob/383616271af4bb858cdba117387dc24928ad7a58/configs/experiment/corruption_factorial.yaml",
+       "text": "# @package _global_\n# Common training assembly: one noisy view, one posterior, one CE objective.\ndefaults:\n- override /algorithm: hybrid_diffusion\n- override /model: single_view\n- override /sampler: hybrid\n- override /parameterization: unconstrained_posterior\n- override /objective: cross_entropy\n- override /time_sampler: antithetic\n\nmodel:\n  time:\n    coordinate: time\nself_conditioning:\n  source: hidden\n  probability: 0.9\n  evaluation_probability: 1.0\ntrainer:\n  max_steps: 10000\n  val_check_interval: 1000\n  # Use one precision across families (including the simplex recipe).\n  precision: bf16-mixed\n  enable_progress_bar: false\ncheckpoint:\n  every_n_steps: 1000\n  save_top_k: 1\n# Periodic generation uses isolated RNG and EMA weights.\ncallback:\n  every_n_steps: 1000\n  subset_size: 128\nsampler:\n  steps: 127\n  final_denoise: greedy\n"
+      }
+     ]
+    },
+    {
+     "label": "Corruption",
+     "files": [
+      {
+       "path": "configs/ablation_path/gaussian.yaml",
+       "url": "https://github.com/patrickpynadath1/sddc/blob/383616271af4bb858cdba117387dc24928ad7a58/configs/ablation_path/gaussian.yaml",
+       "text": "# @package _global_\ndefaults:\n- /gaussian_state: embedding\n- /path_schedule: adaptive\npreparation:\n  path_name: gaussian_embedding\n"
+      },
+      {
+       "path": "configs/ablation_path/simplex.yaml",
+       "url": "https://github.com/patrickpynadath1/sddc/blob/383616271af4bb858cdba117387dc24928ad7a58/configs/ablation_path/simplex.yaml",
+       "text": "# @package _global_\ndefaults:\n- /path_schedule: adaptive\n- override /hybrid_view@model.views.content: simplex\npreparation:\n  path_name: simplex\n"
+      },
+      {
+       "path": "configs/ablation_path/spherical.yaml",
+       "url": "https://github.com/patrickpynadath1/sddc/blob/383616271af4bb858cdba117387dc24928ad7a58/configs/ablation_path/spherical.yaml",
+       "text": "# @package _global_\n# Geodesic spherical flow (S-FLM), with learned unit-normalized embeddings.\ndefaults:\n- /path_schedule: adaptive\n- override /hybrid_view@model.views.content: spherical\npreparation:\n  path_name: spherical\n"
+      },
+      {
+       "path": "configs/ablation_path/spherical_vmf.yaml",
+       "url": "https://github.com/patrickpynadath1/sddc/blob/383616271af4bb858cdba117387dc24928ad7a58/configs/ablation_path/spherical_vmf.yaml",
+       "text": "# @package _global_\n# Alternative vMF probability-flow construction, distinct from geodesic S-FLM.\ndefaults:\n- /path_schedule: adaptive\n- override /hybrid_view@model.views.content: vmf\npreparation:\n  path_name: spherical_vmf\n"
+      },
+      {
+       "path": "configs/path_schedule/cdcd.yaml",
+       "url": "https://github.com/patrickpynadath1/sddc/blob/383616271af4bb858cdba117387dc24928ad7a58/configs/path_schedule/cdcd.yaml",
+       "text": "# @package _global_\n# Learn the continuous view's quantile map with the CDCD loss-CDF fitter.\n# The shared/discrete clock remains uniform; no legacy AdaptiveTimeMap is used.\ndefaults:\n- override /time_sampler: cdcd\nalgorithm:\n  adaptive_time_views: [0]\ntime_sampler:\n  adaptive: true\n  epsilon: 0.001\npreparation:\n  schedule_name: cdcd\n"
+      }
+     ]
+    },
+    {
+     "label": "SC",
+     "files": [
+      {
+       "path": "configs/feedback/none.yaml",
+       "url": "https://github.com/patrickpynadath1/sddc/blob/383616271af4bb858cdba117387dc24928ad7a58/configs/feedback/none.yaml",
+       "text": "# @package _global_\nself_conditioning:\n  enabled: false\n  source: posterior_mean\nmodel:\n  n_blocks: 8\npreparation:\n  feedback_name: none\n"
+      },
+      {
+       "path": "configs/feedback/expected_embedding.yaml",
+       "url": "https://github.com/patrickpynadath1/sddc/blob/383616271af4bb858cdba117387dc24928ad7a58/configs/feedback/expected_embedding.yaml",
+       "text": "# @package _global_\nself_conditioning:\n  enabled: true\n  source: posterior_mean\nmodel:\n  n_blocks: 8\npreparation:\n  feedback_name: expected_embedding\n"
+      }
+     ]
+    },
+    {
+     "label": "Samplers",
+     "files": [
+      {
+       "path": "configs/inference_policies/hybrid_renoising.yaml",
+       "url": "https://github.com/patrickpynadath1/sddc/blob/383616271af4bb858cdba117387dc24928ad7a58/configs/inference_policies/hybrid_renoising.yaml",
+       "text": "# @package _global_\n# Sampler policies for single-view diffusion recipes: the native (ancestral) sampler,\n# its greedy variant, entropy-bounded greedy decoding and forward re-noising (sampled\n# and greedy). Each is tuned on validation; only the best one sees the test split.\npreparation:\n  inference:\n  - name: native\n    space:\n      algorithm.predictor.temperature: {type: float, low: 0.5, high: 1.5}\n    initial_points:\n    - algorithm.predictor.temperature: 1.0\n    trials: 16\n    budget_parameter: steps\n  - name: native_greedy\n    space:\n      sampler.final_denoise: [greedy, sample]\n    trials: 2\n    budget_parameter: steps\n    sampler_overrides:\n      greedy_clean_estimate: true\n  - name: eb_greedy\n    sampler:\n      _target_: core.samplers.parallel_entropy_bounded.ParallelEntropyBoundedSampler\n      steps: 127\n      freeze: true\n      greedy_clean_estimate: true\n      entropy_bound: 0.1\n    space:\n      algorithm.predictor.temperature: {type: float, low: 0.5, high: 1.5}\n      sampler.entropy_bound: {type: float, low: 0.02, high: 0.5, log: true}\n    initial_points:\n    - algorithm.predictor.temperature: 1.0\n      sampler.entropy_bound: 0.1\n    trials: 16\n    budget_parameter: steps\n  - name: renoising\n    sampler:\n      _target_: core.samplers.forward_resampling.ForwardResamplingSampler\n      steps: 127\n      epsilon: 1.0e-5\n      greedy_clean_estimate: false\n      final_denoise: greedy\n    space:\n      algorithm.predictor.temperature: {type: float, low: 0.5, high: 1.5}\n    initial_points:\n    - algorithm.predictor.temperature: 1.0\n    trials: 16\n    budget_parameter: steps\n  - name: renoising_greedy\n    sampler:\n      _target_: core.samplers.forward_resampling.ForwardResamplingSampler\n      steps: 127\n      epsilon: 1.0e-5\n      greedy_clean_estimate: true\n      final_denoise: greedy\n    space:\n      sampler.final_denoise: [greedy, sample]\n    trials: 2\n    budget_parameter: steps\n"
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "id": "block-encoder-decoder",
+   "question": "Block Diffusion: Scale the Encoder or the Decoder?",
+   "dir": "experiments/block-encoder-decoder",
+   "dir_url": "https://github.com/patrickpynadath1/sddc/tree/383616271af4bb858cdba117387dc24928ad7a58/experiments/block-encoder-decoder",
+   "run": "# text8 from the afmck/text8 parquet copy (revision 58c74e96...), as the task's split files.\nuv run --locked python scripts/prepare_data.py text8 \\\n  --parquet PATH/afmck-text8/data --raw-dir $SDDC_STORAGE_ROOT/data_cache/text8/raw\n# The TinyStories story cohort the evaluation indices refer to (revision f54c09fd...).\nuv run --locked python scripts/prepare_data.py tinystories \\\n  --parquet PATH/roneneldan-TinyStories/data \\\n  --output $SDDC_STORAGE_ROOT/data_cache/tinystories_bpe/allowed_ids.json\nexport TINYSTORIES_DATA_DIR=PATH/roneneldan-TinyStories/data\n\nuv run --locked --extra tuning --extra scoring python -m core.sweeps.prepare -m \\\n  +sweep=block_encoder_decoder preparation.output=$SDDC_STORAGE_ROOT/plans/block-encoder-decoder\nuv run --locked --extra tuning --extra scoring python -m core.sweeps.prepare collect \\\n  $SDDC_STORAGE_ROOT/plans/block-encoder-decoder        # 27 cases\nuv run --locked --extra tuning --extra scoring python -m core.sweeps.nested_tuning \\\n  $SDDC_STORAGE_ROOT/plans/block-encoder-decoder/manifest.json \\\n  --output $SDDC_STORAGE_ROOT/runs/block-encoder-decoder --address auto --case-concurrency 4\nuv run --locked --extra scoring python experiments/block-encoder-decoder/analyze.py \\\n  $SDDC_STORAGE_ROOT/runs/block-encoder-decoder --output results/\n",
+   "fixed": [
+    "masked block diffusion (MDLM loss), block size 32, time-conditioned AdaLN, no SC",
+    "20k updates of 256 sequences; one training seed",
+    "128 NFE budget (Sudoku uses 84: its first two blocks are the given puzzle)",
+    "native and native greedy samplers only (inline in the sweep), tuned on validation; winner tested once"
+   ],
+   "notes": [],
+   "see": null,
+   "axes": [
+    {
+     "axis": "Task",
+     "key": "task",
+     "values": [
+      {
+       "name": "Sudoku-hard",
+       "value": "battery/sudoku_hard"
+      },
+      {
+       "name": "text8",
+       "value": "battery/text8"
+      },
+      {
+       "name": "TinyStories BPE",
+       "value": "battery/tinystories_bpe"
+      }
+     ]
+    },
+    {
+     "axis": "Block model",
+     "key": "block",
+     "values": [
+      {
+       "name": "enc 1 / dec 8",
+       "value": "encoder1_decoder8"
+      },
+      {
+       "name": "enc 2 / dec 8",
+       "value": "encoder2_decoder8"
+      },
+      {
+       "name": "enc 4 / dec 8",
+       "value": "encoder4_decoder8"
+      },
+      {
+       "name": "enc 8 / dec 8",
+       "value": "encoder8_decoder8"
+      },
+      {
+       "name": "enc 8 / dec 1",
+       "value": "encoder8_decoder1"
+      },
+      {
+       "name": "enc 8 / dec 2",
+       "value": "encoder8_decoder2"
+      },
+      {
+       "name": "enc 8 / dec 4",
+       "value": "encoder8_decoder4"
+      },
+      {
+       "name": "no encoder (raw context)",
+       "value": "raw_context"
+      },
+      {
+       "name": "block diffusion, one shared 8-layer network",
+       "value": "shared_transformer"
+      }
+     ]
+    }
+   ],
+   "sweep": {
+    "path": "configs/sweep/block_encoder_decoder.yaml",
+    "url": "https://github.com/patrickpynadath1/sddc/blob/383616271af4bb858cdba117387dc24928ad7a58/configs/sweep/block_encoder_decoder.yaml",
+    "text": "# @package _global_\n# Block diffusion: scale the encoder or the decoder? See experiments/block-encoder-decoder.\n# 9 block models (configs/block) x 3 tasks = 27 cases, one training seed each.\n# Masked block diffusion (MDLM loss, block size 32), time-conditioned AdaLN, no\n# self-conditioning, 20k updates of 256 sequences, native samplers at 128 NFE.\ndefaults:\n- /experiment: e2d2\n- common\n- _self_\n# After _self_: a block model sets its depths, recipe name and recipe fields.\n- /block: encoder8_decoder8\n- override /task: battery/text8\nalgorithm:\n  time_conditioning: true\ntrainer:\n  max_steps: 20000\n  accumulate_grad_batches: 32\n  val_check_interval: 32000\ncheckpoint:\n  every_n_steps: 1000\nself_conditioning:\n  enabled: false\ndata:\n  # Read only by TinyStories: the story cohort the evaluation indices refer to.\n  # Build it with scripts/prepare_data.py.\n  allowed_ids_path: ${data.cache_dir}/allowed_ids.json\npreparation:\n  name: block-encoder-decoder\n  output: ${oc.env:SDDC_STORAGE_ROOT,${oc.env:HOME}/.cache/sddc}/plans/block-encoder-decoder\n  family: block_encoder_decoder\n  evaluation_file: experiments/block-encoder-decoder/evaluation/${preparation.task_name}.json\n  recipe_fields: [model, encoder_decoder, block_diffusion, representation, algorithm, parameterization, objective, noise_schedule, time_sampler, prediction, self_conditioning, optimizer]\n  wandb:\n    project: block-encoder-decoder\n  # Native ancestral sampling only; renoising samplers were not run on these models.\n  inference:\n  - name: native\n    sampler:\n      _target_: core.samplers.ancestral.AncestralSampler\n      steps: 127\n      epsilon: 1.0e-5\n      final_denoise: greedy\n    space:\n      algorithm.predictor.temperature: {type: float, low: 0.5, high: 1.5}\n    initial_points:\n    - algorithm.predictor.temperature: 1.0\n    trials: 16\n    budget_parameter: steps\n  - name: native_greedy\n    sampler:\n      _target_: core.samplers.ancestral.AncestralSampler\n      steps: 127\n      epsilon: 1.0e-5\n      final_denoise: greedy\n      greedy_clean_estimate: true\n    space:\n      sampler.final_denoise: [greedy, ancestral]\n    trials: 2\n    budget_parameter: steps\nhydra:\n  sweeper:\n    params:\n      task: battery/sudoku_hard,battery/text8,battery/tinystories_bpe\n      block: encoder1_decoder8,encoder2_decoder8,encoder4_decoder8,encoder8_decoder8,encoder8_decoder1,encoder8_decoder2,encoder8_decoder4,raw_context,shared_transformer\n      ++training.performance.activation_checkpointing: 'true'\n"
+   },
+   "groups": [
+    {
+     "label": "Defaults",
+     "files": [
+      {
+       "path": "configs/sweep/common.yaml",
+       "url": "https://github.com/patrickpynadath1/sddc/blob/383616271af4bb858cdba117387dc24928ad7a58/configs/sweep/common.yaml",
+       "text": "# Excerpt: trainer, loader, training, lr_scheduler, optimizer, preparation.evaluation (135 lines in full; the rest sets W&B, Ray resources,\n# the three native/EB sampler policies and Hydra output paths).\ntrainer:\n  max_steps: 20000\n  accumulate_grad_batches: 4\n  precision: bf16-mixed\n  val_check_interval: 4000\n  num_sanity_val_steps: 0\n  enable_progress_bar: false\nloader:\n  global_batch_size: 256\n  eval_batch_size: 8\n  num_workers: 2\ntraining:\n  warmup_steps: 2500\n  ema: 0.9999\n  performance:\n    compile:\n      enabled: true\n      backend: inductor\n      dynamic: true\nlr_scheduler:\n  _target_: core.training.schedules.constant_warmup\n  warmup_steps: 2500\noptimizer:\n  lr: 0.0003\npreparation:\n  evaluation:\n    nfe: 128\n    seeds:\n    - 41\n    - 42\n    test_seeds:\n    - 1041\n    - 1042\n",
+       "excerpt": true
+      },
+      {
+       "path": "configs/experiment/e2d2.yaml",
+       "url": "https://github.com/patrickpynadath1/sddc/blob/383616271af4bb858cdba117387dc24928ad7a58/configs/experiment/e2d2.yaml",
+       "text": "# @package _global_\n# E2D2 final-hidden-state architecture, using the local DiT backbone and MDLM\n# objective. This reproduces the information flow, not the paper's Qwen3 model.\ndefaults:\n- bd3lm\n- _self_\nmodel:\n  n_blocks: 6\nblock_diffusion:\n  x0_causal: false\nencoder_decoder:\n  _target_: core.modifiers.encoder_decoder.EncoderDecoderModel\n  encoder_layers: 6\n"
+      }
+     ]
+    },
+    {
+     "label": "Block models",
+     "files": [
+      {
+       "path": "configs/block/encoder1_decoder8.yaml",
+       "url": "https://github.com/patrickpynadath1/sddc/blob/383616271af4bb858cdba117387dc24928ad7a58/configs/block/encoder1_decoder8.yaml",
+       "text": "# @package _global_\n# E2D2: 1 encoder layer reads the clean context once per block; 8 decoder\n# layers denoise the current block at every step.\nmodel:\n  n_blocks: 8\nencoder_decoder:\n  encoder_layers: 1\npreparation:\n  recipe_name: e2d2-encoder-1-decoder-8\n"
+      },
+      {
+       "path": "configs/block/encoder2_decoder8.yaml",
+       "url": "https://github.com/patrickpynadath1/sddc/blob/383616271af4bb858cdba117387dc24928ad7a58/configs/block/encoder2_decoder8.yaml",
+       "text": "# @package _global_\n# E2D2: 2 encoder layers read the clean context once per block; 8 decoder\n# layers denoise the current block at every step.\nmodel:\n  n_blocks: 8\nencoder_decoder:\n  encoder_layers: 2\npreparation:\n  recipe_name: e2d2-encoder-2-decoder-8\n"
+      },
+      {
+       "path": "configs/block/encoder4_decoder8.yaml",
+       "url": "https://github.com/patrickpynadath1/sddc/blob/383616271af4bb858cdba117387dc24928ad7a58/configs/block/encoder4_decoder8.yaml",
+       "text": "# @package _global_\n# E2D2: 4 encoder layers read the clean context once per block; 8 decoder\n# layers denoise the current block at every step.\nmodel:\n  n_blocks: 8\nencoder_decoder:\n  encoder_layers: 4\npreparation:\n  recipe_name: e2d2-encoder-4-decoder-8\n"
+      },
+      {
+       "path": "configs/block/encoder8_decoder8.yaml",
+       "url": "https://github.com/patrickpynadath1/sddc/blob/383616271af4bb858cdba117387dc24928ad7a58/configs/block/encoder8_decoder8.yaml",
+       "text": "# @package _global_\n# E2D2: 8 encoder layers read the clean context once per block; 8 decoder\n# layers denoise the current block at every step.\nmodel:\n  n_blocks: 8\nencoder_decoder:\n  encoder_layers: 8\npreparation:\n  recipe_name: e2d2-encoder-8-decoder-8\n"
+      },
+      {
+       "path": "configs/block/encoder8_decoder1.yaml",
+       "url": "https://github.com/patrickpynadath1/sddc/blob/383616271af4bb858cdba117387dc24928ad7a58/configs/block/encoder8_decoder1.yaml",
+       "text": "# @package _global_\n# E2D2: 8 encoder layers read the clean context once per block; 1 decoder\n# layer denoises the current block at every step.\nmodel:\n  n_blocks: 1\nencoder_decoder:\n  encoder_layers: 8\npreparation:\n  recipe_name: e2d2-encoder-8-decoder-1\n"
+      },
+      {
+       "path": "configs/block/encoder8_decoder2.yaml",
+       "url": "https://github.com/patrickpynadath1/sddc/blob/383616271af4bb858cdba117387dc24928ad7a58/configs/block/encoder8_decoder2.yaml",
+       "text": "# @package _global_\n# E2D2: 8 encoder layers read the clean context once per block; 2 decoder\n# layers denoise the current block at every step.\nmodel:\n  n_blocks: 2\nencoder_decoder:\n  encoder_layers: 8\npreparation:\n  recipe_name: e2d2-encoder-8-decoder-2\n"
+      },
+      {
+       "path": "configs/block/encoder8_decoder4.yaml",
+       "url": "https://github.com/patrickpynadath1/sddc/blob/383616271af4bb858cdba117387dc24928ad7a58/configs/block/encoder8_decoder4.yaml",
+       "text": "# @package _global_\n# E2D2: 8 encoder layers read the clean context once per block; 4 decoder\n# layers denoise the current block at every step.\nmodel:\n  n_blocks: 4\nencoder_decoder:\n  encoder_layers: 8\npreparation:\n  recipe_name: e2d2-encoder-8-decoder-4\n"
+      },
+      {
+       "path": "configs/block/raw_context.yaml",
+       "url": "https://github.com/patrickpynadath1/sddc/blob/383616271af4bb858cdba117387dc24928ad7a58/configs/block/raw_context.yaml",
+       "text": "# @package _global_\n# No encoder: 8 decoder layers attend to the clean context's token embeddings\n# (EncoderDecoderModel at encoder depth 0; same visibility and K/V cache as E2D2).\nmodel:\n  n_blocks: 8\nencoder_decoder:\n  encoder_layers: 0\npreparation:\n  recipe_name: raw-context-decoder-8\n"
+      },
+      {
+       "path": "configs/block/shared_transformer.yaml",
+       "url": "https://github.com/patrickpynadath1/sddc/blob/383616271af4bb858cdba117387dc24928ad7a58/configs/block/shared_transformer.yaml",
+       "text": "# @package _global_\n# Ordinary block diffusion (BD3-LM): one 8-layer transformer reads the clean\n# context and denoises the current block.\nmodel:\n  n_blocks: 8\nencoder_decoder: null\npreparation:\n  recipe_name: shared-transformer-8\n  # No encoder_decoder block to record.\n  recipe_fields: [model, block_diffusion, representation, algorithm, parameterization, objective, noise_schedule, time_sampler, prediction, self_conditioning, optimizer]\n"
+      }
+     ]
+    }
+   ]
+  }
+ ]
+}

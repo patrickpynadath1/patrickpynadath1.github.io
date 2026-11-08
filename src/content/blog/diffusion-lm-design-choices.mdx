@@ -17,6 +17,7 @@ import { BleuLength } from "../../components/BleuLength.jsx"
 import { JevLadder } from "../../components/JevLadder.jsx"
 import { Pipeline } from "../../components/PipelineFigure.jsx"
 import ExpandableSection from "../../components/ExpandableSection.jsx"
+import RunConfig from "../../components/RunConfig.jsx"
 
 # A Few Design Choices for Diffusion Language Models (And a Codebase)
 
@@ -157,25 +158,37 @@ Several works offer reasonable answers:
 2. In [@yooSelfconditionedFlowMap2026a], the authors show that self-conditioned flows are equivalent to a fixed point iteration.
 3. In [@davis2026design; @shabalinWhyGaussianDiffusion2026], the authors argue that self conditioning fixes a mismatch between training and inference.
 
-These answers are fairly convincing. But it is unclear whether they capture the full picture. [@joLoopholingDiscreteDiffusion2026] shows that loopholing also improves discrete diffusion with uniform and masked corruption, and [@deschenauxLoopholingAllWay2026a] shows that self conditioning alone is a fairly strong generative method. None of the three hypotheses explains these results, since each depends on properties of continuous diffusion. If self conditioning helps discrete diffusion, where those reasons do not apply, do the theories fully explain why it works in the continuous case? We test three narrower questions below.
+These answers are fairly convincing. But it is unclear whether they capture the full picture. [@joLoopholingDiscreteDiffusion2026] shows that loopholing also improves discrete diffusion with uniform and masked corruption, and [@deschenauxLoopholingAllWay2026a] shows that self conditioning alone is a fairly strong generative method. None of the three hypotheses explains these results, since each depends on properties of continuous diffusion. If self conditioning helps discrete diffusion, where those reasons do not apply, do the theories fully explain why it works in the continuous case? We test four narrower questions below.
 
 In all of these experiments, "SC" means the model receives the expected embedding under its previous prediction.
 
 ### Is self conditioning just a deeper network?
 
-Self conditioning runs the network twice during training, so a fair question is whether it only adds depth. We compare an 8-layer model with SC against a 16-layer model without it, for Gaussian, masked, and uniform corruption on all three tasks. TinyStories uses the 10k-token BPE vocabulary, and those runs come from a second, independent run on different hardware. Everything else is held fixed.
+#### The question
+
+Self conditioning runs the network twice during training, so a fair question is whether it only adds depth. If it does, a 16-layer model without SC should match an 8-layer model with SC. If SC does something extra depth cannot, the 8-layer SC model should win.
+
+#### The experiment
+
+For each corruption type we need three models: an 8-layer baseline, the same baseline with SC, and a 16-layer model without SC. The baseline puts both changes on one scale: how much does each one add over the same starting point? We run this for Gaussian corruption (with the CDCD learned clock), masked corruption (ELBO weighting), and uniform corruption, on all three tasks. That is 27 models. TinyStories uses the 10k-token BPE vocabulary.
+
+Everything else is held fixed: training steps, batch size, width, and the sampler search. Every model is tuned over the same five samplers on validation, and only the winner is scored on the test split. All 27 models were trained and tuned with the same protocol, on the same hardware.
+
+<RunConfig id="sc-vs-depth" client:visible />
+
+#### Results
 
 The first figure puts both options on the same axes. Each mark shows how much SC and how much extra depth improve on the same 8-layer baseline. Marks above the diagonal are cases where SC beats doubling the depth.
 
 <HeadToHead client:visible />
 
-For Gaussian corruption, the answer is clear. SC beats 16 layers on every task: 92.8% of Sudoku puzzles solved against 84.6%, 14.4 valid words against 13.7 on text8, and 7.9 BLEU against 7.2 on TinyStories (7.9 against 7.3 without the length penalty). Doubling depth helps a Gaussian model, but SC helps more, without adding a single parameter.
+For Gaussian corruption, the answer is clear. SC beats 16 layers on every task: 90.6% of Sudoku puzzles solved against 80.7%, 14.1 valid words against 13.7 on text8, and 7.9 BLEU against 7.2 on TinyStories (7.9 against 7.3 without the length penalty). Doubling depth helps a Gaussian model, but SC helps more, without adding a single parameter.
 
 The discrete methods are mixed, and the next figure shows why it is worth looking at each cell rather than the average. Each row is one method on one task; the grey ring is the 8-layer baseline.
 
 <Dumbbells client:visible />
 
-Uniform corruption mostly follows the Gaussian pattern: SC beats depth on Sudoku (94.3% against 89.7%) and on TinyStories (7.4 against 6.7 BLEU, or 7.7 against 7.3 without the length penalty). Masked corruption does not. On Sudoku, the 8-layer masked model already solves 96.9% of puzzles, and SC drops it to 93.0%. On TinyStories, all three masked models land within seed noise of each other under standard BLEU. Without the length penalty, the 16-layer masked model is clearly ahead: 9.0 against 7.8 for both 8-layer models. It writes the shortest stories of the three (78% of the real length), and the penalty hides its lead.
+Uniform corruption mostly follows the Gaussian pattern: SC beats depth on Sudoku (92.8% against 90.6%) and on TinyStories (7.4 against 6.7 BLEU, or 7.7 against 7.3 without the length penalty). Masked corruption does not. On Sudoku, the 8-layer masked model already solves 96.9% of puzzles, and SC drops it to 92.6%. On TinyStories, all three masked models land within seed noise of each other under standard BLEU. Without the length penalty, the 16-layer masked model is clearly ahead: 9.0 against 7.8 for both 8-layer models. It writes the shortest stories of the three (78% of the real length), and the penalty hides its lead.
 
 text8 is the odd one out: SC is the worst option for both discrete methods. The gap grid below collects every cell in one place, which makes the text8 column stand out.
 
@@ -187,23 +200,67 @@ text8 is the odd one out: SC is the worst option for both discrete methods. The 
 
 ### Does self conditioning change how the model should be sampled?
 
-The text8 result looks like SC hurting discrete models. The sampler tells a different story. Every model above was tuned with all five samplers, and the next figure shows which one won for each model.
+#### The question
+
+The text8 result looks like SC hurting discrete models. But each model above used whichever sampler won on validation, so its score mixes two things: how good the model is, and which sampler it can use. Does SC change which sampler works best? If it does, part of the text8 result is about sampling, not about the model.
+
+#### The experiment
+
+This needs no new training. Every model in the previous experiment was already tuned with all five samplers, so we can read off which sampler won for each of the 27 models, and how every sampler scored on validation. Then we compare the 8-layer, SC, and 16-layer models again, with every model held to the same sampler (native). Everything here uses validation scores; the test split is still used only once per model, in the previous experiment.
+
+<RunConfig id="sc-sampler-choice" client:visible />
+
+#### Results
+
+The next figure shows which sampler won for each model.
 
 <SamplerChoice client:visible />
 
-On text8, renoising wins for every Gaussian, masked, and uniform model without SC. With SC, renoising stops working: the masked SC model drops to under 1 valid word per sample with renoising, compared with 13.2 with the native sampler. So the SC models fall back on the native sampler, while their no-SC rivals keep the renoising boost.
+On text8, renoising wins for every Gaussian, masked, and uniform model without SC. With SC, renoising stops working: the masked SC model drops to under 1 valid word per sample with renoising, compared with 13.6 with the native sampler. So the SC models fall back on the native sampler, while their no-SC rivals keep the renoising boost.
 
-If we restrict every model to the native sampler, the text8 picture flips. On validation, SC beats both the 8- and 16-layer masked models (13.2 against 12.2 and 12.8), and lands between them for uniform (14.3 against 13.8 and 14.5). In other words, much of the "SC hurts discrete models" result on text8 is really "SC models cannot use the renoising sampler."
+If we restrict every model to the native sampler, the text8 picture flips. On validation, SC beats both the 8- and 16-layer masked models (13.6 against 11.5 and 12.4), and lands between them for uniform (14.3 against 13.6 and 14.7). In other words, much of the "SC hurts discrete models" result on text8 is really "SC models cannot use the renoising sampler."
 
 We do not yet know why. One guess is that renoising throws away the noisy state the SC feedback was built from, so the feedback no longer matches the state the model sees. That is untested.
 
 **How sure are we?** The sampler flip is clear in the validation numbers, but it comes from one task and one seed. It is a good reason to never compare SC and no-SC models under a single fixed sampler.
 
+### Does self conditioning help every continuous method?
+
+#### The question
+
+The experiments above use one continuous method, Gaussian corruption of learned embeddings. The codebase has three more: simplex, spherical, and vMF. Each corrupts a different representation, so if SC's benefit depends on how Gaussian noise acts on embeddings, it might not carry over. Does SC help all four?
+
+#### The experiment
+
+We train each of the four continuous methods with and without SC on all three tasks. That is 24 models, all with the same 8-layer backbone and the CDCD learned clock, and all tuned with the same five samplers. These are the same runs as in [Continuous Noise Schedules](#continuous-noise-schedules), which asks a different question of them: whether SC changes the learned clock. Their configs are in that section's "How this was run" panel.
+
+#### Results
+
+Each pair below is the same 8-layer model and the same learned clock, with and without SC.
+
+<CdcdPerformance client:visible />
+
+SC helps every continuous method on Sudoku and TinyStories. On text8 the picture is mixed. SC helps simplex most (11.5 to 13.3 valid words) and Gaussian (13.0 to 14.1). Spherical and vMF barely move (13.0 to 13.0, and 12.8 to 13.0). That is the sampler effect from the previous question again: without SC, both pick renoising, which lifts them by 3.5 to 4 valid words on validation. With the native sampler only, SC is worth about 3 for both (9.6 to 12.3 for spherical, 9.1 to 12.8 for vMF, on validation). On TinyStories BPE, SC helps simplex most under standard BLEU, from 6.3 to 8.5. Most of that jump is length: without SC, simplex ends its stories at 80% of the real length, and without the length penalty the gain shrinks to 8.1 to 8.5. Simplex with SC scores 8.5 either way. That makes it the strongest diffusion model here, ahead of spherical with SC (8.3, or 8.5 without the penalty) and Gaussian with SC (7.9). The autoregressive model of the same size scores 8.9 (9.0 without the penalty).
+
+SC also leaves each method's learned clock almost unchanged, as the noise schedule section shows. Whatever it fixes, it does not show up as a change in where the training loss is spent.
+
+**How sure are we?** The gains are large compared with seed noise and hold across tasks, but each comes from one training seed. The text8 result for spherical and vMF depends on the sampler, as above. We would not lean on the Sudoku pairs: those models overfit their training puzzles.
+
 ### Does the tokenizer change the picture?
+
+#### The question
+
+Most language models use subword tokenizers, while most small diffusion experiments use characters or bytes. A mechanism that depends on how hard it is to identify a noisy token could easily change with vocabulary size: with bytes, a noisy position has 260 candidates; with a 10k BPE vocabulary, it has 10,000, mostly whole words. A larger vocabulary makes every model better, so that is not the question. The question is whether SC's effect, and the differences between methods, survive the change.
+
+#### The experiment
+
+We repeat the comparison on TinyStories with BPE vocabularies of 260 (bytes), 500, 1k, 5k, and 10k tokens. At each size we train Gaussian, masked, and uniform diffusion, each with and without SC, plus an autoregressive (AR) model of the same size as a reference. That is 7 models per vocabulary and 35 in total. The vocabulary is the only thing that changes along the ladder; the sequence length is set per vocabulary so every story fits. Every diffusion model is tuned with the same five samplers, and AR chooses between sampling and greedy decoding.
+
+<RunConfig id="tokenizer-ladder" client:visible />
 
 {/* MOCKUP: tokenizer ladder. Data in src/data/vocab_ladder.json (portable-v2-mi210 + ladder-nosc archives). */}
 
-Most language models use subword tokenizers, while most small diffusion experiments use characters or bytes. A mechanism that depends on how hard it is to identify a noisy token could easily change with vocabulary size: with bytes, a noisy position has 260 candidates; with a 10k BPE vocabulary, it has 10,000, mostly whole words. A larger vocabulary makes every model better, so that is not the question. The question is whether SC's effect, and the differences between methods, survive the change. So we repeat the comparison on TinyStories with BPE vocabularies of 260 (bytes), 500, 1k, 5k, and 10k tokens, with and without SC. An autoregressive (AR) model of the same size serves as a reference, and every model is tuned with the same five samplers.
+#### Results
 
 <VocabLadder client:visible />
 
@@ -222,7 +279,13 @@ So SC does not stop mattering at realistic vocabulary sizes. What it fixes does 
 
 ### A second opinion from a judge model
 
-BLEU compares word sequences with one real ending, and as the note on BLEU shows, it also rewards length. It cannot tell a story that wanders off from one that stays on track. So we tried a different kind of evaluator. Using a language model as a judge of generated text is now common [@zheng2023judging; @liu2023geval]: the judge reads an output and answers a question about it, such as which of two responses is better or how coherent a passage is. The usual catch is that the judge answers in free text, so its verdict has to be parsed out of the response, and an answer in the wrong format has to be retried or dropped. [Jev](https://docs.typesafe.ai/concepts/system-one), a model from TypeSafe, is an LLM judge without that step. It answers typed questions (yes or no, pick one of several, place on a scale) and returns each answer as a probability over the allowed options. Nothing needs to be extracted, and every answer comes with a confidence [@li2026jevjudge].
+#### The question
+
+BLEU compares word sequences with one real ending, and as the note on BLEU shows, it also rewards length. It cannot tell a story that wanders off from one that stays on track. Does a judge that reads the stories see the same ladder as BLEU, and can it show what SC actually fixes?
+
+#### The experiment
+
+So we tried a different kind of evaluator. Using a language model as a judge of generated text is now common [@zheng2023judging; @liu2023geval]: the judge reads an output and answers a question about it, such as which of two responses is better or how coherent a passage is. The usual catch is that the judge answers in free text, so its verdict has to be parsed out of the response, and an answer in the wrong format has to be retried or dropped. [Jev](https://docs.typesafe.ai/concepts/system-one), a model from TypeSafe, is an LLM judge without that step. It answers typed questions (yes or no, pick one of several, place on a scale) and returns each answer as a probability over the allowed options. Nothing needs to be extracted, and every answer comes with a confidence [@li2026jevjudge].
 
 We were mostly playing with it as a tool for evaluating language, and two things made it useful. First, it lets us break "is this a good story?" into narrow questions and ask each one separately. Second, it is fast and cheap enough to ask a lot of them: about 160,000 judgments of the ladder's test stories (512 per model) took under 15 minutes and cost under $10. We asked:
 
@@ -232,7 +295,9 @@ We were mostly playing with it as a tool for evaluating language, and two things
 - **Ratings.** Coherence and fluency on a fixed scale. The real endings are rated the same way, so scores can be read relative to them.
 - **Garbled words.** One yes or no question per distinct word: is it misspelled, made up, a fragment, or two words fused?
 
-Every pairwise question was asked twice, with the order of the options swapped, and the answers averaged.
+Every pairwise question was asked twice, with the order of the options swapped, and the answers averaged. No new models are trained: Jev reads the test stories of the 35 ladder models above.
+
+#### Results
 
 <JevLadder client:visible />
 
@@ -248,11 +313,21 @@ Jev's view of the ladder:
 
 ## Continuous Noise Schedules
 
+#### The question
+
 How should we design noise schedules for cDLMs? For masked diffusion, the schedule mostly changes the variance of training, not the objective [@Sahoo_Arriola_Schiff_Gokaslan_Marroquin_Chiu_Rush_Kuleshov_2024]. For continuous methods, the schedule decides how much training time goes to each noise level, and a bad choice can waste most of it.
+
+Every pure continuous recipe here (Gaussian embeddings, simplex, spherical, vMF) learns its noise schedule with CDCD [@dieleman2022continuous]. CDCD fits the expected loss as a function of noise level and samples training times through its inverse, so that every stretch of the warped time $u$ carries the same share of the loss. So we ask three things: does the learned clock do its job, where does it spend training, and does SC change where it spends training? The last one matters because the clock is adaptive, so a change to the model's inputs could move it.
+
+#### The experiment
+
+We train the four continuous methods, each with and without SC, on all three tasks. That is 24 models, all with the 8-layer backbone, the CDCD clock, and the same five-sampler search. On the final checkpoints we then measure whether loss climbs linearly in $u$, what the learned clocks look like, and how quickly each clock destroys a token's identity and its rank, and we compare each method's clock with and without SC. The schedule figures use text8 and byte-level TinyStories checkpoints from an earlier training run of the same recipes, on different GPUs.
+
+<RunConfig id="continuous-schedules" client:visible />
 
 {/* MOCKUP: CDCD schedule figures. Data in src/data/cdcd_schedules.json and cdcd_performance.json. */}
 
-Every pure continuous recipe here (Gaussian embeddings, simplex, spherical, vMF) learns its noise schedule with CDCD [@dieleman2022continuous]. CDCD fits the expected loss as a function of noise level and samples training times through its inverse, so that every stretch of the warped time $u$ carries the same share of the loss. We check three things on the final checkpoints: whether the learned clock does its job, what the clocks look like, and how each method performs with and without SC. The schedule figures use text8 and byte-level TinyStories checkpoints.
+#### Results
 
 The first check is simple. If the clock is right, measured loss should climb in a straight line in $u$.
 
@@ -270,27 +345,29 @@ The raw noise parameters are hard to compare across methods, since a noise level
 
 The two measures disagree sharply. On text8, the nearest token is already wrong more than half the time within the first 12% of the learned clock. Yet the true token's rank is still only halfway to chance at about 75% of the clock for Gaussian, spherical, and vMF, and at about 95% for simplex. On byte-level TinyStories, the gap is even wider. So the learned clocks spend most of training at noise levels where the token's identity is gone, but its rank is not.
 
-This matches the picture of token identifiability from CANDI [@pynadath2025candihybriddiscretecontinuousdiffusion], where Gaussian noise destroys a token's identity and its rank at very different rates. Here, the learned clocks arrive at that split on their own. SC barely changes the clocks on the text tasks: the point where rank information runs out moves by about 0.02 in $u$.
+This matches the picture of token identifiability from CANDI [@pynadath2025candihybriddiscretecontinuousdiffusion], where Gaussian noise destroys a token's identity and its rank at very different rates. Here, the learned clocks arrive at that split on their own.
 
-Last, performance. Each pair below is the same 8-layer model and the same learned clock, with and without SC.
+Last, SC. The clock is adaptive: it is fit to the model's own loss, so anything that changes how hard each noise level is for the model should move it. SC gives the model its previous prediction at every step, which could plausibly make high noise levels easier. Figure I draws each clock with SC (solid) and without (dashed). On the text tasks the two nearly coincide: the point where rank information runs out moves by about 0.02 in $u$. This is a little puzzling next to the scores, where SC changes most methods a lot (see [Does self conditioning help every continuous method?](#does-self-conditioning-help-every-continuous-method)). Whatever SC fixes, it does not show up as a change in where the loss is spent.
 
-<CdcdPerformance client:visible />
-
-SC helps every continuous method on every task. The largest gains are on text8 for spherical (9.6 to 13.1 valid words) and vMF (10.0 to 13.2). On TinyStories BPE, SC helps simplex most under standard BLEU, from 6.3 to 8.5. Most of that jump is length: without SC, simplex ends its stories at 80% of the real length, and without the length penalty the gain shrinks to 8.1 to 8.5. Simplex with SC scores 8.5 either way. That makes it the strongest diffusion model here, ahead of spherical with SC (8.3, or 8.5 without the penalty) and Gaussian with SC (7.9). The autoregressive model of the same size scores 8.9 (9.0 without the penalty).
-
-Put together with the clocks, this is a little puzzling. SC improves every method a lot while leaving its learned clock almost unchanged. Whatever SC fixes, it does not show up as a change in where the loss is spent.
-
-**How sure are we?** The clock checks on text are solid. The performance gains are large compared with seed noise and hold across tasks, but each comes from one training seed. The Sudoku numbers should not be read at all.
+**How sure are we?** The clock checks on text are solid, and so is the small effect of SC on the clocks: it holds for every method on both text tasks. Each clock comes from one training seed. The Sudoku clocks do not describe held-out loss, so we leave them out of every claim. The clocks here and the scores in the self conditioning section come from two separate training runs of the same recipes.
 
 ## Block Diffusion: Scale the Encoder or the Decoder?
 
-{/* MOCKUP: block diffusion figure. Data in src/data/block_scaling.json (portable-v2-mi210 snapshot). */}
+#### The question
 
 Block diffusion generates a sequence one block at a time. Each block is denoised while the model reads the blocks already written. Ordinary block diffusion [@arriola2025block] uses one transformer for both jobs. E2D2 [@arriola2025e2d2] splits them: an encoder reads the clean context, and a decoder denoises the current block. The encoder runs once per block, while the decoder runs at every denoising step. So the two sides have very different costs, and we can ask which one is worth making deeper.
 
 The design map above shows how the weights are split: pick block diffusion, then **Weights → Encoder + decoder (E2D2)** under Sequence modifiers.
 
-We train E2D2 with the decoder fixed at 8 layers and the encoder at 1, 2, 4, or 8, and with the encoder fixed at 8 and the decoder at 1, 2, 4, or 8. We also train a model with no encoder at all, where the decoder reads the raw context embeddings, and ordinary block diffusion with one shared 8-layer transformer. That is 9 models per task and 27 in total, which took about 233 GPU hours of training (6 to 14 hours per run).
+#### The experiment
+
+To separate the two sides, we vary one while holding the other fixed. We train E2D2 with the decoder fixed at 8 layers and the encoder at 1, 2, 4, or 8, and with the encoder fixed at 8 and the decoder at 1, 2, 4, or 8. Two more models bound the comparison: one with no encoder at all, where the decoder reads the raw context embeddings, and ordinary block diffusion with one shared 8-layer transformer. That is 9 models per task and 27 in total, which took about 233 GPU hours of training (6 to 14 hours per run). All of them are masked block diffusion with blocks of 32 tokens and no SC, tuned with the native samplers only.
+
+<RunConfig id="block-encoder-decoder" client:visible />
+
+{/* MOCKUP: block diffusion figure. Data in src/data/block_scaling.json (portable-v2-mi210 snapshot). */}
+
+#### Results
 
 <BlockEncDec client:visible />
 
@@ -316,7 +393,7 @@ Three of the results above changed how we think about these models:
 
 Each of these took a few dozen small training runs, and each leaves an open question we cannot yet answer. That is the kind of result the codebase is built for: cheap enough to run on an academic budget, controlled enough to trust within its scope, and specific enough to point at the next experiment.
 
-{/* TODO(Patrick): add the link to the renamed repository and the commit these results come from. */}
+The code is at [github.com/patrickpynadath1/sddc](https://github.com/patrickpynadath1/sddc) (commit [`3836162`](https://github.com/patrickpynadath1/sddc/tree/383616271af4bb858cdba117387dc24928ad7a58)). Each experiment in this post is a [worked example](https://github.com/patrickpynadath1/sddc/tree/383616271af4bb858cdba117387dc24928ad7a58/experiments) there, with its sweep, the evaluation splits, the numbers reported here and the analysis that rebuilds these figures. The runs themselves used an earlier internal version of the code; the worked examples follow the same protocol, so a rerun should give close numbers, not identical ones.
 
 ## Acknowledgements
 

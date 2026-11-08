@@ -1,7 +1,7 @@
 // Experimental pipeline of the codebase: the "factory line" from a question to
 // figures, and a zoom into one experiment case (nested training / sampler
 // search with a hard validation / test boundary).
-// Sources: candi core/sweeps/prepare.py, core/sweeps/nested_tuning.py,
+// Sources: SDDC core/sweeps/prepare.py, core/sweeps/nested_tuning.py,
 // docs/guides/experiments.md, docs/guides/nested-tuning.md. The "this post"
 // numbers come from the portable-v2-mi210 manifest.
 import { useState } from "react";
