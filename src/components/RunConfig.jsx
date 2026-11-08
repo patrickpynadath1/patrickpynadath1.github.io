@@ -16,8 +16,6 @@ const S = {
     boxShadow: on ? "none" : "inset 0 0 0 1px var(--border)" }),
   small: { fontSize: 13, color: "var(--muted)", lineHeight: 1.55, margin: "6px 0" },
   path: { font: "12.5px var(--font-mono)" },
-  gh: { display: "inline-block", padding: "3px 10px", marginRight: 4, borderRadius: 8, fontWeight: 600,
-    background: "var(--accent-wash)", color: "var(--accent)", textDecoration: "none" },
 };
 
 function FileView({ f }) {
@@ -75,14 +73,12 @@ export default function RunConfig({ id }) {
         <span className="expandable-title">How this was run</span>
         <span className="expandable-icon">{open ? "−" : "+"}</span>
       </button>
-      <p style={{ ...S.small, margin: "8px 0 4px" }}>
-        <a href={q.dir_url} target="_blank" rel="noopener" style={S.gh}>View this experiment on GitHub ↗</a>{" "}
-        <span style={S.path}>{q.dir}/</span> in{" "}
-        <a href={DATA.github} target="_blank" rel="noopener">patrickpynadath1/sddc</a> at commit{" "}
-        <a href={`${DATA.github}/tree/${DATA.sha}`} target="_blank" rel="noopener" style={S.path}>{DATA.short}</a>
-      </p>
       {open && (
         <div className="expandable-content">
+          <p style={S.small}>
+            Worked example <a href={q.dir_url} style={S.path}>{q.dir}/</a> in the SDDC repo at commit{" "}
+            <a href={`${DATA.github}/tree/${DATA.sha}`} style={S.path}>{DATA.short}</a>.
+          </p>
 
           <div style={S.h}>Run it</div>
           <pre style={S.pre}><code>{highlight(q.run, "bash")}</code></pre>
