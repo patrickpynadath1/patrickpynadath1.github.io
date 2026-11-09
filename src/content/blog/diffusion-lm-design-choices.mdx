@@ -18,6 +18,7 @@ import { JevLadder } from "../../components/JevLadder.jsx"
 import { Pipeline } from "../../components/PipelineFigure.jsx"
 import ExpandableSection from "../../components/ExpandableSection.jsx"
 import RunConfig from "../../components/RunConfig.jsx"
+import { ReplaidHybridNfe } from "../../components/ReplaidHybrid.jsx"
 
 # Some DLM Design Choices
 
@@ -449,6 +450,78 @@ At this scale, the practical advice is simple. Put the layers in the decoder, ke
 
 </ExpandableSection>
 
+## Can a hybrid replace self conditioning while keeping its benefits?
+
+#### Why this example
+
+This example has two goals.
+
+1. **Reproduce REPLAiD in a modular way.** REPLAiD [@yang2026continuousdiffusionscalescompetitively] revisits Plaid [@gulrajani2023likelihood] and makes continuous diffusion competitive with discrete diffusion. Its parts are tied together: learned low-dimensional embeddings, a learned noise schedule, a likelihood objective and self conditioning. There was no implementation where these parts can be swapped one at a time. In the codebase, REPLAiD is a preset built from shared parts, with no class of its own.
+2. **Show that a hybrid can be added to an existing recipe with small edits.** Starting from the REPLAiD preset, we add a masked view of the same tokens and turn self conditioning off. Everything else stays REPLAiD.
+
+The question is whether the masked view can do the job of self conditioning. Both give the network clean information about the tokens: self conditioning feeds back its own previous guess, and the masked view reveals some true tokens.
+
+#### What we changed to get the hybrid to work
+
+The hybrid keeps REPLAiD's backbone, its 16-dimensional unit-length embeddings and its likelihood training. The changes:
+
+- **A second view.** Each sequence is corrupted twice: REPLAiD's Gaussian noise on the embeddings, and masking of the tokens. The network reads both.
+- **One clock for both views.** A single learned clock sets both the Gaussian noise level and the masking probability, so the two views stay at the same point in time. Like REPLAiD's schedule, the clock is trained to make the loss estimate less noisy.
+- **Revealed tokens skip the noise.** Gaussian noise is applied only to tokens that are still masked. Revealed tokens also enter through a separate input that projects their clean embedding.
+- **No self conditioning.** The revealed tokens take its place, so the hybrid makes one network call per step with no extra feedback.
+- **A hybrid likelihood objective.** The loss adds a cross entropy term for the masked tokens to REPLAiD's embedding error and prior terms. Each training example masks at least one target token, which keeps the loss estimate stable.
+- **A sampler for two views.** Sampling steps both views together and reads the final tokens from the discrete state.
+
+In the codebase each change is a config option (a view, a schedule, a model input, an objective or a sampler), so the hybrid is a second preset rather than a new method.
+
+#### The experiment
+
+We train both models on TinyGSM [@liu2023tinygsmachieving80gsm8k], math word problems paired with Python solutions, for 250,000 steps: 12 layers, width 768, batch size 256, 512 tokens, and the SmolLM-135M tokenizer. The prompt is never noised. Both are scored by pass@1 on all 1,319 GSM8K test problems [@cobbe2021trainingverifierssolvemath]: the generated program is run and its answer checked.
+
+- **Budget.** We compare the two at 1,025 network calls per sample: 1,024 sampler steps plus one final call. REPLAiD uses trajectory self conditioning, which reuses the previous step's prediction and costs one call per step. We use this budget to compare against bootstrap self conditioning, the paper's default, which costs two forward passes per step: one to get the self conditioning vector and one for the update.
+- **REPLAiD's sampler.** We use the paper's settings: the DDPM sampler with score temperature 0.2.
+- **The hybrid's sampler.** We grid search samplers on 128 problems, pick the best (greedy renoising), and report it on the whole test set. The 128 problems come from the test set, so we also report the 1,191 problems outside them.
+
+#### Results
+
+<ReplaidHybridNfe client:visible />
+
+| Network calls | REPLAiD (paper settings) | REPLAiD hybrid (grid on 128) |
+| --- | --- | --- |
+| 33 | ??? | ??? |
+| 65 | ??? | ??? |
+| 129 | ??? | ??? |
+| 257 | ??? | ??? |
+| 513 | ??? | ??? |
+| 1,025 | 48.5% (47.9%) | 47.2% (46.7%) |
+
+GSM8K pass@1 on all 1,319 problems, with the 1,191 problems outside the hybrid's tuning set in parentheses. ??? marks budgets still running.
+
+At 1,025 network calls, the hybrid solves 47.2% of the problems and REPLAiD 48.5%. The gap is within noise. The paper reports 49.1% for REPLAiD with bootstrap self conditioning [@yang2026continuousdiffusionscalescompetitively], which spends about twice as many network calls. So the masked view keeps most of what self conditioning buys on this task.
+
+#### What the hybrid loses: the embedding clusters
+
+REPLAiD's embeddings are one of its main findings. Trained by likelihood, the embedding table becomes low rank and meaningful: on OpenWebText, 7 principal components explain 90% of its variance [@yang2026continuousdiffusionscalescompetitively]. We repeat the paper's analysis on both TinyGSM models (EMA weights, the 14,118 tokens that appear in 20,000 held-out training rows).
+
+| | REPLAiD | REPLAiD hybrid |
+| --- | --- | --- |
+| Principal components for 90% / 99% of the variance | 12 / 15 | 15 / 16 |
+| Variance on the first component | 18% | 7% |
+| Token type (digit, operator, keyword, word) predicted from 10 nearest neighbors (chance 70%) | 82% | 75% |
+
+REPLAiD's table is not as low rank as on OpenWebText, but it has clear structure, and the structure follows what each token does in the math and the code. `+` and `-` are nearly the same vector. `=` sits next to `+=` and `-=`. The digits form one cluster, indentation another, and quantity words such as `cost`, `distance` and `weight` a third. `if` sits next to `elif`, `while` and `else`.
+
+The hybrid's table is spread almost evenly over all 16 dimensions. Its nearest neighbors are mostly spellings of the same word, such as `apples`, `apple` and `Apples`, or `5` and `five`. Common code tokens such as `=`, `(` and `0` get neighbors that mean little.
+
+We think the reason is the loss. REPLAiD trains its embeddings mostly through an error in embedding space, while the hybrid adds a cross entropy term on the masked tokens at every noise level. Cross entropy pushes embeddings apart until each token is easy to tell from every other, toward a geometry whose decoding error closely matches one-hot vectors [@davis2026design]. The REPLAiD paper sees the same effect: adding a cross entropy loss flattens the spectrum of the embedding table and hurts likelihood [@yang2026continuousdiffusionscalescompetitively]. So the hybrid can stand in for self conditioning on accuracy, but it gives up the clustered embeddings that make REPLAiD interesting.
+
+#### How sure are we?
+
+- **One training run and one sampling seed per model.** On 1,319 problems, a 95% interval is about ±2.7 points, so the 1.3 point gap is not meaningful.
+- **The hybrid's sampler was picked on test problems.** The 128 tuning problems are part of the test set; the 1,191-problem numbers leave them out.
+- **Our TinyGSM setup is smaller than the paper's.** We use batch size 256 rather than 512, and the prompt shares the 16-dimensional embedding table instead of having a separate one.
+- **The embedding analysis is coarse on this data.** TinyGSM is mostly code and arithmetic, so the part-of-speech labels the paper uses are weak here, and we lean on token types instead. The EMA and raw embedding tables also differ: training was still moving them at 250,000 steps.
+
 ## Takeaways
 
 The argument of this post is the modular view. Split diffusion language models into parts that can be swapped across recipes, and use that to measure how the parts interact rather than assume they do not. The experiments are small examples of what that makes possible, and several of their most useful results are interactions.
@@ -478,7 +551,7 @@ This project will keep changing as we find new questions to ask. The codebase al
 
 ### Hybrid methods
 
-Every experiment in this post uses a single corruption process. That leaves out one of the most promising directions: hybrids that corrupt the same tokens with a discrete and a continuous process at once [@pynadath2025candihybriddiscretecontinuousdiffusion; @zheng2025continuously; @davis2026design; @zhou2025coevolutionary]. The codebase already supports a large space of them. A hybrid is a set of views of the same tokens, each with its own representation, corruption process and noise schedule, read by one shared network. Any discrete view (masked or uniform) can be paired with any continuous one (Gaussian embeddings, simplex, spherical or vMF), and more than two views can be combined. Hybrids can also be layered rather than placed side by side. SemiCat [@davis2026design] combines all three kinds of corruption: a Gaussian interpolant wrapped around a corruption on the simplex, plus discrete reveals that switch each position to its clean token at a random time. That construction is not in the codebase yet, but it fits the same split into information path, denoising task and inference. None of these combinations is studied here. Which pairings work best, and whether the results above (SC beating depth, the sampler flip, where learned clocks spend training) carry over to hybrids, are open questions the codebase can already answer.
+Apart from the [REPLAiD hybrid](#can-a-hybrid-replace-self-conditioning-while-keeping-its-benefits), every experiment in this post uses a single corruption process. That leaves out most of one of the most promising directions: hybrids that corrupt the same tokens with a discrete and a continuous process at once [@pynadath2025candihybriddiscretecontinuousdiffusion; @zheng2025continuously; @davis2026design; @zhou2025coevolutionary]. The codebase already supports a large space of them. A hybrid is a set of views of the same tokens, each with its own representation, corruption process and noise schedule, read by one shared network. Any discrete view (masked or uniform) can be paired with any continuous one (Gaussian embeddings, simplex, spherical or vMF), and more than two views can be combined. Hybrids can also be layered rather than placed side by side. SemiCat [@davis2026design] combines all three kinds of corruption: a Gaussian interpolant wrapped around a corruption on the simplex, plus discrete reveals that switch each position to its clean token at a random time. That construction is not in the codebase yet, but it fits the same split into information path, denoising task and inference. Beyond the REPLAiD hybrid, none of these combinations is studied here. Which pairings work best, and whether the results above (SC beating depth, the sampler flip, where learned clocks spend training) carry over to hybrids, are open questions the codebase can already answer.
 
 ### Sampler distillation
 
