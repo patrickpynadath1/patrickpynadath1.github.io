@@ -32,7 +32,7 @@ Patrick Pynadath<sup>1</sup>, Ruqi Zhang<sup>1</sup>
 
 Diffusion language models (DLMs) now cover almost any method that turns noise into text, and every recipe makes many design choices. A published method makes them all at once, and often changes several in the same paper. Some of its techniques carry over to other recipes and some do not; even when one carries over, we rarely know whether it does the same job there.
 
-Image diffusion went through the same phase. EDM [@karras2022elucidating] split diffusion methods into separate parts (the noise schedule, the network's preconditioning, the training noise distribution and the sampler), showed that several published methods were particular settings of those parts, and then studied each part on its own. SDDC (Some DLM Design Choices) tries to do the same for diffusion language models. Its [codebase](https://github.com/patrickpynadath1/sddc) splits every recipe into three parts: the **information path** (how tokens are represented and corrupted, and on what schedule), the **denoising task** (what the network predicts and how it is trained), and **inference** (how the trained model generates). Each part is made of pieces, such as the representation, the corruption process or the sampler, that can be swapped across recipes.
+Image diffusion went through the same phase. EDM [@karras2022elucidating] split diffusion methods into separate parts (the noise schedule, the network's preconditioning, the training noise distribution and the sampler), showed that several published methods were particular settings of those parts, and then studied each part on its own. **SDDC** (**S**ome **D**LM **D**esign **C**hoices) tries to do the same for diffusion language models. Its [codebase](https://github.com/patrickpynadath1/sddc) splits every recipe into three parts: the **information path** (how tokens are represented and corrupted, and on what schedule), the **denoising task** (what the network predicts and how it is trained), and **inference** (how the trained model generates). Each part is made of pieces, such as the representation, the corruption process or the sampler, that can be swapped across recipes.
 
 The core claim fits in one sentence: treat the parts as swappable so you can measure how they interact.
 
@@ -63,8 +63,6 @@ Below we explain what each constraint means and which works it excludes. They ar
 Every method here corrupts a representation with a one-to-one mapping to the tokens of the original sequence. Position $i$ has its own state, and its clean value depends on token $i$ alone: a one-hot vector or a point on the simplex, a learned embedding of that token, or a point on a sphere. Discrete methods use the token itself. Given a token, you know its clean representation; given the clean representation, you can read the token back. The forward process then corrupts each position from its own clean value, and the noisy state can be a mask, a random token, or a noisy point in that space. The model still sees the whole sequence when it denoises. Only the representation and the noise are per token.
 
 This rules out contextual representations, even ones that keep one vector per token. The hidden state of a BERT model or a T5 encoder at position $i$ depends on every token in the input. The same token gets a different vector in every sentence, and the vector at position $i$ carries information about its neighbors. Corrupting that vector corrupts a mixture of the whole sequence, not one token, and no fixed rule reads token $i$ back from it. The same goes for compressed, sequence-level latent spaces, where one latent vector describes many tokens at once [@lovelace2023latent; @meshchaninov2026cosmoscompressedsmoothlatent; @shen2026codar]. Both change what "one step of denoising" means, and comparing them fairly against per-token methods needs its own protocol.
-
-{/* TODO(Patrick): core/modifiers/latent_autoencoder is a contextual latent autoencoder. Either say it is experimental and unused here, or soften the claim above. */}
 
 ### Tokenizer Agnostic
 
@@ -230,8 +228,6 @@ text8 is the odd one out: SC is the worst option for both discrete methods. The 
 
 The Gaussian result is solid: the gap is large and holds on all three tasks. The discrete results are suggestive at best. They rest on one training seed, and several of the gaps are small.
 
-{/* TODO(Patrick): on Sudoku and text8, several SC runs were trained separately from their 8- and 16-layer rivals. Confirm the setups match, or rerun them together. */}
-
 ### Does self conditioning change how the model should be sampled?
 
 #### The question
@@ -256,6 +252,8 @@ If we restrict every model to the native sampler, the text8 picture flips. On va
 
 We do not yet know why. One guess is that renoising throws away the noisy state the SC feedback was built from, so the feedback no longer matches the state the model sees. That is untested.
 
+On Sudoku, the sampler matters even more. Every masked model picks EB greedy, and that choice is most of masked diffusion's lead on the task: with the native sampler, the 8-layer masked model solves 43.0% of validation puzzles, and with EB greedy it solves 96.9%. Our guess is that committing the most certain cells first suits a puzzle where each filled cell constrains the rest. The sampler also flips the SC result here. Under the native sampler, SC helps masked diffusion on Sudoku (75.0% against 43.0% for 8 layers and 56.6% for 16), the reverse of its effect under EB greedy (90.6% against 96.9% and 97.7%). Uniform models without SC lean on renoising (86.7% against 56.3% with the native sampler); with SC, every sampler solves between 94.9% and 96.5%.
+
 #### How sure are we?
 
 The sampler flip is clear in the validation numbers, but it comes from one task and one seed. It is a good reason to never compare SC and no-SC models under a single fixed sampler.
@@ -272,17 +270,25 @@ We train each of the four continuous methods with and without SC on all three ta
 
 <RunConfig id="continuous-schedules" client:visible />
 
-{/* MOCKUP: CDCD schedule figures. Data in src/data/cdcd_schedules.json and cdcd_performance.json. */}
-
 #### Results
 
 Each pair below is the same 8-layer model and the same learned clock, with and without SC.
 
 <CdcdPerformance client:visible />
 
-SC helps every continuous method on Sudoku and TinyStories. On text8 the picture is mixed. SC helps simplex most (11.5 to 13.3 valid words) and Gaussian (13.0 to 14.1). Spherical and vMF barely move (13.0 to 13.0, and 12.8 to 13.0). That is the sampler effect from [the sampling question](#does-self-conditioning-change-how-the-model-should-be-sampled) again: without SC, both pick renoising, which lifts them by 3.5 to 4 valid words on validation. With the native sampler only, SC is worth about 3 for both (9.6 to 12.3 for spherical, 9.1 to 12.8 for vMF, on validation). On TinyStories BPE, SC helps simplex most under standard BLEU, from 6.3 to 8.5. Most of that jump is length: without SC, simplex ends its stories at 80% of the real length, and without the length penalty the gain shrinks to 8.1 to 8.5. Simplex with SC scores 8.5 either way. That makes it the strongest diffusion model here, ahead of spherical with SC (8.3, or 8.5 without the penalty) and Gaussian with SC (7.9). The autoregressive model of the same size scores 8.9 (9.0 without the penalty).
+SC helps every continuous method on Sudoku and TinyStories, and Sudoku shows its largest effect in this post. Without SC, no continuous method solves more than 57% of the test puzzles (Gaussian 53.3%, simplex 23.4%, spherical 50.0%, vMF 56.5%). With SC, all four solve 89 to 94% (90.6%, 89.1%, 92.2% and 93.8%), close to the masked models (92.6 to 97.3%). Simplex gains the most, from 23.4% to 89.1%.
 
-SC also changes which samplers these models can use. Entropy-bounded sampling [@benhamu2025accelerated] was designed for masked diffusion: at each step it commits the positions whose predicted distribution has low entropy, up to a bound. Our EB greedy policy applies the same rule to every method, committing argmax tokens, even though the continuous models were never trained to commit tokens. With SC, simplex, spherical and vMF all work with it. On validation it comes within 0.3 to 1.1 of the native sampler on text8 and TinyStories, and beats native for spherical on TinyStories (7.85 against 7.27). Without SC it mostly breaks: spherical drops to 1.88 on text8 and 0.37 on TinyStories. Gaussian embeddings fail with it on text either way.
+On text8 the picture is mixed. SC helps simplex most (11.5 to 13.3 valid words) and Gaussian (13.0 to 14.1). Spherical and vMF barely move (13.0 to 13.0, and 12.8 to 13.0). That is the sampler effect from [the sampling question](#does-self-conditioning-change-how-the-model-should-be-sampled) again: without SC, both pick renoising, which lifts them by 3.5 to 4 valid words on validation. With the native sampler only, SC is worth about 3 for both (9.6 to 12.3 for spherical, 9.1 to 12.8 for vMF, on validation). On TinyStories BPE, SC helps simplex most under standard BLEU, from 6.3 to 8.5. Most of that jump is length: without SC, simplex ends its stories at 80% of the real length, and without the length penalty the gain shrinks to 8.1 to 8.5. Simplex with SC scores 8.5 either way. That makes it the strongest diffusion model here, ahead of spherical with SC (8.3, or 8.5 without the penalty) and Gaussian with SC (7.9). The autoregressive model of the same size scores 8.9 (9.0 without the penalty).
+
+#### Continuous models can commit discrete tokens
+
+One of the more surprising results here is that purely continuous models can anchor their samples to discrete tokens, the way a masked model does. Entropy-bounded sampling [@benhamu2025accelerated] was designed for masked diffusion: at each step it commits the positions whose predicted distribution has low entropy, up to a bound. Our EB greedy policy applies the same rule to every method. It fixes each committed position to its argmax token and leaves the rest to the method's own update. The continuous models never see a committed token during training, so a partly committed sequence lies outside anything they were trained on. With SC, simplex, spherical and vMF handle it anyway. On validation, EB greedy comes within 0.3 to 1.1 of the native sampler on text8 and TinyStories, and beats native for spherical on TinyStories (7.85 against 7.27).
+
+Recent work on simplex diffusion [@deschenaux2026simplex] reports the same effect. Their confidence-based sampler commits the most confident positions to simplex vertices, which they note puts the sample severely out of distribution, yet it still helps on de novo molecule generation without retraining.
+
+The anchoring depends on the rest of the recipe. On text, without SC it mostly breaks: spherical drops to 1.88 on text8 and 0.37 on TinyStories. Gaussian embeddings fail with it on text either way. Sudoku turns this pattern around. There, anchoring works even without SC for spherical and vMF: EB greedy beats the native sampler (54% against 41%, and 53% against 36%, on validation), and vMF without SC selects it. With SC, vMF selects EB greedy too and solves 93.8% of the test puzzles, the best continuous score on Sudoku. Gaussian embeddings, which fail with EB greedy on text, reach 89% with it under SC. Simplex without SC is the exception, at 2%.
+
+So whether a continuous model can commit tokens depends on its representation, a modifier and the task, another interaction that a one-part-at-a-time comparison would miss. It also means the commitment samplers built for masked diffusion are open to continuous models, which brings the two families closer than their training objectives suggest.
 
 <ExpandableSection title="EB greedy against the native sampler, per method and task" client:load>
 
@@ -294,8 +300,6 @@ Validation scores, native / EB greedy. A check mark means EB greedy was the sele
 | Spherical | 12.29 / 11.91 | 9.61 / 1.88 | 7.27 / 7.85 ✓ | 6.32 / 0.37 | 0.92 / 0.76 | 0.41 / 0.54 |
 | vMF | 12.77 / 12.49 | 9.09 / 8.25 | 7.48 / 7.09 | 6.19 / 2.15 | 0.95 / 0.95 ✓ | 0.36 / 0.53 ✓ |
 | Gaussian embeddings | 14.16 / 3.71 | 11.17 / 0.00 | 7.06 / 0.70 | 6.68 / 0.00 | 0.95 / 0.89 | 0.55 / 0.36 |
-
-On Sudoku, EB greedy also beats native for spherical and vMF without SC, and Gaussian embeddings score 0.89 with it under SC, so the text pattern does not carry over to Sudoku.
 
 </ExpandableSection>
 
@@ -318,8 +322,6 @@ Most language models use subword tokenizers, while most small diffusion experime
 We repeat the comparison on TinyStories with BPE vocabularies of 260 (bytes), 500, 1k, 5k, and 10k tokens. At each size we train Gaussian, masked, and uniform diffusion, each with and without SC, plus an autoregressive (AR) model of the same size as a reference. That is 7 models per vocabulary and 35 in total. The vocabulary is the only thing that changes along the ladder; the sequence length is set per vocabulary so every story fits. Every diffusion model is tuned with the same five samplers, and AR chooses between sampling and greedy decoding.
 
 <RunConfig id="tokenizer-ladder" client:visible />
-
-{/* MOCKUP: tokenizer ladder. Data in src/data/vocab_ladder.json (portable-v2-mi210 + ladder-nosc archives). */}
 
 <VocabLadder client:visible />
 
@@ -431,8 +433,6 @@ To separate the two sides, we vary one while holding the other fixed. We train E
 
 <RunConfig id="block-encoder-decoder" client:visible />
 
-{/* MOCKUP: block diffusion figure. Data in src/data/block_scaling.json (portable-v2-mi210 snapshot). */}
-
 <BlockEncDec client:visible />
 
 In short:
@@ -455,6 +455,8 @@ The argument of this post is the modular view. Split diffusion language models i
 
 - **Self conditioning is more than extra depth, for Gaussian corruption.** An 8-layer model with SC beats a 16-layer model without it on all three tasks, without adding a parameter.
 - **SC and the sampler interact.** On text8, models without SC do best with renoising, while models with SC cannot use it. Comparing SC and no-SC models under one fixed sampler can reverse the result.
+- **Continuous models can commit discrete tokens.** With SC, simplex, spherical and vMF models work with entropy-bounded commitment, a sampler built for masked diffusion, and come within 0.3 to 1.1 of their native sampler on text, though they never see a committed token in training. On text it mostly breaks without SC and for Gaussian embeddings; on Sudoku it works more widely, and vMF with SC selects it.
+- **On Sudoku, the sampler matters as much as the model.** Most of masked diffusion's lead comes from entropy-bounded commitment (43.0% of validation puzzles with the native sampler, 96.9% with EB greedy), and SC lifts every continuous method from at most 57% of test puzzles to 89 to 94%.
 - **SC does not help every method equally.** It improves all four continuous methods (Gaussian, simplex, spherical and vMF) on Sudoku and TinyStories. For masked diffusion its effect is modest at best: it lowers Sudoku accuracy from 96.9% to 92.6%, and its TinyStories gains are small.
 - **The effect survives larger vocabularies.** From 260 to 10k BPE tokens, SC improves every method at every size. What it fixes changes: at small vocabularies it removes garbled words; at large ones it puts real words in the right place.
 - **A clock that is linear in loss is not linear in corruption.** CDCD's learned clocks spend most of training where a token's identity is gone but its rank is not. For Gaussian, spherical and vMF, the true token's rank is halfway to chance at about 75% of the clock; for simplex, at about 95%. SC barely moves the clocks.
