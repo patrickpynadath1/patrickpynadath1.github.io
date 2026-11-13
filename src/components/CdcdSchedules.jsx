@@ -19,7 +19,7 @@ const METHODS = [
 const TASKS = [
   { id: "text8", label: "text8", color: () => P.duo, fmt: (v) => v.toFixed(1), metric: "unique valid words / sample",
     domain: [8, 16], ticks: [8, 10, 12, 14, 16], tick: (v) => `${v}` },
-  { id: "tinystories", label: "TinyStories (bytes)", color: () => P.highlight, fmt: (v) => v.toFixed(2), metric: "reference BLEU",
+  { id: "tinystories", label: "TinyStories (10k BPE)", color: () => P.highlight, fmt: (v) => v.toFixed(2), metric: "reference BLEU",
     domain: [5, 9], ticks: [5, 6, 7, 8, 9], tick: (v) => `${v}` },
   { id: "sudoku_hard", label: "Sudoku", overfit: true, color: () => P.accent, fmt: (v) => `${(v * 100).toFixed(1)}%`, metric: "solve rate",
     domain: [0, 1], ticks: [0, 0.25, 0.5, 0.75, 1], tick: (v) => `${Math.round(v * 100)}%` },
@@ -53,7 +53,7 @@ function LinearityInner() {
 
   return (
     <Frame
-      kicker="Figure H · does the learned clock work?"
+      kicker="Figure M · does the learned clock work?"
       title="Does the learned clock make loss rise in a straight line?"
       subtitle="CDCD fits the expected loss as a function of noise level and samples time through its inverse. If the fit is right, measured loss climbs linearly in the warped time u, so every stretch of u carries the same share of the loss."
       controls={<>
@@ -63,7 +63,7 @@ function LinearityInner() {
           options={[{ id: "off", label: "Text tasks" }, { id: "on", label: "Include Sudoku (overfit)" }]} />
         <Pills value={view} onChange={setView} options={[{ id: "loss", label: "Loss vs u" }, { id: "slope", label: "Slope" }, { id: "spread", label: "Spread" }]} />
       </>}
-      note="Measured: mean cross entropy of the final checkpoint in 20 equal-width bins of u, 128 sequences per bin from the training set (what CDCD fits) or the held-out validation set, divided by the fitted total so the ideal is the diagonal. Bars are ±2 standard errors; the shaded band is ±1 standard deviation across sequences. Slope: bin-to-bin increase relative to the average, flat at 1 means uniform. Spread: standard deviation of per-sequence loss in each bin (hover a point for nats)."
+      note="Measured: mean cross entropy of the final checkpoint in 20 equal-width bins of u, 128 sequences per bin from the training set (what CDCD fits) or the held-out validation set, divided by the fitted total so the ideal is the diagonal. Slope: bin-to-bin increase relative to the average, flat at 1 means uniform. Spread: standard deviation of per-sequence loss in each bin (hover a point for nats)."
     >
       <svg viewBox="0 0 720 290" style={{ width: "100%", height: "auto", display: "block", fontFamily: FONT }}>
         {tasks.map((t, ti) => {
@@ -103,13 +103,8 @@ function LinearityInner() {
                   );
                 }
                 if (view === "loss") {
-                  const band = [...bins.map((b) => [b.u, b.loss + b.std]), ...[...bins].reverse().map((b) => [b.u, b.loss - b.std])];
                   return (
                     <g key={v.id}>
-                      <path d={band.map(([u, l], i) => `${i ? "L" : "M"}${x(u).toFixed(1)},${y(l).toFixed(1)}`).join("") + "Z"} fill={c} opacity={0.1} />
-                      {bins.map((b) => (
-                        <line key={b.u} x1={x(b.u)} x2={x(b.u)} y1={y(b.loss - 2 * b.se)} y2={y(b.loss + 2 * b.se)} stroke={c} strokeWidth={1} opacity={0.6} />
-                      ))}
                       <path d={path(bins.map((b) => b.u), bins.map((b) => b.loss), x, y)} fill="none" stroke={c} strokeWidth={1.6} strokeDasharray={v.dash} />
                       {bins.map((b) => <circle key={b.u} cx={x(b.u)} cy={y(b.loss)} r={2.4} fill={c} />)}
                     </g>
@@ -223,7 +218,7 @@ function SchedulesInner() {
 
   return (
     <Frame
-      kicker="Figure I · the learned schedules"
+      kicker="Figure N · the learned schedules"
       title="Where each method spends its training time"
       subtitle="Each line is a schedule learned by CDCD for one task. Dashed: no SC. Solid: with SC. A steep early rise means the model is pushed to high noise quickly, so most training happens at heavy corruption."
       controls={<>
@@ -320,7 +315,7 @@ function CorruptionInner() {
 
   return (
     <Frame
-      kicker="Figure J · the schedules in token terms"
+      kicker="Figure O · the schedules in token terms"
       title="How fast does each method destroy the token?"
       subtitle="Two ways to measure corruption along each learned clock. Token error: how often the nearest embedding is the wrong token. Clean-token rank: where the true token sits among all candidates (0 = top, 0.5 = no information). The dashed diagonal is a schedule that would spend equal time at every level."
       controls={<>
@@ -407,7 +402,7 @@ function PerformanceInner() {
 
   return (
     <Frame
-      kicker="Figure E · performance"
+      kicker="Figure F · performance"
       title="How much SC adds to each continuous method"
       subtitle="Grey ring: no SC. Green dot: with SC. Same 8-layer backbone, same learned CDCD clock, best sampler on validation."
       controls={<>

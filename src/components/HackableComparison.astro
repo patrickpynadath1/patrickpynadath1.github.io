@@ -1,0 +1,123 @@
+---
+// Side-by-side map from Hackable Diffusion components to their SDDC counterparts,
+// used in the diffusion design choices post. Colors come only from the post's theme variables.
+const groups = [
+  {
+    part: 'Information path',
+    rows: [
+      {
+        hd: ['CorruptionProcess'],
+        hdNote: 'corrupt, sample_from_invariant, convert_predictions',
+        sddc: 'Process',
+        idea: 'The process owns the forward noise, the prior, and the conversion from a prediction to what the sampler needs. It never calls the network.',
+      },
+      {
+        hd: ['CorruptionSchedule'],
+        hdNote: 'evaluate(t)',
+        sddc: 'Noise schedule',
+        idea: 'A schedule only maps time to coefficients.',
+      },
+    ],
+  },
+  {
+    part: 'Denoising task',
+    rows: [
+      {
+        hd: ['DiffusionLoss'],
+        hdNote: 'preds, targets, time; unreduced',
+        sddc: 'Objective',
+        idea: 'Losses come back per token. Masking and averaging happen outside the loss.',
+      },
+      {
+        hd: ['TimeSampler', 'TimeSchedule'],
+        hdNote: 'training times vs. sampling grid',
+        sddc: 'Training time sampler and sampling time grid',
+        idea: 'The times we train on and the times we sample at are separate choices.',
+      },
+    ],
+  },
+  {
+    part: 'Inference',
+    rows: [
+      {
+        hd: ['DiffusionSampler', 'SamplerStep'],
+        hdNote: 'initialize, update, finalize',
+        sddc: 'Shared sampling loop and update rules',
+        idea: 'One generic loop; each sampling algorithm is a small update rule with the same three methods.',
+      },
+      {
+        hd: ['InferenceFn'],
+        hdNote: 'guidance composed on top',
+        sddc: 'Prediction endpoints and predictor',
+        idea: 'The loop asks for a prediction and does not care how it was computed or shaped.',
+      },
+      {
+        hd: ['RoutingStrategy', 'RemaskingFn'],
+        hdNote: 'greedy and entropy-bounded planners, remasking',
+        sddc: 'Position and commitment policies',
+        idea: 'Which positions to update, and whether to revisit them, are pluggable policies.',
+      },
+    ],
+  },
+  {
+    part: 'Composition',
+    rows: [
+      {
+        hd: ['Nested*'],
+        hdNote: 'one process, loss and step per modality',
+        sddc: 'Hybrid views',
+        idea: 'Several diffusion processes run side by side and share one network.',
+      },
+    ],
+  },
+];
+---
+<figure class="hdc" aria-label="Hackable Diffusion components and their SDDC counterparts">
+  <div class="hdc-head" aria-hidden="true">
+    <span class="hdc-col hdc-col-hd">Hackable Diffusion</span>
+    <span class="hdc-arrow-sp"></span>
+    <span class="hdc-col hdc-col-sddc">SDDC</span>
+  </div>
+  {groups.map((g) => (
+    <section class="hdc-group">
+      <h4 class="hdc-part">{g.part}</h4>
+      {g.rows.map((r) => (
+        <div class="hdc-row">
+          <div class="hdc-hd">
+            <div class="hdc-chips">{r.hd.map((n) => <code>{n}</code>)}</div>
+            <div class="hdc-note">{r.hdNote}</div>
+          </div>
+          <div class="hdc-arrow" aria-hidden="true">→</div>
+          <div class="hdc-sddc"><span class="hdc-mobile-label">SDDC</span>{r.sddc}</div>
+          <p class="hdc-idea">{r.idea}</p>
+        </div>
+      ))}
+    </section>
+  ))}
+</figure>
+
+<style>
+  .hdc { margin: 8px 0 32px; padding: 6px 22px 10px; border-radius: 14px; background: var(--surface); box-shadow: inset 0 0 0 1px var(--border); }
+  .hdc-head { display: grid; grid-template-columns: minmax(0, 1fr) 36px minmax(0, 1fr); padding: 14px 0 10px; border-bottom: 1px solid var(--border); }
+  .hdc-col { font: 500 12px/1 var(--font-body); letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
+  .hdc-col-sddc { color: var(--accent); }
+  .hdc-group { padding: 6px 0 2px; }
+  .hdc-group + .hdc-group { border-top: 1px solid var(--border); }
+  .hdc-part { margin: 14px 0 4px; font: 400 18px/1.25 var(--font-display); color: var(--fg); letter-spacing: 0; text-transform: none; }
+  .hdc-row { display: grid; grid-template-columns: minmax(0, 1fr) 36px minmax(0, 1fr); align-items: center; row-gap: 6px; padding: 12px 0; }
+  .hdc-row + .hdc-row { border-top: 1px dashed var(--border); }
+  .hdc-chips { display: flex; flex-wrap: wrap; gap: 6px; }
+  .hdc-chips code { font: 13px/1.4 var(--font-mono); padding: 2px 8px; border-radius: 6px; background: var(--code-bg); color: var(--fg); box-shadow: inset 0 0 0 1px var(--border); }
+  .hdc-note { margin-top: 5px; font: 12.5px/1.45 var(--font-mono); color: var(--muted); }
+  .hdc-arrow { text-align: center; color: var(--muted); font-size: 18px; }
+  .hdc-sddc { justify-self: start; padding: 5px 12px; border-radius: 999px; background: var(--accent-wash); box-shadow: inset 0 0 0 1px var(--accent-line); color: var(--fg); font: 500 14.5px/1.35 var(--font-body); }
+  .hdc-mobile-label { display: none; }
+  .hdc-idea { grid-column: 1 / -1; margin: 2px 0 0; font-size: 14.5px; line-height: 1.6; color: var(--muted); }
+  @media (max-width: 640px) {
+    .hdc { padding: 4px 16px 8px; }
+    .hdc-head { display: none; }
+    .hdc-row { grid-template-columns: minmax(0, 1fr); }
+    .hdc-arrow { display: none; }
+    .hdc-mobile-label { display: inline; margin-right: 8px; font: 600 10.5px/1 var(--font-body); letter-spacing: .08em; text-transform: uppercase; color: var(--accent); }
+  }
+</style>

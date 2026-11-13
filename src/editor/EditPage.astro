@@ -1,0 +1,55 @@
+---
+// Dev-only page at /edit and /edit/<slug>. Injected by the dev-editor integration in astro.config.mjs.
+import { readdirSync } from 'node:fs';
+import PostEditor from './PostEditor.jsx';
+
+export const prerender = false;
+if (!import.meta.env.DEV) return new Response('Not found', { status: 404 });
+
+const slug = Astro.params.slug ?? '';
+const slugs = readdirSync('src/content/blog').filter((f) => f.endsWith('.mdx')).map((f) => f.slice(0, -4)).sort();
+if (slug && !slugs.includes(slug)) return new Response('Not found', { status: 404 });
+---
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{slug ? `Edit ${slug}` : 'Edit posts'}</title>
+    <style is:global>
+      body { margin: 0; background: #fafaf8; color: #1d1d1b; font: 16px/1.6 Helvetica, Arial, sans-serif; }
+      .edit-index { max-width: 720px; margin: 40px auto; padding: 0 16px; }
+      .edit-shell { max-width: 960px; margin: 0 auto; padding: 0 16px 80px; }
+      .edit-bar { position: sticky; top: 0; z-index: 20; height: 52px; box-sizing: border-box; display: flex; gap: 16px; align-items: center; flex-wrap: wrap;
+        padding: 10px 0; background: #fafaf8; border-bottom: 1px solid #ddd; }
+      .edit-bar button { padding: 6px 16px; border-radius: 6px; border: 1px solid #333; background: #1d1d1b; color: #fff; cursor: pointer; }
+      .edit-status { margin-left: auto; color: #666; font-size: 14px; }
+      .mdxeditor { background: #fff; border: 1px solid #ddd; border-radius: 8px; margin-top: 12px; }
+      .mdxeditor .mdxeditor-toolbar { position: sticky; top: 52px; z-index: 10; flex-wrap: wrap; }
+      .edit-content { font-family: Georgia, serif; font-size: 18px; line-height: 1.65; min-height: 60vh; }
+      .tex-view { cursor: pointer; border-radius: 4px; }
+      .tex-view:hover { background: #eef3ff; }
+      .tex-view-block { display: block; padding: 4px 0; }
+      .tex-edit { font: 14px/1.5 ui-monospace, Menlo, monospace; border: 1px solid #6a8dff; border-radius: 4px; padding: 2px 4px; }
+      .tex-edit-block { display: block; width: 100%; box-sizing: border-box; }
+      .tex-error { color: #b00020; font-family: ui-monospace, Menlo, monospace; }
+      .fig-block { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; margin: 10px 0; padding: 10px 12px;
+        border: 1px dashed #8a7bd8; border-radius: 8px; background: #f5f3ff; font: 14px Helvetica, Arial, sans-serif; }
+      .fig-section { display: block; border-style: solid; background: #fbfaff; }
+      .fig-section-head { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; margin-bottom: 6px; }
+      .fig-section [contenteditable="true"] { font: 17px/1.6 Georgia, serif; padding: 0 4px; }
+      .fig-section [contenteditable="true"] > p { margin: 0 0 14px; }
+      .fig-name { font-weight: 700; color: #4b3bb0; }
+      .fig-client { color: #777; font-family: ui-monospace, Menlo, monospace; font-size: 12px; }
+      .fig-attr { display: inline-flex; gap: 6px; align-items: center; color: #555; }
+      .fig-attr input { font: 13px ui-monospace, Menlo, monospace; padding: 2px 6px; border: 1px solid #ccc; border-radius: 4px; }
+      .fig-controls { margin-left: auto; display: inline-flex; gap: 4px; }
+      .fig-controls button { width: 28px; height: 26px; border: 1px solid #ccc; border-radius: 4px; background: #fff; cursor: pointer; }
+      .raw-jsx { font: 12px ui-monospace, Menlo, monospace; color: #8a5a00; background: #fff4dc; padding: 0 4px; border-radius: 3px; }
+      .raw-esm { margin: 2px 0; padding: 2px 8px; font: 12px/1.5 ui-monospace, Menlo, monospace; color: #555; background: #f2f2ee; border-radius: 4px; white-space: pre-wrap; }
+    </style>
+  </head>
+  <body>
+    <PostEditor client:only="react" slug={slug} slugs={slugs} />
+  </body>
+</html>

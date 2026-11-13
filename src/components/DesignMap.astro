@@ -1,0 +1,21 @@
+---
+// The design-map figure (public/figures/design-map/) plus its text, written in the post:
+//
+//   <DesignMap>
+//     <MapText name="about.corr">General text for a part, in markdown.</MapText>
+//     <MapText name="corr.masked">Text for one choice.</MapText>
+//   </DesignMap>
+//
+// The figure reads these when it loads; the post is the only place its text lives.
+const { height = '2400px' } = Astro.props;
+---
+<div class="design-map-text" hidden><slot /></div>
+<div class="fig-bleed">
+  <iframe
+    class="fig-frame"
+    src="/figures/design-map/index.html"
+    title="Interactive map of the design choices in a diffusion language model"
+    scrolling="no"
+    style={`height: ${height}`}
+  ></iframe>
+</div>

@@ -1,52 +1,60 @@
 ---
-title: "Some DLM Design Choices"
+title: "Some DLM Design Choices: Why Modular?"
 description: "Most design choices in a diffusion language model are separate parts that can be swapped across recipes. A codebase that does this, an interactive map of the parts, and small worked examples of the interactions it lets us measure."
 pubDate: 2026-10-28T12:00:00.000Z
 author: "Patrick Pynadath, Ruqi Zhang"
 tags: ["diffusion", "language models"]
 wip: true
+draft: true
 ---
+
+import DesignMap from "../../components/DesignMap.astro"
+import MapText from "../../components/MapText.astro"
+import HackableComparison from "../../components/HackableComparison.astro"
+import { SamplerAlgo } from "../../components/SamplerAlgo.jsx"
 
 {/* The figure lives in public/figures/design-map/index.html (built from the artifact by build_embed.py). */}
 
-import { HeadToHead, Dumbbells, GapGrid, SamplerChoice } from "../../components/SelfCondDepth.jsx"
-import { CdcdLinearity, CdcdSchedules, CdcdCorruption, CdcdPerformance } from "../../components/CdcdSchedules.jsx"
-import { BlockEncDec } from "../../components/BlockScaling.jsx"
-import { VocabLadder } from "../../components/VocabLadder.jsx"
-import { BleuLength } from "../../components/BleuLength.jsx"
-import { JevLadder } from "../../components/JevLadder.jsx"
-import { Pipeline } from "../../components/PipelineFigure.jsx"
-import ExpandableSection from "../../components/ExpandableSection.jsx"
-import RunConfig from "../../components/RunConfig.jsx"
 
-# Some DLM Design Choices
+# Some DLM Design Choices: Why Modular?
 
 <a href="https://github.com/patrickpynadath1/sddc" target="_blank" rel="noopener" aria-label="SDDC code on GitHub" style={{ display: "inline-flex", alignItems: "center", gap: 8, padding: "7px 16px", margin: "4px 0 18px", borderRadius: 999, background: "var(--fg)", color: "var(--bg)", fontWeight: 600, fontSize: 15, textDecoration: "none" }}><svg width="18" height="18" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/></svg>Code on GitHub</a>
-
 
 Patrick Pynadath<sup>1</sup>, Ruqi Zhang<sup>1</sup>
 
 <sup>1</sup> Purdue Department of Computer Science
 
+Series: [Part 1](/blog/diffusion-lm-design-choices/) · [Part 2](/blog/diffusion-lm-design-choices-self-conditioning/) · [Part 3](/blog/diffusion-lm-design-choices-sc-interpretation/)
+
 ## Introduction
 
-Diffusion language models (DLMs) now cover almost any method that turns noise into text, and every recipe makes many design choices. A published method makes them all at once, and often changes several in the same paper. Some of its techniques carry over to other recipes and some do not; even when one carries over, we rarely know whether it does the same job there.
+The design space for DLMs is combinatorially larger than autoregressive, as it encompasses a wide range of different generative trajectories. All autoregressive models follow the same left-to-right generative path. Diffusion language models have come to mean any generative method that leverages some form of parallel, iterative refinement in the generative process. This encompasses Gaussian diffusion; Riemannian Flow Matching on the sphere; Diffusion on the Simplex; Discrete Corruption via uniform random token corruption; diffusion in a latent space with an autoregressive decoder; masked token corruption, or both. For recent overviews, see Li et al. [@li2025dlmsurvey] for diffusion language models broadly, and Tang et al. [@tang2026survey] for continuous diffusion and flow language models. 
 
-Image diffusion went through the same phase. EDM [@karras2022elucidating] split diffusion methods into separate parts (the noise schedule, the network's preconditioning, the training noise distribution and the sampler), showed that several published methods were particular settings of those parts, and then studied each part on its own. **SDDC** (**S**ome **D**LM **D**esign **C**hoices) tries to do the same for diffusion language models. Its [codebase](https://github.com/patrickpynadath1/sddc) splits every recipe into three parts: the **information path** (how tokens are represented and corrupted, and on what schedule), the **denoising task** (what the network predicts and how it is trained), and **inference** (how the trained model generates). Each part is made of pieces, such as the representation, the corruption process or the sampler, that can be swapped across recipes.
+This rapid expansion in diffusion approaches have resulted in many common techniques being introduced under one diffusion family, but gradually becoming used in many others. Case and point, self-conditioning: self-conditioning, or feeding the model's previous predictions as part of the next input, was first introduced within a [@chen2022analog] within a binary Gaussian diffusion method. However, this technique has been shown to be effective Gaussian diffusion on embeddings [@strudel2022self] [@dieleman2022continuous], spherical flow matching [@chemseddine2026spherical], and simplicial diffusion [@deschenaux2026simplex]. Block diffusion was introduced for masked diffusion, but the general approach has been adopted into uniform diffusion [@diffusiongemma2026], and gaussian diffusion [@yang2026sigma], where it blends naturally with continuous noise schedules that increase positionally left to right [@chavan2026lafa; @schiff2026clock]. 
 
-The core claim fits in one sentence: treat the parts as swappable so you can measure how they interact.
+The fields shift to more flexible recipes has led to both the need to more thoroughly understand when and where certain techniques improve performance, along with the convenience of being able to quickly incorporate techniques across recipes from different papers. Teasing apart why techniques transfer requires being able to quickly evaluate them within new recipes through careful ablations. Furthermore, designing effective recipes requires understanding when and where different techniques are needed. Returning to the example of self conditioning -- in [@pynadath2025candihybriddiscretecontinuousdiffusion], we hypthesized that self-conditioning corrects an imbalance induced by long-tailed pathalogies of continuous corruption behavior in high dimensions. But if this is the case, then why does it benefit pure discrete diffusion in DiffusionGemma [@diffusiongemma2026]? And what other recipes will self conditioning be beneficial towards? 
 
-The clearest example in this post is self conditioning and the sampler. On text8, self conditioning looks like it hurts masked and uniform diffusion. Hold every model to the same sampler and the picture flips: the models without self conditioning had been winning with a renoising sampler, and that sampler breaks for masked diffusion with self conditioning. A comparison that changes one method at a time, each with its own default sampler, would report the first result and miss the interaction.
+To answer questions like this, we introduce **SDDC**: **S**ome **D**LM **D**esign **C**hoices, a codebase designed to make DLM recipe's as modular as possible. We focus our attention on a specific archetype of DLM recipes: we address recipes where 1) noise is applied to factorized representations, as opposed to contextual; 2) the recipe is generally tokenizer agnostic; and 3) training is simulation free. We explain DLM recipes as answering three core questions: 
+1. ***Information Path***: How is information represented, and how is it destroyed during the generative path? 
+2. ***Denoising Task***: How do we learn to traverse this information path? 
+3. ***Inference Settings***: How do we actually use both the learned model and information path to generate samples? 
 
-The experiments are small because our compute is small: 8-layer models, 20,000 training steps and, mostly, one training seed. They are worked examples of the questions a modular setup makes cheap to ask, not conclusive findings, and each ends with a note on how sure we are. The protocols and the analysis behind every number are in the repo, so anyone with more compute can rerun them at scale.
+Outside of these questions, we define recipe modifiers as components that require changes across all three facets. In this blog, we briefly the core design philosophy of this design approach, and why we believe this is the right approach for studying DLMs. 
 
-## Why modular?
+## Inspiration: Hackable Diffusion
 
-DLM papers rarely change one thing. A new method often arrives with a new corruption process, a new objective, a new schedule and a new sampler, compared against baselines that differ in all four. When it wins, a reader cannot tell which change mattered, or whether the same change would help another recipe. Splitting recipes into parts turns that into a direct question. Keep everything fixed, swap one part, and measure.
+The structure of SDDC borrows heavily from [Hackable Diffusion](https://github.com/google/hackable_diffusion) [@hackablediffusion2026], a JAX toolbox for experimenting with and teaching diffusion models. Hackable Diffusion is built on two principles: assemble models from small objects with well-defined contracts, and give each part of the pipeline (architecture, corruption, inference, loss and sampling) its own sub-library. Its core file, `hd_api.py`, defines nothing but the interfaces between these parts, so a training or sampling loop never needs to know which schedule, network or data type sits behind them.
 
-Swapping parts does not mean every part works with every other. Some are tied together by theory. A sampler built on a clean-token posterior cannot drive a score parameterization, and a rank-calibrated Gaussian schedule assumes a particular representation. SDDC checks these ties when a recipe is built. The repo's [compatibility table](https://github.com/patrickpynadath1/sddc/blob/main/docs/validation/compatibility.md) is generated by building and running every method family with every sampler and modifier, so each cell either works or states why the combination is refused.
+SDDC applies the same split to diffusion language models. Most of its components have a direct counterpart in Hackable Diffusion:
 
-Many DLM papers build on shared codebases, usually within one family of methods. SDDC instead spans discrete and continuous methods (masked, uniform, Gaussian, simplex, spherical, vMF and their hybrids) under one interface, with one training and evaluation pipeline.
+
+<HackableComparison />
+
+SDDC departs from Hackable Diffusion in three places, each driven by its focus on language:
+
+- **Same data, several views.** Hackable Diffusion's `Nested` pattern applies different processes to different parts of the data, such as an image and its label. A hybrid view in SDDC applies several processes to the *same* tokens. The views share one clean sequence and one clean-token prediction, and their noisy states never need to map into each other.
+- **Representation as its own part.** In Hackable Diffusion, mapping tokens into vectors happens inside the network. SDDC pulls it out into a representation with three operations (`encode`, `posterior_mean`, `decode`). That boundary is what lets one-hot and embedding Gaussian diffusion share one algorithm and one set of samplers, and it is where most continuous language-model recipes actually differ.
+- **Recipes as configurations.** Hackable Diffusion composes Python objects directly. SDDC assembles the same kind of pieces from Hydra configs, ships published methods as named recipes, and checks at build time that the chosen parts fit together. The goal is to run many controlled comparisons, where changing one part should be a one-line override.
 
 ## Scope: What is this Codebase?
 
@@ -76,409 +84,1203 @@ Training never runs the model's own sampler. Each training example is built in c
 
 This rules out distillation, consistency, and flow map methods that train on the model's own trajectories [@roos2026categoricalflowmaps; @lee2026onesteplanguagemodelingcontinuous], as well as RL-style fine-tuning. These methods are central to fast sampling. They are also expensive to train, and their results depend on the base model they start from, which makes them hard to compare at this scale.
 
-### What this Codebase and Blog Is Not
-
-It is not a leaderboard. We chose the tasks and model sizes so that a few dozen small runs can answer a single question, not so that any method looks its best. It is not large-scale pretraining. And it is not a faithful reproduction of every paper it borrows from: where our configs differ from a paper, the docs say so.
-
-## AI usage
-
-Was AI used to build this codebase and write this post? Yes, extensively. Codex, and later Claude Code, did most of the typing over several months; we chose the questions and read every result. More than 1,500 tests run on every commit, and every experiment in this post is a worked example whose analysis script rebuilds the reported numbers from the stored runs. Without agentic coding, a codebase this broad would not have been feasible for one person on a side-project budget.
-
 ## The design space
 
 Each part of a recipe answers one question and is made of a few pieces. Modifiers sit across the parts, because each one touches more than one of them.
 
 | Part | Question | Pieces, with examples |
 | --- | --- | --- |
-| Information path | What does the model observe at each noise level? | **Representation** (tokens, one-hot vectors, learned embeddings, points on the simplex or the sphere), **corruption process** (masking, uniform replacement, Gaussian, Dirichlet, spherical, vMF, blurring), **noise schedule** (fixed, rank-calibrated, or learned like CDCD) |
+| Information path | What does the model observe at each noise level? | **Representation** (tokens, one-hot vectors, learned embeddings, points on the simplex or the sphere), **corruption process** (masking, uniform replacement, Gaussian, Dirichlet, spherical, vMF), **noise schedule** (fixed, rank-calibrated, or learned like CDCD) |
 | Denoising task | What must the model predict, and how is it trained? | **Network** (one transformer with swappable input, time-conditioning and output slots), **parameterization** (clean-token posterior, plug-in estimate, score), **objective** (cross-entropy, ELBO-weighted losses, score entropy), **training time sampler** (uniform or learned) |
 | Inference | How do predictions become a generated sequence? | **Initialization**, the **time grid**, the **update rule** (the method's own reverse step, renoising, entropy-bounded commitment, ODE solvers) and **terminal decoding** |
 | Modifiers | Cut across the parts | **Self conditioning**, **block diffusion** (including encoder-decoder splits), **hybrid views** that corrupt the same tokens several ways, **insertion and deletion** |
 
-The figure below is a map of these parts. The top half shows how the parts connect, split into the three parts of a recipe: the information path, the denoising task, and inference. The bottom half follows five tokens through every part, one layer at a time. Each option has a "See it in the code" button that shows where it lives in the codebase.
+The figure below is a map of these parts. The top half shows how the parts connect, split into the three parts of a recipe: the information path, the denoising task, and inference. The bottom half goes through every part, one at a time. Each option has a "See it in the code" button that shows where it lives in the codebase.
 
-<div className="fig-bleed">
-  <iframe
-    className="fig-frame"
-    src="/figures/design-map/index.html"
-    title="Interactive map of the design choices in a diffusion language model"
-    scrolling="no"
-    style={{ height: '2400px' }}
-  ></iframe>
-</div>
+<DesignMap>
+
+{/* Text shown in the design map. about.<part> is a part's general text, shown under its title. <part>.<option> is the text for one choice, shown under the picture when that choice is picked. */}
+
+{/* Representation */}
+
+<MapText name="about.rep">
+
+Within our framework, representation means the space the noise lives in. In the codebase, we focus on a fairly narrow selection of representations: tokens, one-hot vectors, and embeddings. We choose these as they can be thought of as "factorized" representations: within the representation being noised, there is a one-to-one correspendence between the original tokens in the sequence and the noised elements in the sequence. This is in contrast to contextual representations, where the representation are a function of the entire sequence.
+
+
+
+- SDDC has two representations: `one_hot`, where each token is a vector of length $V$, and `embedding`, a lookup into a table $E$.
+- Both expose the same three operations: `encode` turns tokens into states, `posterior_mean` turns predicted token probabilities into an expected clean state ($pE$), and `decode` turns a state back into tokens. Because of this shared interface, one-hot and embedding Gaussian diffusion run through the same training code and the same samplers.
+- Some noise schedules only make sense for one geometry: the rank-calibrated schedules need one-hot vectors, and the sphere-rank schedule needs unit-norm embeddings. These requirements are checked when a recipe is built.
+- Contextual or compressed encoders would need more than a new `encode` and `decode`: prompts and the posterior mean would have to be redefined, which is why they sit outside the current scope.
+- Reconstructing text well and being easy to generate are different properties of a representation [@zhang2026diffusibility; @du2026decoder].
+
+</MapText>
+
+<MapText name="rep.tokens">
+
+Here, the corruption is defined to occur on tokens directly, rather than some continuous vector. This does not mean that the process is free of continuous vectors: every token is eventually mapped to a continuous vector in the embeding table. Does working with tokens allow for a more "native" corruption process for text? Or is it just disguising the fact that the network must operate on continuous vectors? This is still an open debate. 
+
+
+
+- Used by every discrete process in the codebase: masking and both forms of uniform noise. The network still looks each token up in its own embedding table.
+- Recipes on token IDs include MDLM, MD4, RADD, D3PM, SEDD, LLaDA-style and ARDM-style masking, UDLM, DUO, and discrete flow matching.
+- The usual argument for continuous states: sampling many tokens in parallel from per-position marginals can mix modes when only a few steps are taken, while a continuous state is transformed jointly [@tang2026survey; @lee2026onesteplanguagemodelingcontinuous].
+
+</MapText>
+
+<MapText name="rep.onehot">
+
+Each token is mapped to a vector of dimension $|V|$ where very coordinate is zero, except for the coordinate correspending to the original token index. Such representations are convenient, as they are learning free and still provide a meaningful map from discrete to the continuous domain. However, these representations are generally expensive to work with, especially with modern LLM vocabularies.  
+
+
+
+- The posterior mean of a one-hot vector is just the vector of token probabilities, and decoding is an argmax. Nothing is learned.
+- Used by the one-hot Gaussian recipes (FLM-style and the rank-calibrated baselines), by CANDI's continuous view, and by simplex diffusion.
+- The rank and argmax-error schedules are computed exactly from one-hot geometry, so they are only available here.
+- The state has size $L \times V$, so the input projection grows with the vocabulary. This matters when we sweep the tokenizer.
+- FLM pairs this representation with cross-entropy and a time reparameterization [@lee2026onesteplanguagemodelingcontinuous].
+
+</MapText>
+
+<MapText name="rep.embed">
+
+Each word is a learned point in a vector space (two dimensions shown). Highlighted points are the five tokens. As we are focused on factorized representations within the context of this blog series, these embedding vectors are obtained from the initial embedding table used by the model as opposed to some encoder network. 
+
+
+
+- The table is trainable by default and can be frozen. Rows can be kept at unit norm, optionally renormalized after every optimizer step.
+- Decoding takes the argmax of $zE^\top$, which is nearest-neighbor decoding when the rows have unit norm.
+- Used by the CDCD-, LangFlow- and RePlaid-style recipes, embedding flow matching, and the spherical recipes.
+- The average of unit-norm embeddings is shorter than one, and the codebase keeps it that way: its length still says how uncertain the prediction is.
+- Embeddings learned jointly with the denoiser can collapse together or grow until the noise stops mattering. Published fixes include cross-entropy with normalized embeddings [@dieleman2022continuous; @chen2026langflow] and a full likelihood bound [@gulrajani2023likelihood; @yang2026continuousdiffusionscalescompetitively].
+
+</MapText>
+
+{/* Corruption */}
+
+<MapText name="about.corr">
+
+How we decide to remove information from the clean sequence, and consequently create information during inference. This is one of the more consequential decisons in terms of the overal DLM recipe: many continuous methods share some form of self-conditioning and an adaptive noise schedule akin to [@dieleman2022continuous]. If we chose to work with discrete corruption, some components of the network -- such as time conditioning -- would no longer be necessary. 
+
+
+- The codebase has six corruption processes: absorbing (masking), uniform, uniform with a posterior reverse step, Gaussian, spherical, and Dirichlet (simplex).
+- A process only owns the math of corrupting and un-corrupting. It never calls the network; the sampler decides when each step happens.
+- A hybrid is not a new process. Any set of views (masked, uniform, Gaussian, simplex, spherical) can run side by side, each with its own schedule and clock, and their embeddings feed one transformer. The views share the clean tokens and nothing else.
+- Discrete and continuous corruption are closer than they look: uniform discrete diffusion is what you get by taking the argmax of Gaussian diffusion on one-hot vectors [@sahooDiffusionDuality2025], and sticky jump diffusions describe discrete, continuous and hybrid processes in one framework [@jutrasdube2026sticky].
+
+</MapText>
+
+<MapText name="corr.masked">
+
+Masked: each token is independently hidden behind [M]. A hidden token carries no information about its word. The process itself is an absorbing state diffusion process: once a token is corrupted in the forward process, it no longer changes identity. Similarly, once a token leaves the absorbing process and realizes some token, it does not change. However, it is possible to define remasking processes that allow for self-correction. 
+
+
+
+- Each token survives with probability $\alpha_t$ and otherwise becomes [M]. Stepping from $t$ to a cleaner time $s$, a masked token is revealed with probability $(\alpha_s-\alpha_t)/(1-\alpha_t)$ and drawn from the predicted clean posterior.
+- The process handles revealing; samplers such as entropy-bounded decoding only choose which positions to reveal.
+- Remasking is available at inference only, through the forward-resampling and churn samplers.
+- The masked ELBO reduces to weighted cross-entropy [@sahooSimpleEffectiveMasked2024; @shiSimplifiedGeneralizedMasked2024], and the network does not need to know the time [@ou2025absorbingdiscretediffusionsecretly; @zheng2024masked].
+
+</MapText>
+
+<MapText name="corr.uniform">
+
+Uniform: each token is independently replaced by a random word (red). Ideally, this would represent a more difficult task as it is no longer clear which words are "clean" and which words are "noisy". However, in practice it is often clear, as the distribution of uniformly random tokens is quite different from the actual marginal distribution over tokens. 
+
+
+
+- Both uniform processes share the forward step, $q(x_t=j \mid x_0=i)=\alpha_t\,1[i=j]+(1-\alpha_t)/V$, and differ in the reverse step.
+- The plug-in version (UDLM, DUO) works with a normalized estimate that is not a true posterior. The posterior version mixes exact reverse bridges over a predicted clean-token posterior. Each needs its matching output, so they are not interchangeable.
+- DUO adds a curriculum that starts from a softened relaxation of the tokens [@sahooDiffusionDuality2025]; UDLM is the plain plug-in recipe [@schiff2024simple].
+
+</MapText>
+
+<MapText name="corr.gaussian-onehot">
+
+Gaussian on one-hot vectors: noise is added to every entry. As t grows the true word’s bar sinks into the noise. As discussed in [@pynadath2025candihybriddiscretecontinuousdiffusion], [@lee2026onesteplanguagemodelingcontinuous], this results in poor scaling of discrete identity corruption, which makes the learning problem challenging. 
+
+
+
+- This uses the same Gaussian process as embeddings, $z_t=\alpha_t e(x_0)+\sigma_t\epsilon$. Only the representation changes.
+- Two schedules exist only for one-hot vectors: one calibrates noise by the expected fraction of wrong coordinates that beat the right one, $\Phi(-1/(\sqrt{2}\sigma))$; the other by the chance that argmax picks the wrong token.
+- Recipes: FLM-style (an error-based clock), the rank-calibrated one-hot baselines, and the continuous view of CANDI.
+- Token identity becomes recoverable inside a narrow window of noise levels, and the window shrinks as the vocabulary grows [@pynadath2025candihybriddiscretecontinuousdiffusion; @lee2026onesteplanguagemodelingcontinuous].
+
+</MapText>
+
+<MapText name="corr.gaussian-embed">
+
+Gaussian on embeddings: noise pushes each point off its word. The blob shows how far noise can reach at this t. Embedding diffusion can be difficult to train stably, as using an MSE objective would result in the embeddings collapsing to the same vector; whereas using a cross-entropy objective results in 
+
+
+
+- Schedules available here: exponential VE, linear interpolation, a sphere-rank calibration, LangFlow's Gumbel schedule, rescaled versions of these, loss-fitted clocks, and RePlaid's learned log-SNR.
+- Recipes: CDCD-style, LangFlow-style, RePlaid, embedding flow matching, and embedding VE.
+- The network predicts a clean-token posterior; the sampler turns it into an expected embedding and from there into a velocity.
+- Earlier work handled embedding collapse in different ways: a regression loss plus a norm penalty [@li2022diffusion], cross-entropy with normalized embeddings [@dieleman2022continuous], or an anchor loss that forces predictions to decode correctly [@gao2022empowering].
+
+</MapText>
+
+<MapText name="corr.simplex">
+
+Simplex: each token is a probability vector. Noise drifts it from its corner toward the uniform middle while it always sums to one.
+
+
+
+- The state is a point on the simplex, corrupted with Dirichlet noise and reversed with Dirichlet bridges. The network can read it as an expected embedding or through its argmax.
+- The recipe follows Simplex Diffusion Models [@deschenaux2026simplex]. Its sampler supports churn and guidance, and its time grid can be linear, cosine, or fitted to the training loss.
+- Related simplex methods use other paths: Dirichlet flow matching [@stark2024dirichlet], or Gaussian noise on logits as in SSD-LM and TESS [@hanSSDLMSemiautoregressiveSimplexbased2022; @mahabadi2024tess].
+
+</MapText>
+
+<MapText name="corr.spherical">
+
+Spherical: embeddings live on the unit sphere. Noise picks a random point and moves along the arc toward it, so the state never leaves the sphere.
+
+
+
+- Embeddings live on the unit sphere, and corruption moves along it using the sphere's log and exp maps.
+- Two recipes: S-FLM's geodesic path [@deschenaux2026language], and von Mises-Fisher paths with an optional Langevin corrector at inference [@chemseddine2026spherical].
+- Sampling averages the tangent directions toward each candidate token, weighted by the predicted probabilities.
+- Other spherical approaches: Fisher-Flow maps the simplex onto the sphere with a square root [@davis2024fisher], RDLM builds bridges toward token vertices [@joContinuousDiffusionModel2025], and spherical Brownian diffusion uses heat-kernel noise [@miele2026sbd].
+
+</MapText>
+
+<MapText name="corr.combined">
+
+Two corruptions run on the same clean sequence, each in its own representation and with its own schedule. The network sees both views at once. (CANDI is masked + Gaussian.)
+
+
+
+- Each view bundles a process, a schedule, a representation and a clock. Their embeddings are summed by default; gated fusion can turn a view on or off depending on whether a token is masked.
+- CANDI: masking plus Gaussian noise on one-hot vectors, with mask-dependent fusion and a rank-calibrated Gaussian schedule [@pynadath2025candihybriddiscretecontinuousdiffusion].
+- CADD-style: the continuous view is only used while a token is still masked [@zheng2025continuouslyaugmenteddiscretediffusion].
+- The RePlaid hybrid: masking plus Gaussian noise trained with a likelihood bound, with revealed tokens fed back into the continuous input [@yang2026continuousdiffusionscalescompetitively].
+- Other pairs (spherical plus uniform, simplex plus Gaussian) compose the same way, though we have not tuned them.
+- Related: joint token and latent denoising in CCDD [@zhou2025coevolutionary].
+
+</MapText>
+
+{/* Noise schedule */}
+
+<MapText name="about.sched">
+
+How much noise there is at each time t. Three families: fixed before training, a few learned knobs, or fully refit from the loss.
+
+
+
+- A schedule only maps time to coefficients: a keep rate $\alpha_t$ for discrete views, or $\alpha_t$ and $\sigma_t$ with their derivatives for Gaussian ones. It never chooses training times or corrupts anything.
+- The options range from fixed curves (log-linear, rank-calibrated, exponential VE, linear), through LangFlow's Gumbel schedule, to clocks refit from the loss and RePlaid's learned schedule.
+- Rescaling a Gaussian path (VE, VP or linear) keeps its signal-to-noise ratio, but not the exact network inputs or the path a finite-step sampler takes.
+- For a fixed Gaussian path, changing the schedule or the training-time distribution amounts to reweighting the loss across noise levels [@kingma2021variational; @dieleman2022continuous].
+
+</MapText>
+
+<MapText name="sched.fixed">
+
+Predefined schedules never change: the same curve is used from the first training step to the last.
+
+
+
+- Discrete views default to log-linear. For Gaussian noise, the rank and argmax-error schedules set noise by how recoverable the clean token is, and exponential VE and linear interpolation are the plain choices.
+
+</MapText>
+
+<MapText name="sched.semi">
+
+Semi-adaptive: the schedule comes from a fixed family (here a Gumbel-shaped one, as in LangFlow), and only its few parameters are fit to the training loss. The fit pushes the loss to grow linearly with t (right), but a two-knob family can only get so straight. Press Play to watch the fit.
+
+
+
+- The Gumbel schedule can fit its location, scale and an entropy term to the per-example cross-entropy. These knobs are updated by their own small optimizer step, separate from the network's, and start from LangFlow's released values [@chen2026langflow].
+
+</MapText>
+
+<MapText name="sched.full">
+
+Fully adaptive: the whole curve is refit from the training loss, as in CDCD. The map from t to noise level is warped (left) until the loss grows linearly with t (right), so equal steps in t cover equal amounts of denoising difficulty. RePlaid also learns its schedule, but to lower the variance of its likelihood estimate rather than to straighten the loss. Press Play to watch the fit. Loss-derivative fitting reaches the same warp another way: it spends time in proportion to how fast the loss changes, which also makes the loss rise linearly in t. Because it reshapes how the process moves through t, in training and in generation, it is a noise schedule, not a training time sampler.
+
+
+
+- The CDCD- and S-FLM-style clocks keep a buffer of recent losses and refit the time warp every 50 steps, after 1,000 warmup steps, with an exponential moving average.
+- The CDCD-style clock fits the warp with isotonic regression over 100 bins; the CDCD paper learns its bins by gradient [@dieleman2022continuous]. The S-FLM-style clock uses a spline fit.
+- RePlaid's schedule works differently: a monotone curve trained by gradient to lower the variance of the likelihood estimate [@yang2026continuousdiffusionscalescompetitively].
+
+</MapText>
+
+<MapText name="sched.full-discrete">
+
+For masked or uniform noise it warps the keep rate.
+
+</MapText>
+
+<MapText name="sched.combined">
+
+With two corruptions, each view has its own schedule.
+
+
+
+- Each view keeps its own schedule and its own map from global time. The RePlaid hybrid instead shares one learned clock across its views.
+
+</MapText>
+
+{/* Network */}
+
+<MapText name="about.net">
+
+A transformer reads the noisy sequence and produces predictions.
+
+
+
+- Every diffusion recipe uses the same network: a DiT [@peebles2023scalable] whose input, time conditioning, self-conditioning and output head are swappable slots. Autoregressive baselines use a causal version with a KV cache.
+- The default size is width 512, 8 blocks and 8 heads.
+- The time input can be raw time or a transform of it, such as $-\log(1-t)$, the log keep rate, or log SNR. This changes only what the network sees, not the noise.
+- The transformer blocks can also be changed: other sublayers in place of the MLP, and other ways for a block to read earlier blocks.
+- Other designs: ELF feeds time to the network as extra tokens instead of through adaptive normalization [@hu2026elf], and LangDiT revisits these choices for continuous text models [@luo2026langdit].
+
+</MapText>
+
+<MapText name="net.self-off">
+
+Self-conditioning off: each pass starts fresh from the noisy input.
+
+</MapText>
+
+<MapText name="net.self-mean">
+
+Self-conditioning on the expected embedding: the previous pass’s probabilities p are multiplied by the embedding table E, giving the average embedding ē the model expects. That vector is fed back in.
+
+
+
+- The network gets back the expected clean embedding from its previous prediction, before any temperature or top-k, through a projection that starts at zero.
+- In training, 90% of examples first get a no-gradient pass on the same noisy input, and that prediction is fed back. In generation the previous step's prediction is reused, so no extra network calls are needed.
+- A second option re-runs the two passes fresh at every step, at twice the cost.
+- It works with every method that predicts a clean-token posterior. Plug-in and score methods (UDLM, DUO, SEDD) cannot use it, and neither can the adaptive ODE solver.
+- Self-conditioning was introduced in Analog Bits [@chen2022analog]. Proposed explanations include fixed-point refinement [@yooSelfconditionedFlowMap2026a] and making tokens identifiable under heavy noise [@davis2026design]. It can also push models toward repetition [@zhang2026ace].
+- Self-conditioning sits here as a network input, but it also changes the effective information path. [Part 3](/blog/diffusion-lm-design-choices-sc-interpretation/) gives our working interpretation.
+
+</MapText>
+
+<MapText name="net.self-hidden">
+
+Self-conditioning on the hidden state: the previous pass’s last hidden vector h is fed back directly, before it is turned into word probabilities.
+
+
+
+- The final hidden state is fed back through a layer norm whose scale and bias start at zero, with no projection. Unlike the expected embedding, this does not need token probabilities.
+- Related: Simplex Diffusion Models feed back hidden features [@deschenaux2026simplex], and loopholing does the same for discrete diffusion [@joLoopholingDiscreteDiffusion2026].
+
+</MapText>
+
+<MapText name="net.time-off">
+
+Without time conditioning the network must infer the noise level from the input itself.
+
+
+
+- One switch removes time from the input embedding, every block and the output head together. The RADD recipe runs without it.
+- For masked diffusion this is principled: the optimal clean-token posterior does not depend on time [@ou2025absorbingdiscretediffusionsecretly; @zheng2024masked].
+
+</MapText>
+
+<MapText name="net.time-on">
+
+Time conditioning tells the network how noisy its input is.
+
+</MapText>
+
+{/* Output */}
+
+<MapText name="about.param">
+
+What the network’s output means.
+
+
+
+- The codebase separates what the network outputs from what that output means. The main meanings are a clean-token posterior (with or without the masking rules), a plug-in estimate for uniform noise, score ratios for SEDD, and a posterior with a Gaussian prior term for RePlaid.
+- Two normalized outputs are not interchangeable just because both sum to one: each is tied to the reverse step and loss that expect it.
+- Continuous recipes predict a clean-token posterior, which the sampler converts to an expected clean state and then to a velocity.
+- Logits are shaped in a fixed order: an optional softcap, then excluded tokens, then (only when sampling) temperature, top-k and top-p, then normalization. Entropy-bounded sampling measures entropy before any token is committed.
+- For Gaussian paths, clean-data, noise, velocity and score predictions can all be converted into each other; FLM and ELF both find clean-data prediction the easiest to learn [@lee2026onesteplanguagemodelingcontinuous; @hu2026elf].
+
+</MapText>
+
+<MapText name="param.posterior">
+
+For every position, a probability over the six words for the clean token. Slide the input noise up and the bars flatten.
+
+
+
+- For masking, the posterior never predicts [M] and copies visible tokens through. The Gaussian version skips both rules, since a noisy vector is not an observed token.
+- CDCD uses the same kind of output: it averages embeddings under the posterior and turns that into a score [@dieleman2022continuous].
+
+</MapText>
+
+<MapText name="param.score">
+
+Score ratios: how much more likely each word is than the current token. Not a normalized distribution. SEDD defines them for uniform noise too; the codebase implements the masked version.
+
+
+
+- The output is a set of log score ratios, not a distribution. It is used by the SEDD recipe, with score entropy and its analytic sampler [@louDiscreteDiffusionModeling2023].
+
+</MapText>
+
+<MapText name="param.plugin">
+
+A plug-in estimate for uniform noise: the posterior mixed with a uniform floor that grows with noise.
+
+
+
+- Only uniform-noise recipes (UDLM, DUO) use this output. Hybrid views and expected-embedding self-conditioning need a true posterior, so they reject it.
+
+</MapText>
+
+<MapText name="param.gpost">
+
+A clean-token posterior shaped by a Gaussian prior on the noisy vector, used to compute the expected clean vector.
+
+
+
+- Adds $\frac{\alpha}{\sigma^2}\, z E^\top$ to the logits before normalizing, so each word gets a bonus for lining up with the current noisy vector. Used by the RePlaid recipes [@yang2026continuousdiffusionscalescompetitively].
+
+</MapText>
+
+<MapText name="param.next">
+
+Only the next position is predicted, given everything to its left.
+
+</MapText>
+
+{/* Loss */}
+
+<MapText name="about.loss">
+
+There are two ways to arrive at an objective. A **likelihood-based** objective starts from the probabilistic model the other choices define and trains on a bound on its log-likelihood, so its form follows from those choices. An **endpoint-based** objective starts from inference instead: it trains the network on exactly the quantity the sampler will ask for, the clean tokens at the end of the path.
+
+In practice the two routes are closer than they look. The term compared at each noise level (cross-entropy on tokens, MSE on embeddings, or score entropy) is fixed by the representation and the parameterization, not by which route you take. What mostly differs is how much each noise level counts, and whether the final loss value is a bound you can report. With unlimited capacity, both are minimized by the same clean-token posterior. Gaussian noise is the main exception: its likelihood bound compares embeddings with MSE, while the endpoint loss compares tokens with cross-entropy. Finally, weighting a noise level more heavily and sampling it more often have the same effect, which ties the choice of objective to the training-time sampler below.
+
+
+
+- Available objectives: MDLM's weighted cross-entropy, plain cross-entropy with optional weighting, the uniform-noise loss of UDLM and DUO, score entropy, the D3PM bound, RePlaid's Gaussian ELBO, a hybrid ELBO, and losses composed from KL terms.
+- Plain cross-entropy can be weighted by time, $\alpha$, $\sigma$, effective noise, SNR or log SNR, or by a learned weight that starts out as plain cross-entropy.
+- The Gaussian ELBO reports its prior, reconstruction and diffusion terms separately, so the learned schedule and the time sampler can adapt to each one.
+- Block diffusion can add a next-token loss on the clean context on top of the base objective.
+- Cross-entropy is a strictly proper scoring rule, so it is minimized by the true token probabilities [@gneiting2007strictly]. A full likelihood bound also penalizes embedding collapse on its own [@gulrajani2023likelihood].
+
+</MapText>
+
+{/* Equations shown above the loss picture. Colours: termint (amber, the integral), termmse (purple), termrecon (teal), termprior (rose), termoff (grey, a term that is zero). */}
+
+<MapText name="eq.likelihood-masked">
+
+$$
+\mathcal{L} = \mathbb{E}_{t \sim \mathcal{U}[0,1]}\,\mathbb{E}_q \sum_{i:\, z_{t,i} = [\mathrm{M}]} \textcolor{termint}{\frac{-\kappa'(t)}{1-\kappa(t)}}\,\big(-\log p_{\theta,i}(x_i)\big) \;+\; \textcolor{termoff}{\mathcal{L}_{\text{recon}}} \;+\; \textcolor{termoff}{\mathcal{L}_{\text{prior}}}
+$$
+
+With $\kappa(t) = 1 - t$ the weight is $1/t$. Both end terms are zero: every token is visible at $t = 0$, and at $t = 1$ every token is [M], which is the prior.
+
+</MapText>
+
+<MapText name="eq.likelihood-uniform">
+
+$$
+\mathcal{L} = \mathbb{E}_{t}\,\mathbb{E}_q \sum_{i} \textcolor{termint}{\frac{\kappa'(t)}{V\kappa(t)}}\Big[\frac{V}{\bar x_{z}} - \frac{V}{\bar x_{\theta,z}} - \sum_{v} \frac{\bar x_v}{\bar x_z}\log\frac{\bar x_{\theta,z}\,\bar x_v}{\bar x_{\theta,v}\,\bar x_z}\Big] \;+\; \textcolor{termoff}{\mathcal{L}_{\text{recon}}} \;+\; \textcolor{termoff}{\mathcal{L}_{\text{prior}}}
+$$
+
+Here $z = z_{t,i}$ is the token now at position $i$, $\bar x = V\kappa(t)\,\mathbb{1}_{x_i} + (1-\kappa(t))\,\mathbf{1}$ and $\bar x_\theta = V\kappa(t)\,p_{\theta,i} + (1-\kappa(t))\,\mathbf{1}$: the true and predicted marginals, times $V$. Every position counts, since any token may have been swapped. Both end terms are zero: at $t = 1$ the tokens are already uniform, which is the prior.
+
+</MapText>
+
+<MapText name="eq.likelihood-gaussian">
+
+$$
+\mathcal{L} = \textcolor{termrecon}{\sum_i -\log p_{\theta,i}(x_i \mid z_0)} \;+\; \mathbb{E}_{t}\,\mathbb{E}_q \sum_i \textcolor{termint}{w(t)}\,\lVert e_i - \hat e_{\theta,i} \rVert^2 \;+\; \textcolor{termprior}{\mathcal{L}_{\text{prior}}}
+$$
+
+With $z_{t,i} = \alpha_t e_i + \sigma_t \epsilon_i$, $w(t) = -\tfrac{1}{2}\mathrm{SNR}'(t)$ and $\mathcal{L}_{\text{prior}} = \sum_i \mathrm{KL}\big(\mathcal{N}(\alpha_1 e_i, \sigma_1^2 I)\,\|\,\mathcal{N}(0, I)\big)$. All three terms are present: $\gamma$ is finite at both ends, so neither end is exact.
+
+</MapText>
+
+<MapText name="eq.likelihood-hybrid">
+
+$$
+\mathcal{L} = \textcolor{termoff}{\mathcal{L}_{\text{recon}}} \;+\; \mathbb{E}_{t}\,\mathbb{E}_q \sum_{i:\, K_{t,i} = 0} \Big[\textcolor{termint}{\frac{-\kappa'(t)}{1-\kappa(t)}}\big(-\log p_{\theta,i}(x_i)\big) + \textcolor{termmse}{w(t)}\,\lVert e_i - \hat e_{\theta,i} \rVert^2\Big] \;+\; \textcolor{termprior}{\mathcal{L}_{\text{prior}}}
+$$
+
+The cross-entropy scores tokens as they are revealed; the MSE scores hidden tokens that stay hidden. $\mathcal{L}_{\text{recon}} = 0$ because every token is visible at $t = 0$; the prior KL stays because $\gamma$ is finite at $t = 1$.
+
+</MapText>
+
+<MapText name="eq.likelihood-score">
+
+$$
+\mathcal{L} = \mathbb{E}_{t}\,\mathbb{E}_q \sum_{i:\, z_{t,i} = [\mathrm{M}]} \textcolor{termint}{\sigma'(t)}\Big[\sum_{v \neq [\mathrm{M}]} s_{\theta,i}(v) - r_t \log s_{\theta,i}(x_i) + r_t(\log r_t - 1)\Big] \;+\; \textcolor{termoff}{\mathcal{L}_{\text{recon}}} \;+\; \textcolor{termoff}{\mathcal{L}_{\text{prior}}}
+$$
+
+With $\sigma(t) = -\log\kappa(t)$ and $r_t = \kappa(t)/(1-\kappa(t))$, the true ratio for the hidden token; $s_{\theta,i}(v)$ are the network's score ratios. The last term is a constant that makes the minimum zero.
+
+</MapText>
+
+<MapText name="eq.endpoint-masked">
+
+$$
+\mathcal{L} = \mathbb{E}_{t \sim \mathcal{U}[0,1]}\,\mathbb{E}_q \sum_{i:\, z_{t,i} = [\mathrm{M}]} \textcolor{termint}{1}\cdot\big(-\log p_{\theta,i}(x_i)\big)
+$$
+
+The same term as the likelihood loss, with weight 1 at every noise level. Not a bound.
+
+</MapText>
+
+<MapText name="eq.endpoint-uniform">
+
+$$
+\mathcal{L} = \mathbb{E}_{t \sim \mathcal{U}[0,1]}\,\mathbb{E}_q \sum_{i} \textcolor{termint}{1}\cdot\big(-\log p_{\theta,i}(x_i)\big)
+$$
+
+Every position counts, since any token may have been swapped. Not a bound.
+
+</MapText>
+
+<MapText name="eq.endpoint-continuous">
+
+$$
+\mathcal{L} = \mathbb{E}_{t \sim \mathcal{U}[0,1]}\,\mathbb{E}_q \sum_{i} \textcolor{termint}{1}\cdot\big(-\log p_{\theta,i}(x_i \mid z_t)\big)
+$$
+
+The network reads the noisy vectors $z_t$ and predicts the clean token directly, as in CDCD: no distance in vector space and no end terms. Simplex and spherical noise have no bound in the codebase, so this is their only objective.
+
+</MapText>
+
+<MapText name="eq.endpoint-hybrid">
+
+$$
+\mathcal{L} = \mathbb{E}_{t \sim \mathcal{U}[0,1]}\,\mathbb{E}_q \sum_{i} \textcolor{termint}{1}\cdot\big(-\log p_{\theta,i}(x_i \mid z_t)\big)
+$$
+
+One cross-entropy, with the network reading both views of each position. Not a bound.
+
+</MapText>
+
+<MapText name="loss.endpoint">
+
+Endpoint-based: predict the clean tokens with cross-entropy, at every noise level alike, because the clean-token prediction is what the sampler uses. It is not a bound on any likelihood. For masked noise, the term at each noise level is the same as in the likelihood-based loss; only the weighting across noise levels differs.
+
+</MapText>
+
+<MapText name="loss.endpoint-discrete">
+
+With masked or uniform noise this is plain cross-entropy on the clean tokens.
+
+</MapText>
+
+<MapText name="loss.endpoint-continuous">
+
+With continuous noise it is the CDCD-style recipe: cross-entropy on the clean token, predicted from the noisy vectors, rather than a distance in vector space.
+
+</MapText>
+
+<MapText name="loss.endpoint-hybrid">
+
+With two views, one cross-entropy covers both: the network predicts the clean token from both views at once.
+
+</MapText>
+
+<MapText name="loss.likelihood">
+
+Likelihood-based: the loss is whatever a bound on the log-likelihood (an ELBO) turns out to be for the other choices. That bound depends on the parameterization as well as the corruption: DUO’s bound is written in terms of its plug-in posterior, and SEDD’s in terms of score ratios.
+
+</MapText>
+
+<MapText name="loss.likelihood-masked">
+
+For masking it is cross-entropy weighted by 1/t on the masked positions (as in MDLM), so nearly clean examples count much more.
+
+</MapText>
+
+<MapText name="loss.likelihood-uniform">
+
+For uniform noise it is DUO’s exact bound, which compares the model’s plug-in posterior with the true posterior over every word, not only the correct one.
+
+</MapText>
+
+<MapText name="loss.likelihood-gaussian">
+
+For Gaussian noise it is a weighted MSE between the expected embedding ē and the true embedding, integrated over time, plus two end terms: a reconstruction cross-entropy at t = 0 and a prior KL at t = 1 (RePlaid’s three terms).
+
+</MapText>
+
+<MapText name="loss.likelihood-hybrid">
+
+For masked + Gaussian it is both at once: cross-entropy on the masked positions, weighted by how fast the keep rate falls, plus the Gaussian weighted MSE on the embeddings and the prior KL (the REPLAiD hybrid).
+
+</MapText>
+
+<MapText name="loss.likelihood-score">
+
+For score-ratio outputs it is score entropy (SEDD).
+
+</MapText>
+
+{/* Training time sampler */}
+
+<MapText name="about.tsamp">
+
+Which times t each training batch uses. It is worth explaining why the training time sampler is distinct from the noise schedule, as these are often grouped together. We treat these separately as they serve distinct purposes: the noise schedule defines the physical noise level at each time. In other words, the noise schedule defines what a time value $t$ means towards the actual denoising task difficulty. The training time sampler decides how to allocate budget across different denoising tasks -- for example, we may want to investigate what happens if we allocate more training towards the middle of the noise schedule. If we link the noising process and training time sampler, then this would require changing what noise level a value of $t$ correspends to. Decoupling the two allows us to keep the same interpretation of $t$ while altering the allocation of training budget. A principal goal of this codebase is to maximize the flexibility for DLM recipes. As decoupling training time sampler from the noise schedule increases the number of design choices, we opt towards separating the two. 
+
+- Options: stratified uniform times (the default, spread evenly across GPUs and gradient-accumulation steps), D3PM's discrete steps, RePlaid's split between reconstruction and diffusion examples, and a learned importance density for the RePlaid hybrid.
+- Changing which times are trained does not change the inference grid, and it does not reweight the loss unless the recipe does so explicitly.
+- When insertion is on, the loss-derivative warp (a noise schedule) can also fit to the insertion losses.
+- Stratified, low-discrepancy time sampling comes from VDM [@kingma2021variational].
+
+</MapText>
+
+<MapText name="tsamp.uniform">
+
+Uniform times between ε and 1. The codebase stratifies them: a batch of n examples gets one time in each of n equal slices, so every batch covers the whole range. This is the default for almost every recipe.
+
+</MapText>
+
+<MapText name="tsamp.discrete">
+
+D3PM trains on a grid of discrete steps (1000 in the codebase, 10 shown). Each time is a stratified uniform draw, rounded up to the next step.
+
+</MapText>
+
+<MapText name="tsamp.mid">
+
+Fixed non-uniform: training visits the middle half of t three times as often as either end (the `cdcd_mid_range_times` preset). Each draw is divided by its density, so the objective is unchanged; only where the gradient estimate is most precise moves. The noise schedule, and so generation, is untouched.
+
+</MapText>
+
+<MapText name="tsamp.alloc">
+
+Adaptive allocation (RePlaid) splits each batch between the two sampled terms of the Gaussian likelihood loss. The reconstruction term lives at a single point, t = 0, so it cannot be reached by drawing t from a range: some rows sit exactly at t = 0 to estimate it (red), and the rest get stratified uniform times for the diffusion integral. The prior term at t = 1 is computed exactly and needs no samples.
+
+The split follows how noisy each term is: each gets a share of the batch proportional to the running standard deviation of its loss (Neyman allocation), so the noisier term gets more rows and the total estimate has the lowest variance. Each term is rescaled by how many rows it received, so the objective stays the same bound whatever the split. Like every training time sampler, it changes only how training spends its batch, not what t means or how the model generates. It needs the three-term Gaussian likelihood loss, which is why it is only available for Gaussian noise with the likelihood-based objective.
+
+</MapText>
+
+<MapText name="tsamp.mix">
+
+With a block-size mixture, single-token blocks skip this and always train at t = 1 (pure noise).
+
+</MapText>
+
+<MapText name="tsamp.note">
+
+The sampler never changes what a value of t means; that is the noise schedule’s job. It only decides how often each t is drawn (left), and so how the training budget is split across t (right). Generation never uses it.
+
+</MapText>
+
+{/* Sampler */}
+
+<MapText name="about.samp">
+
+How predictions become text. Four settings: where to start, which steps to take, how each step changes the state, and how the end state becomes tokens.
+
+
+
+- Fixed-length recipes share one sampling engine with independent settings: how to propose clean tokens (keep the full posterior, sample, or argmax), which positions to update (all, random, or by entropy), how to move the state (the method's reverse step, or fresh forward noise), whether committed tokens stay fixed, and how to decode at the end.
+- The named samplers are presets of this engine: ancestral, entropy-bounded, SEDD's analytic step, discrete flow matching, Euler, Heun and adaptive ODE solvers, DDPM, and each process's native reverse step.
+- Cost is counted in network calls, including the final decoding call, so samplers should be compared at equal call budgets.
+- There are two kinds of temperature: one on the token probabilities, and Plaid's score temperature, which applies only to Gaussian steps.
+- In RePlaid's comparison, DPM-Solver++ does best with few steps and DDPM with many [@yang2026continuousdiffusionscalescompetitively; @lu2025dpmsolverpp]. The codebase currently has Euler, Heun, an adaptive-step ODE solver and DDPM.
+
+All of these are settings of one loop; step through it in the figure below the map.
+
+</MapText>
+
+<MapText name="samp.ancestral">
+
+Ancestral sampling reveals tokens a few at a time in random order, one network call per step.
+
+</MapText>
+
+<MapText name="samp.eb">
+
+Entropy-bounded sampling fixes a position as soon as the model is sure about it, and fixes every such position in the same step. Positions become final in order of confidence, not at random, so it needs fewer steps and rarely fixes a wrong word.
+
+
+
+- Commitment belongs to the sampler, so even a purely continuous model can use entropy-bounded decoding: a committed token's state is set to its clean value and held there.
+- A churn option randomly reopens committed tokens and re-noises them with the process's own forward step. It costs no extra calls, but it may use more of the step budget before finishing.
+- Based on the entropy-bounded sampler [@benhamu2025accelerated].
+
+</MapText>
+
+<MapText name="samp.ode">
+
+A Gaussian solver (Euler, Heun, adaptive ODE or DDPM) moves every vector a little each step; all words sharpen together.
+
+
+
+- Euler takes one network call per step, Heun two, and the adaptive-step ODE solver picks its own steps within an error tolerance and a call budget. Integration stops just short of the clean endpoint, then decodes. The adaptive solver does not support self-conditioning.
+
+</MapText>
+
+<MapText name="samp.flow">
+
+Each process takes its own reverse step, and all positions sharpen together. Simplex Diffusion Models use Dirichlet bridge sampling, with optional churn. S-FLM integrates along the geodesic with tangent Euler steps. vMF spherical flows use an ODE predictor, with optional Langevin corrector steps. On the simplex the state is itself a probability vector, drawn as the bar under each position: it starts even and its mass moves to one word. On the sphere the state is a direction: the dial shows the angle between it (white) and the clean embedding (purple), which closes as generation runs.
+
+</MapText>
+
+<MapText name="samp.hybrid">
+
+Each view takes its own reverse step: masked tokens are revealed while the continuous view sharpens.
+
+</MapText>
+
+<MapText name="samp.analytic">
+
+SEDD's analytic step uses the score ratios to jump several masked tokens at once with exact transition probabilities.
+
+
+
+- Used only with SEDD's score ratios [@louDiscr eteDiffusionModeling2023].
+
+</MapText>
+
+<MapText name="samp.ctmc">
+
+Discrete flow matching follows a continuous-time Markov chain: tokens jump between states, and with uniform noise a filled-in word can still change later (red).
+
+
+
+- At each step, sample a candidate token, then jump to it with probability $1-e^{-h\,\mathrm{rate}}$. This is the basic solver from discrete flow matching, with no corrector [@gat2024discrete]. Revealed masked tokens stay fixed; under uniform noise a token can still change.
+
+</MapText>
+
+<MapText name="samp.ddpm">
+
+DDPM takes stochastic Gaussian reverse steps: every vector sharpens, with a little fresh noise added each step.
+
+
+
+- DDPM takes stochastic steps from the reverse Gaussian posterior; it is not Euler with noise added. It has its own self-conditioning options and supports score temperature.
+
+</MapText>
+
+<MapText name="samp.ar">
+
+Autoregressive decoding: one new token per step, strictly left to right.
+
+</MapText>
+
+<MapText name="samp.eb-continuous">
+
+With continuous noise the same rule applies to vectors: once a position’s prediction is under the entropy bound, its vector is set to the clean embedding of the predicted word and frozen. The other positions keep taking the method’s own reverse step.
+
+</MapText>
+
+<MapText name="samp.renoise">
+
+Renoising predicts the whole clean sequence at every step, then corrupts that prediction again to the next, lower noise level. Nothing is final until the end: with masking, a word shown at one step can be masked again at the next (orange).
+
+
+
+- Forward resampling draws a full clean sequence from the posterior, then applies fresh forward noise at the next time, separately for each view. It works with any fixed-length recipe, and it can remask tokens.
+
+</MapText>
+
+<MapText name="samp.renoise-continuous">
+
+With continuous noise, each step jumps to a fresh noisy version of the predicted words instead of moving the current vector a little. Early on the prediction can switch between words; the noise shrinks step by step until one word is left.
+
+</MapText>
+
+<MapText name="samp.note">
+
+Each card is one position. With continuous noise the likely words are stacked, larger and brighter when more likely, and they merge into one as the noise falls. A dashed box is not final; a solid box is fixed. Red marks a wrong word.
+
+</MapText>
+
+{/* Sequence modifiers */}
+
+<MapText name="about.mods">
+
+Each one changes several parts at once. Block diffusion changes the input layout, the attention mask and the order of generation. E2D2 keeps that layout but gives the clean and noisy copies separate weights. Insertion changes which positions exist, adds a length loss and lets the sampler insert tokens.
+
+
+
+- Available modifiers: block diffusion (default block size 32, with an optional next-token loss on the clean context and a cache for the clean prefix), the E2D2 encoder-decoder split, BlockGen's mix of block sizes, insertion, self-conditioning, and hybrid views.
+- Block diffusion wraps an existing recipe and leaves its process, schedule, output and loss unchanged. RePlaid is not supported yet.
+- Insertion treats deletion as the forward corruption and insertion as the reverse step. The number of new tokens in each gap is drawn from a Poisson distribution, and each view initializes new positions its own way: as [M], as uniform noise, or as a noised guess of the clean token. It is an approximate model, not FlexMDM's exact objective.
+- Insertion also works inside block diffusion.
+- Related work: BD3-LM [@arriolaBlockDiffusionInterpolating2025], E2D2 [@arriola2025e2d2], FlexMDM [@kim2026any], and expanding flows for continuous insertion [@tang2026expanding].
+
+**Hybrid views, and how they differ from earlier hybrids**
+
+- Earlier hybrids fix the pairing as part of the method.
+  - CANDI pairs masking with Gaussian noise on one-hot vectors [@pynadath2025candihybriddiscretecontinuousdiffusion].
+  - CADD pairs masking with a Gaussian diffusion in the learned token-embedding space. The continuous state is noised only while its token is masked, and equals the clean embedding once the token is revealed. The network predicts token logits only [@zheng2025continuouslyaugmenteddiscretediffusion].
+  - CCDD pairs a discrete diffusion on tokens (masking by default) with a Gaussian diffusion on continuous representations from a fixed encoder, contextual embeddings in its main experiments. The two corruptions are independent given the clean data, and one network has two heads, one per part [@zhou2025coevolutionary].
+- Here a hybrid is a modifier, not a method. "Discrete" and "continuous" are just two views of the same clean tokens, and the modifier does not care which corruption each view uses.
+- So arbitrary processes can be combined: masked with Gaussian, uniform with simplex, simplex with Gaussian, or more than two views. The one requirement is that every view works from a clean-token prediction.
+- The views share three things: the clean tokens, one transformer (their embeddings are fused at the input), and one prediction. Their noisy states never have to map into each other.
+
+**How each view's time is managed**
+
+- There is one global time $t \in [0, 1]$. The training time sampler draws it, and the sampler steps it on one grid.
+- CADD and CCDD also run both parts on one shared time, each part with its own schedule. We keep that, and add a time map per view.
+- Each view has its own time map, which turns global time into that view's local time. Each view also has its own schedule, which turns local time into a noise level.
+- So at the same global time, two views can sit at different noise levels. One view can be nearly clean while the other is still mostly noise.
+- A time map can be the identity (the default), a fixed power or linear map, or a learned clock fit to the training loss. A learned clock can be applied to some views and not others.
+- At generation, every view moves along the same global grid. Each takes its own reverse step, at its own local time, from the one shared prediction.
+
+</MapText>
+
+<MapText name="mods.none">
+
+Turn on block diffusion or insertion to see how they change generation.
+
+</MapText>
+
+<MapText name="mods.block">
+
+Block diffusion splits the sequence into blocks. In training the network reads the noisy sequence and the clean sequence together (length 2L) under the mask above. At generation, blocks are produced left to right; inside a block, tokens are denoised in parallel.
+
+</MapText>
+
+<MapText name="mods.block-bc">
+
+Block-causal clean context, as in the BD3-LM paper (`block_diffusion.x0_causal=false`).
+
+</MapText>
+
+<MapText name="mods.block-causal">
+
+Token-causal clean context: the clean stream is an ordinary causal language model, which lets every block size share one KV cache (the codebase default, `x0_causal=true`).
+
+</MapText>
+
+<MapText name="mods.block-ar">
+
+Token-causal clean context plus a next-token loss on it, so the same network is also trained as an autoregressive model of the context (`block_diffusion.clean_loss=autoregressive`). BlockGen gets its AR behavior a different way: see Mixture of block sizes.
+
+</MapText>
+
+<MapText name="mods.block-mix">
+
+Mixture of block sizes, as in BlockGen: one model with a token-causal clean context is trained on block sizes 1 and 16. Size 1 uses pure noise and CE, so it is next-token prediction; the larger size keeps the recipe’s own loss (`+experiment=blockgen_mixture`, composed after a fixed-block recipe).
+
+</MapText>
+
+<MapText name="mods.split-e2d2">
+
+Encoder + decoder, as in E2D2: the same block-causal layout, but the clean copy and the noisy copy go through separate weights. An encoder reads the clean blocks once per block; a decoder denoises the current block at every step, and each decoder layer attends to the final encoder state. Encoder and decoder depth are set separately (`encoder_decoder.encoder_layers`; decoder depth is `model.n_blocks`).
+
+</MapText>
+
+<MapText name="mods.insert">
+
+Insertion lets the length change: generation starts short and new tokens are inserted between existing ones (outlined), so the model decides the length.
+
+</MapText>
+
+{/* Paper recipes (from docs/guides/paper-recipes.md in SDDC) */}
+
+<MapText name="recipe.mdlm">
+
+Absorbing posterior, weighted CE, ancestral inference.
+
+</MapText>
+
+<MapText name="recipe.md4">
+
+Standard state-independent masking; shares MDLM components. Not GenMD4.
+
+</MapText>
+
+<MapText name="recipe.radd">
+
+Time-independent posterior (no time conditioning). No unchanged-state prediction cache.
+
+</MapText>
+
+<MapText name="recipe.d3pm_absorb">
+
+Absorbing variant, discrete-time variational objective plus reconstruction.
+
+</MapText>
+
+<MapText name="recipe.sedd_absorb">
+
+Absorbing scores, score entropy and analytic sampling.
+
+</MapText>
+
+<MapText name="recipe.llada_style">
+
+Masked training with a local DiT and ancestral decoding.
+
+</MapText>
+
+<MapText name="recipe.ardm_style">
+
+Basic absorbing order-agnostic construction, without upscaling or adaptive-budget machinery.
+
+</MapText>
+
+<MapText name="recipe.dfm_masked">
+
+Posterior CE and base CTMC probability-velocity updates. No extra corrector.
+
+</MapText>
+
+<MapText name="recipe.udlm">
+
+The plug-in uniform diffusion recipe. No paper guidance extensions.
+
+</MapText>
+
+<MapText name="recipe.uniform_posterior">
+
+Uniform corruption with ordinary posterior CE; distinct from plug-in UDLM.
+
+</MapText>
+
+<MapText name="recipe.duo">
+
+Continuous-relaxation / discrete curriculum (uses one-hot relaxations), uniform reverse inference.
+
+</MapText>
+
+<MapText name="recipe.dfm_uniform">
+
+Posterior CE and base CTMC probability-velocity updates. No extra corrector.
+
+</MapText>
+
+<MapText name="recipe.candi_hybrid">
+
+Masked / Gaussian hybrid with mask-dependent fusion and rank calibration.
+
+</MapText>
+
+<MapText name="recipe.cadd">
+
+Gated Gaussian / masked hybrid. The YAML records missing dropout, sharing / detachment and schedule / sampler alignment.
+
+</MapText>
+
+<MapText name="recipe.cdcd">
+
+Learned-embedding Gaussian CE and adaptive clock; the adaptation machinery differs from the paper.
+
+</MapText>
+
+<MapText name="recipe.flm_gaussian">
+
+Gaussian one-hot linear flow and error-based clock; finite calibration bounds and local conditioning differ.
+
+</MapText>
+
+<MapText name="recipe.langflow">
+
+Embedding Gaussian CE, Gumbel clock, expected-embedding self-conditioning. Normalization, conditioning and architectural details still differ.
+
+</MapText>
+
+<MapText name="recipe.replaid">
+
+Learned embeddings and schedule, reconstruction / diffusion / prior terms, DDPM sampling. No separate original-PLAID preset.
+
+</MapText>
+
+<MapText name="recipe.simplex">
+
+Dirichlet bridge construction, CE and churn. Not Dirichlet Flow Matching or SSD-LM.
+
+</MapText>
+
+<MapText name="recipe.spherical_flow_matching">
+
+Geodesic sphere path and tangent integration. Not every paper architecture / velocity approximation.
+
+</MapText>
+
+<MapText name="recipe.spherical_vmf">
+
+von Mises-Fisher spherical flows with predictor-corrector inference. Paper classifier / damping details differ.
+
+</MapText>
+
+<MapText name="recipe.bd3lm">
+
+Block diffusion with a clean prefix, configurable block size, and ancestral sampling. No claim to the optimized paper schedules. Block-causal clean context, as in the paper (`x0_causal: false`).
+
+</MapText>
+
+<MapText name="recipe.e2d2">
+
+BD3-LM with the E2D2 encoder-decoder split: a clean-context encoder and a denoising decoder with separate weights, block-causal context, MDLM objective. Reproduces the information flow on the local DiT, not the paper’s pretrained Qwen3 models or its specialized training schedule.
+
+</MapText>
+
+<MapText name="recipe.blockgen_masked">
+
+BlockGen’s fixed-block baseline: masked blocks of 16, token-causal clean context, plain CE with observed tokens kept, ancestral sampling (16 calls per block). The reference’s fixed-block scripts use a block-causal context instead. A TinyGSM version is `tinygsm_blockgen_masked`.
+
+</MapText>
+
+<MapText name="recipe.blockgen_uniform">
+
+The same fixed-block BlockGen baseline with uniform-state blocks and a token-causal context: plug-in output and the uniform ELBO (not posterior CE), uniform ancestral sampling. A TinyGSM version is `tinygsm_blockgen_uniform`.
+
+</MapText>
+
+<MapText name="recipe.eb_masked">
+
+Entropy-bounded unmasking on MDLM. This changes inference, not training.
+
+</MapText>
+
+<MapText name="recipe.flexmdm_style">
+
+Masked insertion. Uses our count / gap objectives, not the full paper variational objective.
+
+</MapText>
+
+{/* Recipe-specific schedule, output and loss pictures */}
+
+<MapText name="rsched.loglinear">
+
+Log-linear schedule: each token survives with probability α(t), which falls in a straight line from 1 to 0.
+
+</MapText>
+
+<MapText name="rsched.discrete">
+
+D3PM trains on a fixed grid of discrete time steps (orange dots) along the same log-linear path.
+
+</MapText>
+
+<MapText name="rsched.duo">
+
+DUO uses the log-linear schedule plus a curriculum: early in training the uniform noise is applied to a softened relaxation of the tokens, which anneals to hard tokens.
+
+</MapText>
+
+<MapText name="rsched.candi">
+
+CANDI runs two schedules at once. Masking follows a log-linear path, and the Gaussian view is rank-calibrated against it.
+
+</MapText>
+
+<MapText name="rsched.cadd">
+
+CADD-style hybrids also keep one schedule per view; the YAML records where its schedule alignment differs from the paper.
+
+</MapText>
+
+<MapText name="rsched.cdcd">
+
+CDCD-style: the base is an exponential VE schedule, and the adaptive clock refits it from the loss as training goes.
+
+</MapText>
+
+<MapText name="rsched.flm">
+
+FLM-style: time is defined by an error clock. t is the fraction of tokens a greedy argmax would get wrong, and the Gaussian σ (0.2 to 4) is calibrated to produce it.
+
+</MapText>
+
+<MapText name="rsched.gumbel">
+
+LangFlow-style: γ(t) follows Gumbel quantiles. Its location and scale are refit from detached cross-entropy feedback, not by the network’s optimizer. Press Play to watch them move.
+
+</MapText>
+
+<MapText name="rsched.replaid">
+
+RePlaid learns its −log SNR curve with a small monotone network, trained to lower the variance of the ELBO estimate. Press Play to watch it reshape.
+
+</MapText>
+
+<MapText name="rsched.simplex">
+
+The simplex process ships its own schedule. Its loss-derivative warp is switched off (`adaptive=false`), so training draws uniform times.
+
+</MapText>
+
+<MapText name="rsched.spherical">
+
+S-FLM moves along the geodesic; the schedule sets how far along the arc the state is at time t.
+
+</MapText>
+
+<MapText name="rsched.vmf">
+
+vMF spherical flows spread noise as a von Mises-Fisher distribution whose concentration falls over time.
+
+</MapText>
+
+<MapText name="rout.mdlm">
+
+Masked recipes only predict the masked positions; visible tokens are copied through unchanged.
+
+</MapText>
+
+<MapText name="rout.radd">
+
+RADD drops time conditioning: the posterior depends only on which tokens are still visible.
+
+</MapText>
+
+<MapText name="rout.candi">
+
+CANDI predicts a clean-token posterior at masked positions, fusing what the masked and Gaussian views say.
+
+</MapText>
+
+<MapText name="rout.replaid">
+
+RePlaid adds a Gaussian prior term to the network’s logits before the softmax: each word gets a bonus for how well its embedding lines up with the current noisy vector.
+
+</MapText>
+
+<MapText name="rloss.d3pm">
+
+D3PM’s bound is a sum over discrete steps: a reconstruction term at the start, a KL term per step, and a prior term at the end.
+
+</MapText>
+
+<MapText name="rloss.mdlm">
+
+The masked ELBO reduces to cross-entropy on masked tokens, weighted by 1/t under the log-linear schedule.
+
+</MapText>
+
+<MapText name="rloss.sedd">
+
+SEDD trains score ratios with score entropy, using the same ELBO weighting.
+
+</MapText>
+
+{/* Grouped recipes: several configs that build the same pipeline */}
+
+<MapText name="recipe.group-mdlm">
+
+Several papers, one construction: absorbing (mask) noise, a clean-token posterior at masked positions, the 1/t-weighted ELBO, and ancestral unmasking. The configs below differ only in details this figure does not draw.
+
+</MapText>
+
+<MapText name="recipe.group-uniform_posterior">
+
+Uniform noise trained with plain posterior cross-entropy. The two configs differ only in how the sampler takes each step.
+
+</MapText>
+
+{/* Recipe families */}
+
+<MapText name="family.masked">
+
+One construction under many names: mask noise, a clean-token posterior at masked positions, the 1/t-weighted ELBO. Variants change the time steps and loss (D3PM) or the sampler (entropy-bounded). Block variants are under Block diffusion.
+
+</MapText>
+
+<MapText name="family.sedd">
+
+Masking noise, but the network predicts score ratios instead of clean tokens.
+
+</MapText>
+
+<MapText name="family.uniform">
+
+Tokens are swapped for random words instead of masked. Variants differ in the output and loss, and DUO adds a training curriculum.
+
+</MapText>
+
+<MapText name="family.dfm">
+
+The same flow-matching recipe on two kinds of discrete noise; only the corruption changes.
+
+</MapText>
+
+<MapText name="family.hybrid">
+
+Masking and Gaussian noise run side by side. CANDI and CADD differ in how the views are arranged and fused, and in the sampler.
+
+</MapText>
+
+<MapText name="family.gauss">
+
+Gaussian noise on vectors, solved back to tokens. The variants mostly differ in the schedule, plus self-conditioning, the loss and the sampler.
+
+</MapText>
+
+<MapText name="family.sphere">
+
+Noise on the unit sphere of embeddings. The variants differ in the output and the sampler.
+
+</MapText>
+
+<MapText name="family.simplex">
+
+Noise on the probability simplex with a Dirichlet bridge.
+
+</MapText>
+
+<MapText name="recipe.blockgen_masked_mixture">
+
+BlockGen’s mixture model with masked blocks: one model trained on block sizes 1 and 16 (5% / 95%, stratified across GPUs), token-causal context. Size 1 is pure noise + CE, the AR component. Mixture likelihood evaluation and the ARPC/EIPC samplers are not implemented.
+
+</MapText>
+
+<MapText name="recipe.blockgen_uniform_mixture">
+
+The same 1 + 16 mixture with uniform-state blocks; size 16 keeps the plug-in uniform ELBO. Mixture likelihood evaluation and ARPC/EIPC are not implemented.
+
+</MapText>
+
+<MapText name="family.block">
+
+Generate blocks left to right and diffuse inside each block. Training reads the noisy and clean sequence together (2L) under a structured mask. The variants differ in how the clean context attends (BD3-LM: block causal; BlockGen: token causal), in the noise inside each block, and in whether one model is trained on several block sizes.
+
+</MapText>
+
+<MapText name="family.flex">
+
+Masked diffusion that can also insert tokens, so the length is decided by the model.
+
+</MapText>
+
+<MapText name="recipe.intro">
+
+Each recipe is a named config in the codebase (`+experiment=&lt;name&gt;`). Presets compose existing components; they do not certify paper benchmark parity.
+
+</MapText>
+
+</DesignMap>
+
+### The samplers, as one loop
+
+{/* PROSE: to be written */}
+
+<SamplerAlgo client:visible general />
 
 Switch to "Paper recipes" at the top to see how published methods fill in the map. Boxes that change across a family of recipes are highlighted. Many well-known methods differ in only one or two boxes, which is what makes it tempting to swap parts between them.
 
-## The Experimental Pipeline
+## Why modular? (And some Teasers)
+The modular approach of this codebase is motvated by two core reasons: first, a modular set up makes it easier to design experiments that tease out otherwise subtle interactions that different components can have on downstream performance. For spherical methods (both the hyperspherical flows from [@deschenaux2026language], the spherical vMF trajectories from [@chemseddine2026spherical], and simplex diffusion from [@deschenaux2026simplex]), we notice that these methods can utilize hybrid inference samplers, such as a hybrid formulation of the EB sampler from [@benhamu2025accelerated]. This is surprising, given that none of these methods are trained to handle committed tokens. What is more surprising is that this property is contingent on whether self-conditioning is used: without self conditioning, hybrid EB samplers perform quite poorly. This seems to support two conclusions: 
+1. Self conditioning can help continuous methods by providing some form of pseudo-conditioning. 
+2. Self-conditioning must do more than provide conditioning info, as the same trick does not perform as well for Gaussian diffusion. 
 
-In total, this codebase supports about 3,000 recipes, not counting samplers, modifiers, and architectural changes. A grid search over all of them is impractical, so the codebase is built for targeted experiments that vary a few design choices at a time.
+This is a fairly naunced finding, and it wouldn't have been discovered without being able to plug and play different components across recipes, especially for inference settings. 
 
-<Pipeline client:visible />
+Second, it makes it quite easy to produce new recipes from existing components. Most of the work is re-using the existing components and wiring everything together through a config file, instead of designing each recipe from scratch.
 
-The pipeline figure shows how we go from a question to an answer. First, given a question, we define a protocol: the variations of a recipe we want to compare, and the tasks we want to compare them on. Each variation is trained once, which gives us one checkpoint. Each checkpoint is then tuned over inference settings. We pick the sampler with the best validation score, and only that winner is scored on held-out test examples with fresh seeds.
+## Next in this series
 
-A large part of this approach is inspired by [@rowell2025modelfactory], specifically the way design choices are quickly translated into reliable downstream performance numbers. Given the enormous difference in scale and goal (training models versus studying diffusion methods), this project ended up being substantially different.
+Part 2, [Self Conditioning Across Recipes](/blog/diffusion-lm-design-choices-self-conditioning/), uses the breadth of the framework on one question. It swaps one part at a time to show how self conditioning interacts with the corruption process, the sampler and the noise schedule.
 
-### Training Pipeline and Supported Tasks
-
-All models in this post share one backbone: a diffusion transformer with 8 layers, width 512, and 8 heads. Unless noted, every model trains for 20,000 updates at batch size 256, with learning rate 3e-4 and 2,500 warmup steps. Where a paper gives a loss weighting or a training time distribution, we use the paper's choice.
-
-We use three tasks, each with a metric computed on generated samples rather than on the training loss:
-
-- **Sudoku (hard split):** fill in a puzzle given its clues. Metric: the share of puzzles solved exactly.
-- **text8:** unconditional character-level generation on Wikipedia text. Metric: unique valid words per sample.
-- **TinyStories:** short children's stories, with either raw bytes or a BPE vocabulary of 500 to 10,000 tokens. Metric: corpus BLEU against held-out reference stories.
-
-The codebase also includes OpenWebText (generative perplexity) and TinyGSM (math word problems), but we do not use them here.
-
-<div className="callout">
-<span className="callout-label">Why no likelihoods?</span>
-
-Every number in this post is computed on generated samples, never on a likelihood or a bound on it. Most recipes here train on a variational bound (an ELBO), but each corruption process gives a different bound with its own unknown gap to the true likelihood, so comparing bounds across, say, masked and Gaussian diffusion compares their slack as much as their models. Several recipes do not train on a bound at all, so their validation loss is only a training signal. And even an exact likelihood says little about samples at this scale, where generation is the end goal: a model can have a good likelihood and poor samples, or the reverse [@theis2016noteevaluationgenerativemodels]. Sample-based metrics have their own trap, since a single sampler setting can trade diversity for quality and decide a comparison on its own, which is why every model here is scored with its own tuned sampler. We make the full argument in [Generative Frontiers](/blog/eval_methodology/) [@pynadath2026generativefrontiers].
-
-</div>
-
-### A note on BLEU
-
-Corpus BLEU has two parts. The first counts how many word sequences in the model's continuations also appear in the real endings. The second is a brevity penalty: if the continuations are shorter overall than the real endings, the score is multiplied by a factor below one.
-
-On TinyStories, that penalty matters more than we expected. Every story is generated in a fixed-length canvas, and the model decides where to end it. Masked diffusion models end their stories early, at 76 to 92% of the real length, and the penalty takes 8 to 27% off their score. Most other runs write stories close to the real length and lose little; the exceptions are simplex without SC, the block diffusion models, and a few uniform runs. So a ranking by BLEU is partly a ranking by story length.
-
-Whether ending early should count against a model is a judgment call. So every TinyStories BLEU in this post can be shown both ways, and the switch in the figure below sets all of them at once. Where the choice changes a conclusion, the text says so. For the tokenizer ladder, we also asked a judge model to read the stories; it sides with the penalty-free ranking (see "A second opinion from a judge model" below).
-
-<BleuLength client:visible />
-
-<ExpandableSection title="Why we do not tune training settings" client:load>
-
-We keep training settings at paper defaults across methods. This is not ideal: we apply these methods to tasks the original papers did not cover, and the defaults could misrepresent an otherwise good method.
-
-The reason is cost. For diffusion models, the settings that matter most are not only the learning rate. The loss weighting and the distribution over training times matter as much. But changing the loss weighting changes the objective itself, so two models trained with different weightings have validation losses that measure different things. They cannot be ranked by validation loss.
-
-The only fair way to compare training settings is downstream: tune the sampler for each candidate, then compare sample quality. That turns every training run into a full round of inference tuning. A single question in this post already takes 10 to 50 training runs. Tuning training settings on top of that would multiply the cost several times over.
-
-So our claims are scoped to this protocol: paper-default training, a shared budget, and inference tuned per model on validation data. Most work at this scale also uses default training settings; the inference tuning is the part we add.
-
-</ExpandableSection>
-
-### Inference Pipeline
-
-Unless noted, every diffusion model gets 128 network evaluations (NFE) per sequence. Every sampler starts from the model's prediction of the clean tokens at each step; they differ in how they use it:
-
-- **Native** takes one step of the method's own reverse process, using the model's softmax at a tuned temperature as the clean estimate. For Gaussian diffusion, that means the expected embedding under the softmax, followed by a draw from the Gaussian reverse step. For masked diffusion, each masked position unmasks with the schedule's probability and gets a token sampled from the softmax.
-- **Native greedy** is the same step with the argmax token as the clean estimate.
-- **EB greedy** commits argmax tokens wherever the model's entropy is below a tuned bound, following entropy-bounded unmasking for masked diffusion [@benhamu2025accelerated].
-- **Renoise** draws a full clean sequence (sampled or argmax), then corrupts it again with the forward process down to the next noise level.
-
-Each sampler's own settings, such as the temperature or the entropy bound, are tuned with a small automatic search on validation data. As the next sections show, the best sampler often depends on the rest of the recipe, so we tune it for every model.
-
-<div className="callout">
-<span className="callout-label">About the experiments</span>
-
-The rest of the post works through a few questions as worked examples. They are small because our compute is small: 8-layer models, 20,000 training steps, and mostly one training seed. Each shows a question the modular setup makes cheap to ask, by swapping one part and holding the rest fixed, and each ends with how sure we are. The [limitations](#limitations) spell out what they cannot tell us, and anyone with more compute can rerun them at scale from the [repo](https://github.com/patrickpynadath1/sddc/tree/383616271af4bb858cdba117387dc24928ad7a58/experiments).
-
-</div>
-
-## Self Conditioning: What does it do?
-
-Self conditioning has emerged as a necessary part of continuous diffusion language models (cDLMs). First introduced in [@Chen_Zhang_Hinton_2023], it has proven effective across a wide range of cDLM recipes [@dieleman2022continuous; @strudel2022self; @batzolis2026towards; @yang2026continuousdiffusionscalescompetitively]. Some works have tried to remove it because of its added cost at training and inference [@davis2026design]. Others have embraced it and leaned further in [@deschenauxLoopholingAllWay2026a; @yooSelfconditionedFlowMap2026a]. Either way, few doubt that self conditioning works. The open question is why.
-
-Several works offer reasonable answers:
-
-1. In [@pynadath2025candihybriddiscretecontinuousdiffusion], we hypothesized that self conditioning anchors the model, because discrete and continuous corruption are imbalanced.
-2. In [@yooSelfconditionedFlowMap2026a], the authors show that self-conditioned flows are equivalent to a fixed point iteration.
-3. In [@davis2026design; @shabalinWhyGaussianDiffusion2026], the authors argue that self conditioning fixes a mismatch between training and inference.
-
-These answers are convincing, but they may not capture the full picture. [@joLoopholingDiscreteDiffusion2026] shows that loopholing also improves discrete diffusion with uniform and masked corruption, and [@deschenauxLoopholingAllWay2026a] shows that self conditioning alone is a fairly strong generative method. None of the three hypotheses explains these results, since each depends on properties of continuous diffusion. If self conditioning helps discrete diffusion, where those reasons do not apply, do the theories fully explain why it works in the continuous case? We test three narrower questions below. Two more, about tokenizers and about a judge model's view of the stories, are among the further examples after them.
-
-In all of these experiments, "SC" means the model receives the expected embedding under its previous prediction.
-
-### Is self conditioning just a deeper network?
-
-#### The question
-
-Self conditioning runs the network twice during training, so a fair question is whether it only adds depth. If it does, a 16-layer model without SC should match an 8-layer model with SC. If SC does something extra depth cannot, the 8-layer SC model should win.
-
-#### The experiment
-
-For each corruption type we need three models: an 8-layer baseline, the same baseline with SC, and a 16-layer model without SC. The baseline puts both changes on one scale: how much does each one add over the same starting point? We run this for Gaussian corruption (with the CDCD learned clock), masked corruption (ELBO weighting), and uniform corruption, on all three tasks. That is 27 models. TinyStories uses the 10k-token BPE vocabulary.
-
-Everything else is held fixed: training steps, batch size, width, and the sampler search. Every model is tuned over the same five samplers on validation, and only the winner is scored on the test split. All 27 models were trained and tuned with the same protocol, on the same hardware.
-
-<RunConfig id="sc-vs-depth" client:visible />
-
-#### Results
-
-The first figure puts both options on the same axes. Each mark shows how much SC and how much extra depth improve on the same 8-layer baseline. Marks above the diagonal are cases where SC beats doubling the depth.
-
-<HeadToHead client:visible />
-
-For Gaussian corruption, the answer is clear. SC beats 16 layers on every task: 90.6% of Sudoku puzzles solved against 80.7%, 14.1 valid words against 13.7 on text8, and 7.9 BLEU against 7.2 on TinyStories (7.9 against 7.3 without the length penalty). Doubling depth helps a Gaussian model, but SC helps more, without adding a single parameter.
-
-The discrete methods are mixed, and the next figure shows why we look at each cell rather than at the average. Each row is one method on one task; the grey ring is the 8-layer baseline.
-
-<Dumbbells client:visible />
-
-Uniform corruption mostly follows the Gaussian pattern: SC beats depth on Sudoku (92.8% against 90.6%) and on TinyStories (7.4 against 6.7 BLEU, or 7.7 against 7.3 without the length penalty). Masked corruption does not. On Sudoku, the 8-layer masked model already solves 96.9% of puzzles, and SC drops it to 92.6%. On TinyStories, all three masked models land within sampling-seed noise of each other under standard BLEU. Without the length penalty, the 16-layer masked model is clearly ahead: 9.0 against 7.8 for both 8-layer models. It writes the shortest stories of the three (78% of the real length), and the penalty hides its lead.
-
-text8 is the odd one out: SC is the worst option for both discrete methods. The gap grid below collects every cell in one place, which makes the text8 column stand out.
-
-<GapGrid client:visible />
-
-#### How sure are we?
-
-The Gaussian result is solid: the gap is large and holds on all three tasks. The discrete results are suggestive at best. They rest on one training seed, and several of the gaps are small.
-
-### Does self conditioning change how the model should be sampled?
-
-#### The question
-
-The text8 result looks like SC hurting discrete models. But each model above used whichever sampler won on validation, so its score mixes two things: how good the model is, and which sampler it can use. Does SC change which sampler works best? If it does, part of the text8 result is about sampling, not about the model.
-
-#### The experiment
-
-This needs no new training. Every model in the previous experiment was already tuned with all five samplers, so we can read off which sampler won for each of the 27 models, and how every sampler scored on validation. Then we compare the 8-layer, SC, and 16-layer models again, with every model held to the same sampler (native). Everything here uses validation scores; the test split is still used only once per model, in the previous experiment.
-
-<RunConfig id="sc-sampler-choice" client:visible />
-
-#### Results
-
-The next figure shows which sampler won for each model.
-
-<SamplerChoice client:visible />
-
-On text8, renoising wins for every Gaussian, masked, and uniform model without SC. With SC, renoising stops working: the masked SC model drops to under 1 valid word per sample with renoising, compared with 13.6 with the native sampler. So the SC models fall back on the native sampler, while their no-SC rivals keep the renoising boost.
-
-If we restrict every model to the native sampler, the text8 picture flips. On validation, SC beats both the 8- and 16-layer masked models (13.6 against 11.5 and 12.4), and lands between them for uniform (14.3 against 13.6 and 14.7). In other words, much of the "SC hurts discrete models" result on text8 is "SC models cannot use the renoising sampler."
-
-We do not yet know why. One guess is that renoising throws away the noisy state the SC feedback was built from, so the feedback no longer matches the state the model sees. That is untested.
-
-On Sudoku, the sampler matters even more. Every masked model picks EB greedy, and that choice is most of masked diffusion's lead on the task: with the native sampler, the 8-layer masked model solves 43.0% of validation puzzles, and with EB greedy it solves 96.9%. Our guess is that committing the most certain cells first suits a puzzle where each filled cell constrains the rest. The sampler also flips the SC result here. Under the native sampler, SC helps masked diffusion on Sudoku (75.0% against 43.0% for 8 layers and 56.6% for 16), the reverse of its effect under EB greedy (90.6% against 96.9% and 97.7%). Uniform models without SC lean on renoising (86.7% against 56.3% with the native sampler); with SC, every sampler solves between 94.9% and 96.5%.
-
-#### How sure are we?
-
-The sampler flip is clear in the validation numbers, but it comes from one task and one seed. It is a good reason to never compare SC and no-SC models under a single fixed sampler.
-
-### Does self conditioning help every continuous method?
-
-#### The question
-
-The experiments above use one continuous method, Gaussian corruption of learned embeddings. The codebase has three more: simplex, spherical, and vMF. Each corrupts a different representation, so if SC's benefit depends on how Gaussian noise acts on embeddings, it might not carry over. Does SC help all four?
-
-#### The experiment
-
-We train each of the four continuous methods with and without SC on all three tasks. That is 24 models, all with the same 8-layer backbone and the CDCD learned clock, and all tuned with the same five samplers. The same runs feed the [noise schedule example](#where-do-learned-noise-schedules-spend-training) further down.
-
-<RunConfig id="continuous-schedules" client:visible />
-
-#### Results
-
-Each pair below is the same 8-layer model and the same learned clock, with and without SC.
-
-<CdcdPerformance client:visible />
-
-SC helps every continuous method on Sudoku and TinyStories, and Sudoku shows its largest effect in this post. Without SC, no continuous method solves more than 57% of the test puzzles (Gaussian 53.3%, simplex 23.4%, spherical 50.0%, vMF 56.5%). With SC, all four solve 89 to 94% (90.6%, 89.1%, 92.2% and 93.8%), close to the masked models (92.6 to 97.3%). Simplex gains the most, from 23.4% to 89.1%.
-
-On text8 the picture is mixed. SC helps simplex most (11.5 to 13.3 valid words) and Gaussian (13.0 to 14.1). Spherical and vMF barely move (13.0 to 13.0, and 12.8 to 13.0). That is the sampler effect from [the sampling question](#does-self-conditioning-change-how-the-model-should-be-sampled) again: without SC, both pick renoising, which lifts them by 3.5 to 4 valid words on validation. With the native sampler only, SC is worth about 3 for both (9.6 to 12.3 for spherical, 9.1 to 12.8 for vMF, on validation). On TinyStories BPE, SC helps simplex most under standard BLEU, from 6.3 to 8.5. Most of that jump is length: without SC, simplex ends its stories at 80% of the real length, and without the length penalty the gain shrinks to 8.1 to 8.5. Simplex with SC scores 8.5 either way. That makes it the strongest diffusion model here, ahead of spherical with SC (8.3, or 8.5 without the penalty) and Gaussian with SC (7.9). The autoregressive model of the same size scores 8.9 (9.0 without the penalty).
-
-#### Continuous models can commit discrete tokens
-
-One of the more surprising results here is that purely continuous models can anchor their samples to discrete tokens, the way a masked model does. Entropy-bounded sampling [@benhamu2025accelerated] was designed for masked diffusion: at each step it commits the positions whose predicted distribution has low entropy, up to a bound. Our EB greedy policy applies the same rule to every method. It fixes each committed position to its argmax token and leaves the rest to the method's own update. The continuous models never see a committed token during training, so a partly committed sequence lies outside anything they were trained on. With SC, simplex, spherical and vMF handle it anyway. On validation, EB greedy comes within 0.3 to 1.1 of the native sampler on text8 and TinyStories, and beats native for spherical on TinyStories (7.85 against 7.27).
-
-Recent work on simplex diffusion [@deschenaux2026simplex] reports the same effect. Their confidence-based sampler commits the most confident positions to simplex vertices, which they note puts the sample severely out of distribution, yet it still helps on de novo molecule generation without retraining.
-
-The anchoring depends on the rest of the recipe. On text, without SC it mostly breaks: spherical drops to 1.88 on text8 and 0.37 on TinyStories. Gaussian embeddings fail with it on text either way. Sudoku turns this pattern around. There, anchoring works even without SC for spherical and vMF: EB greedy beats the native sampler (54% against 41%, and 53% against 36%, on validation), and vMF without SC selects it. With SC, vMF selects EB greedy too and solves 93.8% of the test puzzles, the best continuous score on Sudoku. Gaussian embeddings, which fail with EB greedy on text, reach 89% with it under SC. Simplex without SC is the exception, at 2%.
-
-So whether a continuous model can commit tokens depends on its representation, a modifier and the task, another interaction that a one-part-at-a-time comparison would miss. It also means the commitment samplers built for masked diffusion are open to continuous models, which brings the two families closer than their training objectives suggest.
-
-<ExpandableSection title="EB greedy against the native sampler, per method and task" client:load>
-
-Validation scores, native / EB greedy. A check mark means EB greedy was the selected sampler.
-
-| Method | text8, SC | text8, no SC | TinyStories 10k, SC | TinyStories 10k, no SC | Sudoku, SC | Sudoku, no SC |
-| --- | --- | --- | --- | --- | --- | --- |
-| Simplex | 13.29 / 12.20 | 11.69 / 9.43 | 8.28 / 7.63 | 6.22 / 3.60 | 0.90 / 0.89 | 0.23 / 0.02 |
-| Spherical | 12.29 / 11.91 | 9.61 / 1.88 | 7.27 / 7.85 ✓ | 6.32 / 0.37 | 0.92 / 0.76 | 0.41 / 0.54 |
-| vMF | 12.77 / 12.49 | 9.09 / 8.25 | 7.48 / 7.09 | 6.19 / 2.15 | 0.95 / 0.95 ✓ | 0.36 / 0.53 ✓ |
-| Gaussian embeddings | 14.16 / 3.71 | 11.17 / 0.00 | 7.06 / 0.70 | 6.68 / 0.00 | 0.95 / 0.89 | 0.55 / 0.36 |
-
-</ExpandableSection>
-
-#### How sure are we?
-
-The gains are large compared with sampling-seed noise and hold across tasks, but each comes from one training seed. The EB comparison uses validation scores, and we did not test EB with sampled rather than argmax tokens. The text8 result for spherical and vMF depends on the sampler, as above. The Sudoku models overfit their training puzzles, but that only affects their learned clocks (see the [noise schedule example](#where-do-learned-noise-schedules-spend-training)). The scores here are measured on held-out test puzzles.
-
-## More worked examples
-
-The four questions below use the same pipeline. They are collapsed to keep the post short; each opens with its main result.
-
-### Does the tokenizer change the picture?
-
-Does SC's effect survive the move from bytes to a 10k-token BPE vocabulary? It does: with the native sampler, SC raises all 15 method-and-vocabulary cells, though how much it helps depends on the sampler and the metric.
-
-<ExpandableSection title="The tokenizer ladder in detail" client:load>
-
-Most language models use subword tokenizers, while most small diffusion experiments use characters or bytes. A mechanism that depends on how hard it is to identify a noisy token could easily change with vocabulary size: with bytes, a noisy position has 260 candidates; with a 10k BPE vocabulary, it has 10,000, mostly whole words. A larger vocabulary makes every model better, so that is not the question. The question is whether SC's effect, and the differences between methods, survive the change.
-
-We repeat the comparison on TinyStories with BPE vocabularies of 260 (bytes), 500, 1k, 5k, and 10k tokens. At each size we train Gaussian, masked, and uniform diffusion, each with and without SC, plus an autoregressive (AR) model of the same size as a reference. That is 7 models per vocabulary and 35 in total. The vocabulary is the only thing that changes along the ladder; the sequence length is set per vocabulary so every story fits. Every diffusion model is tuned with the same five samplers, and AR chooses between sampling and greedy decoding.
-
-<RunConfig id="tokenizer-ladder" client:visible />
-
-<VocabLadder client:visible />
-
-Across the ladder:
-
-- **SC's effect is visible at every vocabulary size, for every method.** With the native sampler, SC raises all 15 method and vocabulary cells. The biggest gains are Gaussian's and uniform's at small vocabularies (+1.9 BLEU at 260 tokens); masked gains a steadier 0.4 to 0.9.
-- **Whether the effect shrinks depends on how you measure it.** With the native sampler on validation, Gaussian's SC gain shrinks from +1.9 at 260 tokens to +0.4 at 10k, and uniform's from +1.9 to +0.7. On the test split, with each model's chosen sampler and no length penalty, Gaussian's gain stays near +1 at every size (+0.7 to +1.1). The judge model below sides with the second reading.
-- **The best sampler depends on the method.** Gaussian needs sampled clean estimates: EB greedy scores near zero, and greedy renoising trails far behind. Masked does best with native and loses 0.5 to 1.3 BLEU with sampled renoising. Uniform is the only method where EB greedy works, and it wins 5 of the 10 uniform cells.
-- **AR still leads.** It sits 0.9 to 1.5 BLEU above the best diffusion model at every vocabulary size.
-
-These bullets use validation BLEU with the length penalty, because that is what the samplers were tuned on. The chosen sampler's test score can also be shown without the penalty (**Compare methods → Chosen · test**), and two things change there. Masked, which writes the shortest stories, becomes the strongest diffusion method in 7 of the 10 vocabulary-and-SC comparisons. And the gap to AR shrinks: masked with SC comes within 0.1 BLEU of AR at 260 tokens and passes it at 1k (9.2 against 9.1).
-
-So SC does not stop mattering at realistic vocabulary sizes. What it fixes does seem to change, though, and BLEU is too coarse to show it. The judge model below makes it visible.
-
-**How sure are we?** The direction of the SC effect is solid: it holds in all 15 cells. Its size, and whether it shrinks with vocabulary, depends on the sampler and the metric, and comes from one training seed. The TinyStories gaps between methods are often within half a BLEU point.
-
-</ExpandableSection>
-
-### A second opinion from a judge model
-
-BLEU rewards length and cannot tell a story that wanders off from one that stays on track. A judge model that reads the stories mostly agrees with BLEU without the length penalty, and shows that what SC fixes changes with the vocabulary: garbled words at 260 tokens, real words in the wrong place at 10k.
-
-<ExpandableSection title="The judge model in detail" client:load>
-
-BLEU compares word sequences with one real ending, and as the note on BLEU shows, it also rewards length. It cannot tell a story that wanders off from one that stays on track. Does a judge that reads the stories see the same ladder as BLEU, and can it show what SC actually fixes?
-
-So we tried a different kind of evaluator. Using a language model as a judge of generated text is now common [@zheng2023judging; @liu2023geval]: the judge reads an output and answers a question about it, such as which of two responses is better or how coherent a passage is. The usual catch is that the judge answers in free text, so its verdict has to be parsed out of the response, and an answer in the wrong format has to be retried or dropped. [Jev](https://docs.typesafe.ai/concepts/system-one), a model from TypeSafe, is an LLM judge without that step. It answers typed questions (yes or no, pick one of several, place on a scale) and returns each answer as a probability over the allowed options. Nothing needs to be extracted, and every answer comes with a confidence [@li2026jevjudge].
-
-<div className="callout">
-<span className="callout-label">Disclosure</span>
-
-[Jev](https://docs.typesafe.ai/concepts/system-one) is made by TypeSafe. We are not sponsored by them.
-
-</div>
-
-We were mostly playing with it as a tool for evaluating language, and two things made it useful. First, it lets us break "is this a good story?" into narrow questions and ask each one separately. Second, it is fast and cheap enough to ask a lot of them: about 160,000 judgments of the ladder's test stories (512 per model) took under 15 minutes and cost under $10. We asked:
-
-- **Best of three.** Given an opening and three endings from Gaussian, masked, and uniform diffusion (all with SC, or all without), which ending is best for coherence and staying on topic?
-- **SC or not.** The same method with and without SC: which ending is better?
-- **Real or model.** The model's ending next to the real one: which did the original author write? 50% would mean Jev cannot tell them apart.
-- **Ratings.** Coherence and fluency on a fixed scale. The real endings are rated the same way, so scores can be read relative to them.
-- **Garbled words.** One yes or no question per distinct word: is it misspelled, made up, a fragment, or two words fused?
-
-Every pairwise question was asked twice, with the order of the options swapped, and the answers averaged. No new models are trained: Jev reads the test stories of the 35 ladder models above.
-
-<JevLadder client:visible />
-
-Jev's view of the ladder:
-
-- **For Gaussian, SC's effect does not fade with vocabulary.** Jev prefers Gaussian's SC version 77 to 85% of the time at every size (**SC vs no SC**). For masked and uniform, the preference eases at larger vocabularies, to 63% at 10k. (Uniform at 1k, at 48%, looks like a weak checkpoint on every measure.)
-- **What SC fixes changes with vocabulary.** At 260 tokens, Gaussian without SC writes 6.4 garbled words per 100, and SC cuts that to 1.9. At 10k there are few garbled words left to fix (0.5 per 100), yet SC's gain in realism, relative to AR, is four times larger than at 260 (+0.12 against +0.03). Once tokens are whole words, Gaussian's mistakes become real words in the wrong place, and that is what SC repairs.
-- **Without SC, Gaussian is the only method that falls further behind AR as the vocabulary grows.** Relative to AR at the same vocabulary size, the rate at which Jev mistakes it for the original author drops from 0.31 to 0.22 (**Mistaken for the author**, **÷ AR at same vocab**). Masked and uniform without SC hold steady, and Gaussian with SC stays between 0.28 and 0.35.
-- **It agrees with BLEU without the length penalty, not with standard BLEU.** Its pick for the best method matches the penalty-free ranking in 7 of the 10 vocabulary-and-SC comparisons, and the standard ranking in 2. Masked comes out first or close to it; Gaussian comes out last.
-- **AR is far ahead, by much more than BLEU shows.** Jev mistakes AR's endings for the original author's 34 to 45% of the time, against 9 to 20% for the diffusion models. Head to head, a diffusion model beats AR at most 12% of the time.
-
-**How sure are we?** Jev is one judge, and we have not checked it against human ratings. Some of its yes or no questions misfire on the real stories: it flags 32% of real endings as repetitive, so we do not report that flag. When it picks among five or more options, it slightly favors the middle position, so we only report two- and three-way comparisons. And every model here is still one training run. We read these results as a second opinion that points the same way as BLEU without the length penalty, not as ground truth.
-
-</ExpandableSection>
-
-### Where do learned noise schedules spend training?
-
-Every continuous recipe here learns its noise schedule with CDCD. The learned clocks do make the loss climb linearly, but they spend most of training where a token's identity is already gone while its rank is not, and SC barely moves them.
-
-<ExpandableSection title="The noise schedules in detail" client:load>
-
-Schedules matter more here than for masked diffusion, where the schedule mostly changes the variance of training, not the objective [@Sahoo_Arriola_Schiff_Gokaslan_Marroquin_Chiu_Rush_Kuleshov_2024]. For continuous methods, the schedule decides how much training time goes to each noise level, and a bad choice can waste most of it. Every continuous recipe here learns its schedule with CDCD [@dieleman2022continuous]. CDCD fits the expected loss as a function of noise level and samples training times through its inverse, so that every stretch of the warped time $u$ carries the same share of the loss. Because the clock adapts to the model's own loss, SC could move it.
-
-We measure three things on the 24 continuous models from the self conditioning section: whether loss climbs linearly in $u$, what the learned clocks look like, and how quickly each clock destroys a token's identity and its rank. The schedule figures use text8 and byte-level TinyStories checkpoints from an earlier training run of the same recipes, on different GPUs.
-
-**Does the clock do its job?** If the clock is right, measured loss should climb in a straight line in $u$.
-
-<CdcdLinearity client:visible />
-
-On both text tasks, it does. A straight line explains at least 99.8% of the variation in the measured loss, on training data and on held-out data, for every method. On Sudoku, it does not, even on training data. The Sudoku models overfit their training puzzles, so their clocks do not describe held-out loss. We keep them behind a toggle for completeness.
-
-**How sure are we?** The check on text is solid: the line fits for every method on both text tasks, on training and on held-out data. Each clock comes from one training seed. The Sudoku clocks do not describe held-out loss, so we leave them out of every claim about the clocks. Their test scores are unaffected.
-
-**Where does it spend training?** Each line below is the schedule CDCD learned for one method on one task.
-
-<CdcdSchedules client:visible />
-
-The raw noise parameters are hard to compare across methods, since a noise level of 0.5 means something different for a Gaussian embedding than for a point on the simplex. So the next figure measures corruption in two units every method shares: how often the nearest embedding is the wrong token, and where the true token ranks among all candidates.
-
-<CdcdCorruption client:visible />
-
-The two measures disagree sharply. On text8, the nearest token is already wrong more than half the time within the first 12% of the learned clock. Yet the true token's rank is still only halfway to chance at about 75% of the clock for Gaussian, spherical, and vMF, and at about 95% for simplex. On byte-level TinyStories, the gap is even wider. So the learned clocks spend most of training at noise levels where the token's identity is gone, but its rank is not.
-
-This matches the picture of token identifiability from CANDI [@pynadath2025candihybriddiscretecontinuousdiffusion], where Gaussian noise destroys a token's identity and its rank at very different rates. Here, the learned clocks arrive at that split on their own.
-
-**How sure are we?** The split between identity and rank holds for every method on both text tasks. Each clock comes from one training seed, and these checkpoints come from an earlier training run than the scores above.
-
-**Does SC move the clock?** The clock is adaptive: it is fit to the model's own loss, so anything that changes how hard each noise level is for the model should move it. SC gives the model its previous prediction at every step, which could plausibly make high noise levels easier. Figure I draws each clock with SC (solid) and without (dashed). On the text tasks the two nearly coincide: the point where rank information runs out moves by about 0.02 in $u$. This is a little puzzling next to the scores, where SC changes most methods a lot (see [Does self conditioning help every continuous method?](#does-self-conditioning-help-every-continuous-method)). Whatever SC fixes, it does not show up as a change in where the loss is spent.
-
-**How sure are we?** The small effect of SC on the clocks holds for every method on both text tasks. Each clock comes from one training seed, and the clocks and the scores come from two separate training runs of the same recipes.
-
-</ExpandableSection>
-
-### Scale the encoder or the decoder?
-
-In encoder-decoder block diffusion, which side is worth making deeper? The decoder. Decoder depth drives quality, while 1 to 8 encoder layers stay within sampling-seed noise, and one shared transformer does as well as the split at standard BLEU.
-
-<ExpandableSection title="Block diffusion in detail" client:load>
-
-Block diffusion generates a sequence one block at a time. Each block is denoised while the model reads the blocks already written. Ordinary block diffusion [@arriola2025block] uses one transformer for both jobs. E2D2 [@arriola2025e2d2] splits them: an encoder reads the clean context, and a decoder denoises the current block. The encoder runs once per block, while the decoder runs at every denoising step. The two sides therefore have very different costs, which raises the question of which one is worth making deeper.
-
-The design map above shows how the weights are split: pick block diffusion, then **Weights → Encoder + decoder (E2D2)** under Sequence modifiers.
-
-To separate the two sides, we vary one while holding the other fixed. We train E2D2 with the decoder fixed at 8 layers and the encoder at 1, 2, 4, or 8, and with the encoder fixed at 8 and the decoder at 1, 2, 4, or 8. Two more models bound the comparison: one with no encoder at all, where the decoder reads the raw context embeddings, and ordinary block diffusion with one shared 8-layer transformer. That is 9 models per task and 27 in total, which took about 233 GPU hours of training (6 to 14 hours per run). All of them are masked block diffusion with blocks of 32 tokens and no SC, tuned with the native samplers only.
-
-<RunConfig id="block-encoder-decoder" client:visible />
-
-<BlockEncDec client:visible />
-
-In short:
-
-- **Decoder depth matters.** On text8, going from 1 to 8 decoder layers raises the score from 5.6 to 9.8. On TinyStories, it rises from 6.2 to 7.0, with most of the gain by 4 layers (7.7 to 8.8 without the length penalty, with all of the gain by 2 layers).
-- **Encoder depth does not.** With an 8-layer decoder, 1 to 8 encoder layers stay within sampling-seed noise on both tasks. On text8, even no encoder at all scores the same.
-- **One encoder layer is enough here.** On TinyStories, the first encoder layer helps over raw embeddings (6.5 to 7.0, or 7.8 to 8.7 without the length penalty). Layers after that add nothing.
-- **Splitting does not beat sharing, at least by standard BLEU.** One shared 8-layer transformer matches E2D2 8/8 on both tasks, with half the layers. On TinyStories this depends on the metric: the shared model writes longer stories than any E2D2 model (88% of the real length against 79 to 82%), and without the length penalty E2D2 8/8 is clearly ahead (8.8 against 7.9).
-- **Encoder layers are cheap at inference; decoder layers are not.** Inference time barely changes with encoder depth, but more than doubles from 1 to 8 decoder layers on TinyStories (18 to 44 seconds).
-
-At this scale, the practical advice is simple. Put the layers in the decoder, keep the encoder shallow, and expect a single shared transformer to do just as well. The encoder only needs to summarize context that is already clean, which may be an easy job at these sequence lengths.
-
-**How sure are we?** The decoder trend is solid: the gaps are far larger than sampling-seed noise. The encoder result is suggestive. These block models were tuned with the native samplers only, come from one training seed, and use short sequences. Longer contexts could easily give the encoder more to do. The Sudoku block models barely learned the task, so we leave them out of every claim.
-
-</ExpandableSection>
-
-## Takeaways
-
-The argument of this post is the modular view. Split diffusion language models into parts that can be swapped across recipes, and use that to measure how the parts interact rather than assume they do not. The experiments are small examples of what that makes possible, and several of their most useful results are interactions.
-
-- **Self conditioning is more than extra depth, for Gaussian corruption.** An 8-layer model with SC beats a 16-layer model without it on all three tasks, without adding a parameter.
-- **SC and the sampler interact.** On text8, models without SC do best with renoising, while models with SC cannot use it. Comparing SC and no-SC models under one fixed sampler can reverse the result.
-- **Continuous models can commit discrete tokens.** With SC, simplex, spherical and vMF models work with entropy-bounded commitment, a sampler built for masked diffusion, and come within 0.3 to 1.1 of their native sampler on text, though they never see a committed token in training. On text it mostly breaks without SC and for Gaussian embeddings; on Sudoku it works more widely, and vMF with SC selects it.
-- **On Sudoku, the sampler matters as much as the model.** Most of masked diffusion's lead comes from entropy-bounded commitment (43.0% of validation puzzles with the native sampler, 96.9% with EB greedy), and SC lifts every continuous method from at most 57% of test puzzles to 89 to 94%.
-- **SC does not help every method equally.** It improves all four continuous methods (Gaussian, simplex, spherical and vMF) on Sudoku and TinyStories. For masked diffusion its effect is modest at best: it lowers Sudoku accuracy from 96.9% to 92.6%, and its TinyStories gains are small.
-- **The effect survives larger vocabularies.** From 260 to 10k BPE tokens, SC improves every method at every size. What it fixes changes: at small vocabularies it removes garbled words; at large ones it puts real words in the right place.
-- **A clock that is linear in loss is not linear in corruption.** CDCD's learned clocks spend most of training where a token's identity is gone but its rank is not. For Gaussian, spherical and vMF, the true token's rank is halfway to chance at about 75% of the clock; for simplex, at about 95%. SC barely moves the clocks.
-- **In block diffusion, spend layers on the decoder.** With an 8-layer decoder, encoder depth from 1 to 8 layers stays within sampling-seed noise, and one shared 8-layer transformer matches E2D2 8/8 under standard BLEU. Encoder layers are cheap at inference, and decoder layers are not [@arriola2025e2d2].
-
-### Limitations
-
-These claims come with clear limits:
-
-- **Scale.** Every model is small (8 layers of width 512, or 16 for the depth comparison) and trained for 20,000 steps on small tasks. Whether the results hold at realistic scale is an open question.
-- **One seed, shared training settings.** Each cell is a single training run. Training hyperparameters are shared across methods rather than tuned for each one; only the inference settings were tuned, on validation data.
-- **The tasks are not ordinary language modeling.** In Sudoku, the nine digits appear equally often in every solution, while language tokens follow a heavily skewed, Zipf-like distribution. text8 and TinyStories are small and simple corpora.
-- **The metrics are coarse.** BLEU rewards length, and the judge model is a single judge we have not checked against human ratings.
-- **The runs used an earlier internal version of the code.** Each experiment is a [worked example](https://github.com/patrickpynadath1/sddc/tree/383616271af4bb858cdba117387dc24928ad7a58/experiments) in the public repo with the same protocol, so a rerun should give close numbers, not identical ones.
+Part 3, [An Interpretation of Self Conditioning](/blog/diffusion-lm-design-choices-sc-interpretation/), gives our working interpretation of those results.
 
 ## Future directions
 
 This project will keep changing as we find new questions to ask. The codebase also covers a narrow slice of current DLM research (see [the scope](#scope-what-is-this-codebase)). These are the directions where we would most welcome contributions.
-
-### Hybrid methods
-
-Every experiment in this post uses a single corruption process. That leaves out one of the most promising directions: hybrids that corrupt the same tokens with a discrete and a continuous process at once [@pynadath2025candihybriddiscretecontinuousdiffusion; @zheng2025continuously; @davis2026design; @zhou2025coevolutionary]. The codebase already supports a large space of them. A hybrid is a set of views of the same tokens, each with its own representation, corruption process and noise schedule, read by one shared network. Any discrete view (masked or uniform) can be paired with any continuous one (Gaussian embeddings, simplex, spherical or vMF), and more than two views can be combined. Hybrids can also be layered rather than placed side by side. SemiCat [@davis2026design] combines all three kinds of corruption: a Gaussian interpolant wrapped around a corruption on the simplex, plus discrete reveals that switch each position to its clean token at a random time. That construction is not in the codebase yet, but it fits the same split into information path, denoising task and inference. None of these combinations is studied here. Which pairings work best, and whether the results above (SC beating depth, the sampler flip, where learned clocks spend training) carry over to hybrids, are open questions the codebase can already answer.
 
 ### Sampler distillation
 
@@ -494,12 +1296,8 @@ Latent diffusion for language has made real progress [@lovelace2023latent; @mesh
 
 These are only a few directions, and we are sure we are missing others.
 
-## A small ask for compute
-
-More compute would buy three things: several training seeds per cell, so every comparison gets error bars; larger models and longer training, to see which results survive scale; and realistic vocabularies of 32k to 50k tokens. If these questions interest you and you have compute to share, please reach out at [ppynadat@purdue.edu](mailto:ppynadat@purdue.edu).
-
 ## Acknowledgements
 
-We thank Yazid Janati, Justin Deschenaux, Valentin Bertoli, and Alex Galashov for valuable feedback and all-hands support during the writing of this blog.
+We thank Yazid Janati, Justin Deschenaux, Valentin De Bortoli, and Alex Galashov for all-hands support during the writing of this blog.
 
 ## References

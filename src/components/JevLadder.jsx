@@ -58,7 +58,7 @@ function JevLadderInner() {
 
   return (
     <Frame
-      kicker="Figure G · a judge's view of the ladder"
+      kicker="Figure K · a judge's view of the ladder"
       title="What a judge model sees in the tokenizer ladder"
       subtitle={m.help}
       controls={<>

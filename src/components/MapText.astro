@@ -1,0 +1,6 @@
+---
+// One text entry for <DesignMap>: name="about.<part>" for a part's general text,
+// name="<part>.<option>" for one choice.
+const { name } = Astro.props;
+---
+<div data-key={name}><slot /></div>

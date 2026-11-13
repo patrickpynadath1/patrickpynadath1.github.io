@@ -11,6 +11,12 @@ and render through `src/layouts/BlogLayout.astro` and `src/styles/post.css`.
 - `bun install`, then `bun run dev` (local server), `bun run build` (to `dist/`), `bun run preview`.
 - `bun run check` runs `astro check` (type checks). There are no unit tests.
 - `node scripts/check-wave-loop.mjs` checks the homepage wave animation.
+- **Visual post editor (dev only):** run `bun run dev`, then open `/edit` (list of posts) or `/edit/<slug>`.
+  - Rich text with KaTeX math (click a formula to edit its TeX), figures as labelled blocks (↑ ↓ to move, × to delete, "Insert figure" in the toolbar), RunConfig `id` and ExpandableSection `title` editable in place.
+  - The toggle at the top right switches to raw source or a diff against the last save. Save with the button or Cmd+S; "View post" opens `/blog/<slug>/`, which reloads on save.
+  - Saving only rewrites the lines you changed; the rest of the file stays byte for byte. Import lines, `{/* comments */}` and unknown JSX (like the `<svg>` in the GitHub button) show as locked blocks: edit them in source mode or in VS Code.
+  - The frontmatter dialog rewrites the YAML in its own style (same values). Edit frontmatter in source mode to keep its formatting.
+  - Code is in `src/editor/`. The routes are injected by the `dev-editor` integration in `astro.config.mjs` only under `astro dev`, so `bun run build` never sees them.
 
 ## How the site is built
 

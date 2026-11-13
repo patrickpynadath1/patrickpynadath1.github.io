@@ -1,0 +1,247 @@
+---
+title: "Some DLM Design Choices: An Interpretation of Self Conditioning"
+description: "Part 3 of Some DLM Design Choices. Our interpretation of what self conditioning does, based on the results in Part 2."
+pubDate: 2026-11-12T12:00:00.000Z
+author: "Patrick Pynadath, Ruqi Zhang"
+tags: ["diffusion", "language models"]
+wip: true
+draft: true
+---
+
+
+import { ScOrdering } from "../../components/ScOrdering.jsx"
+import { ScAlike } from "../../components/ScAlike.jsx"
+import ExpandableSection from "../../components/ExpandableSection.jsx"
+import { BitRecovery } from "../../components/BitRecovery.jsx"
+import { ScInteraction } from "../../components/ScInteraction.jsx"
+import { TwoObservers, ThreeSources, UpdateKeeps, TwoWires, FixedPointIterations, WhereProgressLives } from "../../components/ScSketches.jsx"
+
+# Some DLM Design Choices: An Interpretation of Self Conditioning
+
+{/* In-progress reminders: the only place pending work is mentioned. Delete this block before release. */}
+<div style={{ border: "2px solid #e5484d", background: "rgba(229, 72, 77, 0.10)", borderRadius: 10, padding: "12px 16px", margin: "8px 0 18px" }}>
+<strong style={{ color: "#e5484d" }}>In progress (remove before release)</strong>
+
+- **TinyStories is missing from Figures R, E and G.** Its untuned baseline is not yet scored with MAUVE, so the sampler, commitment and hybrid results in the Evidence section rest on Sudoku and text8 only.
+- **TinyStories top-3 sampler family tests** (ts-families-20261113) are still running. Figure R needs them before TinyStories can be added.
+- **Rank-linear hybrids on TinyStories** were tuned on the old metric (ref_w1) and need a MAUVE re-tune before they can go into Figure G.
+- **The text is a rough draft.** Numbers quoted from other papers still need to be checked against the papers.
+
+</div>
+
+<a href="https://github.com/patrickpynadath1/sddc" target="_blank" rel="noopener" aria-label="SDDC code on GitHub" style={{ display: "inline-flex", alignItems: "center", gap: 8, padding: "7px 16px", margin: "4px 0 18px", borderRadius: 999, background: "var(--fg)", color: "var(--bg)", fontWeight: 600, fontSize: 15, textDecoration: "none" }}><svg width="18" height="18" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/></svg>Code on GitHub</a>
+
+Patrick Pynadath<sup>1</sup>, Ruqi Zhang<sup>1</sup>
+
+<sup>1</sup> Purdue Department of Computer Science
+
+Series: [Part 1](/blog/diffusion-lm-design-choices/) · [Part 2](/blog/diffusion-lm-design-choices-self-conditioning/) · [Part 3](/blog/diffusion-lm-design-choices-sc-interpretation/)
+
+
+## Introduction
+
+In the previous part of the series, we did a study over how self conditioning interacts with the corruption form and noise schedule across various discrete, continuous, and hybrid recipes. In this part, we argue that self conditioning acts as a channel of information between sampling steps: it lets the model keep what it has already worked out about the sample, so that generation becomes more gradual and follows the order the model finds easiest.
+
+The argument has three parts.
+
+1. **The gap.** At every step, a forward pass works out more about the final sample than the next state is able to hold. Part of that work is dropped when the state is updated.
+2. **The second channel.** Self conditioning carries the dropped part forward. The next pass starts from the model's previous prediction, so it does not have to redo that work.
+3. **The consequence.** Discrete and continuous methods normally recover information in opposite ways: one position at a time, or a little of every position at once. With self conditioning, both move toward the order the model itself prefers, so they begin to behave alike.
+
+This view will likely be unsurprising to many. It is close to the intuition that has accompanied the heuristic since it was introduced: a model's prediction is used to take a single step and is then thrown away, and feeding it back lets the model refine its answer instead of starting from scratch [@chen2022analog; @dieleman2022continuous]. Our goal is not to replace that intuition, but to make it precise enough to apply across recipes. We want to say what is being carried forward, why the state alone cannot carry it, and why the effect looks so different for discrete, continuous, and hybrid methods.
+
+It is important to note that this is a claim about how generation unfolds, not about whether performance improves. Whether a more gradual path helps is a separate question, and the results in [Part 2](/blog/diffusion-lm-design-choices-self-conditioning/) show that the answer depends on both the method and the task.
+
+The rest of this part is organized as follows. We first make "what the model has worked out" precise, using the idea that the information in a sample depends on the compute available to the observer. We then describe the gap, and why it is the price of training without simulation. Next, we describe self conditioning as a second channel, and relate this view to recent work, most closely the fixed-point view of [@yooSelfconditionedFlowMap2026a]. Finally, we return to the results from Part 2 and discuss which of them this interpretation explains, and where it falls short.
+
+## What a "bit" is
+
+Any sample from a discrete distribution can be described by a number of bits: the answers to a series of yes-or-no questions that, taken together, pin the sample down [@shannon1948; @cover2006elements]. Generating a sample means settling all of these bits. Each token accounts for some of them, and how many depends on how predictable that token is from the rest of the sequence.
+
+The classic way to count bits assumes an observer with unlimited compute. Under that assumption, a deterministic computation can never add information, since its output is fully explained by its input. This is a poor fit for our setting. A denoiser is a fixed function of its input, yet its prediction is clearly more useful to the next step than the noisy input alone. To describe this, we follow [@finzi2026epiplexity] and treat information as relative to a compute budget. For an observer with limited compute, whatever it cannot work out within its budget counts as unresolved, even if the answer is fully determined by what it sees.
+
+In our case the observer is the model, and its budget is a single forward pass. This gives the quantity we track throughout this post. Fix the final sample $x_0$ that a sampling trajectory ends at. At each step, we ask how many bits of $x_0$ the model cannot determine from its current input in one pass. In the notation of [@finzi2026epiplexity] this is a time-bounded entropy, $H_T(x_0 \mid z_t, \theta)$, where $z_t$ is the current state, $\theta$ are the weights, and $T$ is one forward pass of $f_\theta$. For a single trajectory, we measure it per position as the model's surprise at its own final output:
+
+$$
+h_{t,i} = -\log p_{\theta,i}(x_{0,i} \mid z_t), \qquad h_t = \sum_i h_{t,i}.
+$$
+
+The sum over positions is exact, because a single forward pass predicts each position separately given the state. Since $x_0$ is the sample the trajectory actually produces, $h_t$ is defined during generation and needs no reference data. In training, where $x_0$ is a real sequence, the same quantity is the familiar per-position denoising cross-entropy used by masked and continuous models alike [@sahooSimpleEffectiveMasked2024; @shiSimplifiedGeneralizedMasked2024; @dieleman2022continuous; @gulrajani2023likelihood]. We note that a trained model only gives an estimate of $H_T$: the formal definition uses the best possible model within the budget, not the one we happened to train.
+
+It is useful to separate the unresolved bits into two kinds. **Open bits** have not been decided at all: the randomness that will pick them has not been drawn yet. **Hidden bits** are already fixed by the state and the weights, but working them out takes more than one forward pass. An observer with unlimited compute would only see the open bits. A one-pass model sees both, mixed together. Most of this post is about the hidden bits.
+
+<TwoObservers client:visible />
+
+<ExpandableSection title="Time-bounded entropy, as defined in the paper" client:load>
+
+- Source: [@finzi2026epiplexity].
+- Models allowed: programs $P$ that can both sample and score probabilities within $T$ steps. Call this set $\mathcal{P}_T$.
+- Best model: $P^\star = \arg\min_{P \in \mathcal{P}_T} \; |P| + \mathbb{E}\big[-\log P(X)\big]$, where $|P|$ is the length of the program in bits.
+- Epiplexity (structure): $S_T(X) = |P^\star|$.
+- Time-bounded entropy (what still looks random): $H_T(X) = \mathbb{E}\big[-\log P^\star(X)\big]$.
+- Conditional version: the same, with a model that takes an input $Y$ first, written $H_T(X \mid Y)$. The input can also be a fixed string, such as a set of weights.
+- Stated without proof, more compute never hurts the total: $S_{T'}(X) + H_{T'}(X) \le S_T(X) + H_T(X)$ whenever $T' \ge T$.
+- Stated without proof, computation can raise time-bounded information for a bounded observer (their Paradox 1).
+- We use only $H_T$. We do not measure $S_T$. Applying the idea to generation, one sampling step at a time, is our extension and not a result of the paper.
+
+</ExpandableSection>
+
+## The information path
+
+In [Part 1](/blog/diffusion-lm-design-choices/#the-design-space), we described the information path of a recipe: how information is represented, and how it is destroyed along the generative path. With the quantity above, we can restate it from the model's side. The information path is how $h_t$ falls to zero, over time and across positions. The bits recovered in a step from $t$ to $s$ are the drop between the two states,
+
+$$
+\Delta_{t \to s} = h_t - h_s, \qquad \Delta_{t \to s,\, i} = h_{t,i} - h_{s,i}.
+$$
+
+This drop is positive on average but not at every step: fresh noise or remasking can raise $h$ again [@wang2025remasking]. Viewing a noise schedule as a way of spreading information over time is not new. CDCD learns a time warping so that the loss, and with it the information recovered, grows linearly in time [@dieleman2022continuous], and several recent works design schedules around the same idea [@stancevic2025entropic; @raya2026infonoise]. What we add is the split across positions, and the restriction to what a single pass can extract.
+
+Not every way of driving $h_t$ to zero makes a usable recipe. The trajectories have to meet two conditions. They must start from a distribution we can sample, and their intermediate states must be something we can produce directly from data, without calling the model. The second condition is what makes training simulation-free [@sohl2015deep; @song2020score; @kingma2021variational], and it will matter a great deal below.
+
+During generation, each state is built from three sources. The **original noise** is what makes this a sampler and not a fixed-point iteration: it decides which sample we get, and it holds choices that have not been decoded yet. **Fresh noise** makes new choices along the way and can overwrite earlier mistakes. The **model's predictions** supply the structure the model has worked out. One step can be written as
+
+$$
+\hat{x}_t = f_\theta(z_t), \qquad z_s = u(z_t, \hat{x}_t, \epsilon),
+$$
+
+where $u$ is the sampler's update rule and $\epsilon$ is fresh noise. The original noise enters through $z_t$. Deterministic samplers such as DDIM or an ODE solver use no $\epsilon$ [@song2020denoising; @song2020score], while samplers that fully renoise at every step discard $z_t$ and keep only the prediction.
+
+<ThreeSources client:visible />
+
+## Which bits each corruption family recovers
+
+Bits are not interchangeable. Two methods can recover the same number of bits in a step and still recover different ones, so corruption families differ in which bits they recover and in what order. We think this is the difference that matters most between them.
+
+Discrete methods recover the bits of a few positions at a time, and each of those positions is recovered fully. In masked diffusion, a position is either revealed or masked, and a masked position has had none of its own bits written into the state [@austin2021structured; @sahooSimpleEffectiveMasked2024; @shiSimplifiedGeneralizedMasked2024; @louDiscreteDiffusionModeling2023]. Continuous methods do the opposite. Gaussian, simplex and spherical corruptions apply roughly the same noise level to every position, so each step recovers some bits of every position, at a near-uniform rate across the sequence [@li2022diffusion; @dieleman2022continuous; @gulrajani2023likelihood; @deschenaux2026simplex; @chemseddine2026spherical; @deschenaux2026language]. Hybrid methods combine the two, with some positions committed and the rest partly noised [@pynadath2025candihybriddiscretecontinuousdiffusion; @zheng2025continuouslyaugmenteddiscretediffusion; @zhou2025coevolutionary].
+
+One clarification is important here. In masked diffusion the *state* changes only at the positions that are revealed, but the model's uncertainty also drops elsewhere, because every revealed token is context for the positions that are still masked. So the claim is about which bits are written into the state, not about where the model's uncertainty falls. In all of these families, the order in which bits are recovered is set by the forward process and its schedule, and not by the model.
+
+<BitRecovery client:visible />
+
+## The gap
+
+The central observation of this post is that a forward pass works out more than the state update keeps. At step $t$ the model produces a full prediction $\hat{x}_t$, a distribution over tokens at every position. The update $u$ then writes only part of that prediction into the next state. Without self conditioning, the next pass sees $z_s$ alone, and we can measure what was dropped as
+
+$$
+-\log p_\theta(x_0 \mid z_s) \;-\; \big(-\log p_\theta(x_0 \mid z_s, \hat{x}_t)\big),
+$$
+
+that is, how much less surprised the model would be by its final output if it still had its last prediction.
+
+How the prediction is dropped depends on the sampler. In masked diffusion, the update commits a few sampled tokens and throws away the predicted distribution at every position that stays masked. This is the "sampling wall" described by [@joLoopholingDiscreteDiffusion2026], and the same loss was the original motivation for self conditioning [@chen2022analog; @dieleman2022continuous]. In continuous diffusion with a stochastic sampler, the prediction is partly written into the state and then blurred by fresh noise. With a deterministic sampler, no fresh noise overwrites anything, but the update still writes only a fraction of the prediction into the state: the state moves a small step toward it, and the rest is dropped. The next pass cannot get that part back within its budget. So every sampler drops part of the prediction. They differ in how much, and in whether fresh noise also overwrites what was written.
+
+<UpdateKeeps client:visible />
+
+Ideally, the update would keep everything the pass worked out. The obstacle is that a state holding all of the model's beliefs would be out of distribution. In training, every state is produced from clean data and the forward corruption. A state built from the model's own beliefs is not one of those, and since the model has never seen such a state, it may not know how to handle it. Related failures have been documented for continuous models, where sampling can drift into regions that training did not cover [@shabalinWhyGaussianDiffusion2026; @davis2026design]. The update therefore has to produce states that look like training states, and this is what forces it to drop part of the prediction.
+
+We view this as the price of simulation-free training. Training a model on its own outputs would mean running it on itself many times to produce each training input. Noise avoids this: it gives us training states for free, and a sampler that follows the same corruption in reverse visits the same kind of states. The gap is what we pay for that convenience.
+
+## Self conditioning as a second channel
+
+Self conditioning feeds the model's previous prediction back as an extra input [@chen2022analog]. In our terms, it adds a second channel between sampling steps. The state carries decisions: the choices that have been committed. Self conditioning carries beliefs: what the model has worked out but not committed to. It passes forward what the state update drops. With it, a sampling step becomes
+
+$$
+\hat{x}_s = f_\theta(z_s, \hat{x}_t), \qquad h^{\mathrm{sc}}_{s,i} = -\log p_{\theta,i}(x_{0,i} \mid z_s, \hat{x}_t).
+$$
+
+The point is efficiency. The model keeps the work it has already done, so the next pass does not have to redo it. At sampling time this costs nothing, since the previous step's prediction is simply reused.
+
+<TwoWires client:visible />
+
+The cost is paid in training. We could feed the previous prediction to any model, but a model that was not trained with it would not know what to do with it: the extra input would itself be out of distribution. Self-conditioned training teaches the model how to read its own prediction. On part of each batch, the model first makes a prediction without gradients, and that prediction is fed back in:
+
+$$
+\hat{x} = f_\theta\big(z_t, \mathrm{sg}[f_\theta(z_t, \varnothing)]\big),
+$$
+
+where $\mathrm{sg}$ stops the gradient and both passes use the same $z_t$ [@chen2022analog; @strudel2022self]. This is a small amount of simulation, one extra pass, and it is the only place where we give up the simulation-free setup. The technique has since been used with Gaussian diffusion on embeddings [@strudel2022self; @dieleman2022continuous; @gulrajani2023likelihood; @yang2026continuousdiffusionscalescompetitively], simplex diffusion [@mahabadi2024tess; @deschenaux2026simplex], spherical flows [@chemseddine2026spherical], and recent flow language models [@hu2026elf; @chen2026langflow], with variations in what is fed back and how it enters the network [@luo2026langdit; @deschenaux2026simplex].
+
+Self conditioning also changes the order in which bits are recovered. Every forward pass already resolves the easy bits first: the model is confident wherever its input makes the answer easy. Without self conditioning, the state update ignores this order, and the forward process decides what survives. With self conditioning, the model's own order survives between steps. The effective information path is then set partly by the model, and not only by the schedule.
+
+The second channel is not perfect. In training, the fed-back prediction comes from one pass on the same state. In sampling, it comes from the previous step, which was itself fed by the step before it, a chain many passes deep. This mismatch is known to hurt few-step sampling and to encourage overconfident, repetitive samples, and several recent methods target it directly [@nguyencong2026fastdiss; @li2026untied; @liu2024trec; @zhang2026ace; @shabalin2025tencdm].
+
+### Relation to fixed-point flows
+
+The closest account to ours is the fixed-point view of [@yooSelfconditionedFlowMap2026a], and our interpretation builds on it. An earlier form of this view appears in Plaid, which defines its self-conditioned denoiser as the fixed point of a recurrence [@gulrajani2023likelihood]. [@yooSelfconditionedFlowMap2026a] show that at each flow step, a self-conditioned denoiser defines an iteration on its own estimate, $z^{j+1} = \hat{D}_t(x_t, z^j)$, and that the quantity that matters is the fixed point of this iteration. Standard self-conditioned sampling is then a warm start: one iteration per step, starting from the previous step's estimate. A cold start discards that estimate and iterates from zero. They report that with one iteration per step the warm start beats the cold start, and that the two only reach the same quality at about 100 iterations per step. More iterations keep helping even with a warm start: for ELF [@hu2026elf], generative perplexity keeps falling with each extra iteration, while sample entropy drops only slightly. They also distill the fixed point into a model with no self conditioning that matches its teacher, and use it to build few-step flow maps [@lee2026onesteplanguagemodelingcontinuous; @roos2026categoricalflowmaps; @potaptchik2026discrete].
+
+<FixedPointIterations client:visible />
+
+The two views agree on the mechanism. Their fixed point is a precise version of what we call the bits the model could resolve from the state with more compute. Their warm start is what we call the second channel: it carries finished work forward so that the next pass does not redo it. Their iteration results are direct evidence for the gap, since one pass per step clearly leaves a lot unresolved. For deterministic samplers the two accounts say the same thing. The memory is a cache of compute, and their cold-start experiment shows exactly how much compute it saves.
+
+Their work gives us a formal object for the gap, with conditions under which it is well defined, and a clean experiment that separates information that is missing from information that is costly to recover. Our account extends this in a few directions. The fixed-point analysis is stated for continuous flows, whereas we use one account across masked, continuous and hybrid methods. We also describe where and when recovery happens: self conditioning makes it more gradual across positions and steps. Finally, we give a reason for why the gap exists at all, which is that the state has to stay in distribution for a model trained without simulation.
+
+Their setup also leaves a question open. Under a deterministic flow, the current state still holds everything that earlier states held, so the memory can always be rebuilt with enough compute. With fresh noise or remasking, part of the state is overwritten, and there the memory may hold something the state no longer has. Running their warm-start and cold-start comparison with a stochastic sampler would test this, and it would be a natural extension of their experiment.
+
+### Support from prior work
+
+Several other recent results fit this picture. Loopholing adds a deterministic latent pathway to discrete diffusion, so that the predicted distribution is carried past the sampling step instead of being collapsed to a token [@joLoopholingDiscreteDiffusion2026]. This is the second channel, built for a discrete state. LAW takes the idea to its limit: it is a model built on self conditioning alone, which passes the expected embedding of its prediction from step to step and decodes to tokens only once, at the end [@deschenaux2026loopholingwaylanguagemodeling]. In our terms, all progress is carried in the second channel, and that channel alone is enough to generate. This supports the claim that the fed-back prediction carries real information and is not just a small correction.
+
+<WhereProgressLives client:visible />
+
+[@davis2026design] study self conditioning in continuous diffusion language models and attribute its gains to two effects: it corrects a mismatch between training and inference, and it helps the model identify tokens under heavy noise, the token identifiability problem raised in [@pynadath2025candihybriddiscretecontinuousdiffusion]. They show that a two-level interpolant, DoubleCat, recovers a large part of the gain without the extra forward pass. This matches our account of the gap as a consequence of which states the model sees in training. At the same time, they report that adding self conditioning on top of DoubleCat still clearly raises TinyGSM accuracy [@liu2023tinygsmachieving80gsm8k]. So fixing the training states is not the whole effect, and something is left for the second channel to do.
+
+## A counterbalance for discrete and continuous
+
+Putting these pieces together, the order in which the model itself resolves bits is neither uniform across positions nor strictly one position at a time. Some positions are easy early and others need more context. Self conditioning lets this order survive between steps. As a result, it pulls each family away from its own extreme.
+
+For discrete methods, masked positions get a place to hold partial beliefs. A position no longer has to be either unknown or committed, and all-or-nothing recovery becomes gradual. For continuous methods, confident positions stay settled between steps instead of being blurred along with everything else. Uniform progress becomes uneven, which is what anchoring provides in hybrid methods [@pynadath2025candihybriddiscretecontinuousdiffusion; @zheng2025continuouslyaugmenteddiscretediffusion]. In both cases the result moves toward the middle, and the two families begin to look alike.
+
+None of this says that self conditioning improves the final sample. It changes how recovery unfolds, and a more gradual path can help on one task and hurt on another. Nor is self conditioning the sole reason information spreads across positions. Committing a single token already tells the model something about its neighbors, through context, and this holds for a purely discrete model too. Self conditioning adds to this: it gives that partial progress somewhere to live between steps, so more of it reaches the positions that are still masked.
+
+<BitRecovery client:visible sc />
+
+## Evidence
+
+We now return to the results from [Part 2](/blog/diffusion-lm-design-choices-self-conditioning/) and ask which of them this interpretation explains. In each case, the thing to look for is a change in how recovery unfolds, not whether the score went up or down. All results use small models and one training seed per model, so we treat them as consistent with the interpretation and not as proof of it.
+
+### Self Cond makes all methods have similar entropy profiles during generation
+
+The most direct evidence is the entropy of the model's predictions during sampling. The figure below shows, for each method, how the entropy across positions evolves with and without self conditioning, using each model's untuned native sampler. If self conditioning lets every method follow the model's own order, the methods should look more alike with it than without it.
+
+<ScOrdering client:visible />
+
+This is largely what we observe. The second figure overlays the six methods and shades the region between the lowest and the highest. For the gap between the 75th and 25th percentile of entropy across positions, that region is clearly narrower with self conditioning, on both text8 and TinyStories. Without self conditioning the six methods peak at different times and stay apart until the end. With it, they all peak early and then fall together. However, the convergence happens mostly in the second half of sampling, and it does not hold for every statistic: on text8, the standard deviation of entropy across positions does not become more similar across methods.
+
+<ScAlike client:visible />
+
+### SC Stabilizes Performance Across Samplers
+
+In our account, the sampler is the state update. It decides how the three sources are mixed, and without self conditioning the state is the only channel, so the sampler controls everything that is passed between steps. With self conditioning there is a second channel that the sampler does not touch. We would therefore expect the choice of sampler to matter less, though not to stop mattering, since the sampler still makes the choices.
+
+The results in [Part 2](/blog/diffusion-lm-design-choices-self-conditioning/) are consistent with this. On Sudoku, tuning the sampler gives a large gain over the untuned native sampler without self conditioning, and almost none with it. On text8 the gain shrinks too, though less. The gain is smaller with self conditioning for every recipe on both tasks. The picture is less clean if we look at the gap between the best and the worst sampler on text8, which does not shrink, because some samplers collapse there with or without self conditioning.
+
+<ScInteraction client:visible figure="Figure R" />
+
+### SC Improves Discrete Commitment in Continuous Methods
+
+Committing tokens in a continuous model only works if some positions are settled while others are not. A pure continuous model is trained with the same noise level everywhere, so without self conditioning it has no way of holding on to that unevenness between steps. With self conditioning the unevenness persists, and committing positions that are already settled should cost little. This is close to the role that self conditioning plays as a source of pseudo-clean anchors in [@pynadath2025candihybriddiscretecontinuousdiffusion], and to entropy-based commitment in masked models [@benhamu2025accelerated].
+
+We compare against the best sampler that never commits a position, on validation scores. On Sudoku we use entropy-bounded commitment, which commits the positions the model is surest about. Without self conditioning its result is erratic: it lands far below the best non-committing sampler for some methods and well above it for vMF. With self conditioning it sits close to the best non-committing sampler for all four continuous methods.
+
+On text8 we use a different committing sampler. Entropy-bounded samplers do poorly on text8 in general: they score below the best non-committing sampler for every model we tuned, and they collapse for masked and Gaussian models, where the score falls close to zero. So on text8 we focus on random anchoring, which commits positions at random on a schedule. Here the result is mixed. Anchoring scores higher with self conditioning than without for all four methods. But it stays well below the best non-committing sampler. The distance shrinks for simplex and spherical, and stays about the same for Gaussian and vMF.
+
+<ScInteraction client:visible figure="Figure E" mode="commit" />
+
+### SC Can Improve Hybrid Methods
+
+A hybrid widens what the state can carry: it holds both full commitments and partial progress [@pynadath2025candihybriddiscretecontinuousdiffusion; @zheng2025continuouslyaugmenteddiscretediffusion; @zhou2025coevolutionary]. In our account this closes part of the gap from the state's side. But the schedule still sets the order in which positions are committed, and the update still drops the model's beliefs at uncommitted positions. So self conditioning should still change how recovery unfolds in a hybrid, with less left for it to change.
+
+The size of the effect follows this ordering. On Sudoku, self conditioning changes pure continuous models the most, hybrids with a uniform view less, and hybrids with a masked view hardly at all. On text8 the changes are smaller across the board: largest for pure continuous models, smaller for masked-view hybrids, and slightly negative for uniform-view hybrids. The direction of the change is not what our interpretation predicts. Its size is: the more the state already carries, the less self conditioning changes.
+
+<ScInteraction client:visible figure="Figure G" path="hybrid" />
+
+## Limitations
+
+The main limitation is scale. The models have 8 layers, each is trained once, and the tasks are Sudoku, text8 and TinyStories. Several of the patterns above are clear on Sudoku and mixed on text8.
+
+This is why we avoid making general claims about performance. It is entirely possible that absolute rankings could change, given a different setting and task. Thus we restrict our attention to explaining the mechanism. Determining which of these methods will survive scaling is something that can only be learned by actually testing them at scale. As Erwin Smith says, we will only know once we get there.
+
+{/* OLD DRAFT, moved from the Part 3 intro:
+Based on these empirical observations, we interpret self conditioning as defining another trajectory of information recovery that is in between discrete and continuous trajectories: unlike discrete trajectories, self conditioning allows for positions to recover information without fully committing, allowing for more uniform progress; and unlike typical continuous trajectories, it allows for more uneven recovery by allowing the model to see which positions are confident and which positions are uncertain, rather than all being at the same level of uncertainty due to a uniform noise level across the sequence. We go into more detail as to why our observations seem to suport these conclusions.
+*/}
+
+{/* OLD DRAFT, moved from the Part 3 analysis section:
+Here we provide our current interpretation of self-conditioning, as well as why we believe the experimental results support this. Within discrete generative modeling, we can view each sample as being defined by some number of bits, or answers to yes or no questions. Each token within the sequence correspends to some of these bits of information. Note that this should not be confused with a bytestream representation: here we mean bits as in the minimum code length under the target distribution. Within DLM recipes, we can view the Information Path as defining how we go about recovering these bits of information.  DLM Recipe's, specifically the Information Pathway, can be viewed as a question of distributing these bits across the process time. Discrete and Continuous represent extremes along this design axis: discrete recovers bits grouped by positions. In contrast, continuous recovers bits in an almost stratified way across positions. Self conditioning represents an alternative pathway that is constructed on top of each one: instead of recovering bits position by position or across all positions, it recovers bits in order of how easy it is for the model to recover them. This allows it to recover bits grouped by positions for tokens it is highly confident in, or spread out the bit recovery for positions it is less certain in. As it sits in between both extremes of discrete and continuous, it has different affects on both: for masked, it allows for more gradual recovery of information across positions rather than all or nothing. For continuous, it allows for anchoring, as the original trajectory only allows for uniform recovery across positions. For hybrid methods, self conditioning can still provide some benefit: even though hybrid can recover information both position by position or across the entire sequence, it does not necessarily recover the bits in the order that is easiest for the model.
+*/}
+
+## References

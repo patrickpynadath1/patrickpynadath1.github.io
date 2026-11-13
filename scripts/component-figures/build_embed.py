@@ -57,6 +57,17 @@ function viewH() { try { return window.frameElement ? parent.innerHeight : windo
     dlg.style.maxHeight = Math.min(900, vh - 32) + 'px';
   }
   new MutationObserver(place).observe(dlg, { attributes: true, attributeFilter: ['open'] });
+  // Citation and footnote links point at the post, not this frame: jump the post instead.
+  document.addEventListener('click', function (e) {
+    var a = e.target.closest && e.target.closest('a[href^="#"]');
+    if (!a || !window.frameElement) return;
+    var id = decodeURIComponent(a.getAttribute('href').slice(1)), el = null;
+    try { el = parent.document.getElementById(id); } catch (err) {}
+    if (!el) return;
+    e.preventDefault();
+    try { parent.history.pushState(null, '', '#' + id); } catch (err) {}
+    el.scrollIntoView({ behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth', block: 'center' });
+  });
 })();
 </script>
 """

@@ -17,6 +17,20 @@ function bibliographies() {
   return files;
 }
 
+// Dev-only post editor at /edit (see src/editor/). The routes exist only under `astro dev`,
+// so `astro build` stays fully static and never sees them.
+/** @type {import('astro').AstroIntegration} */
+const devEditor = {
+  name: 'dev-editor',
+  hooks: {
+    'astro:config:setup': ({ command, injectRoute }) => {
+      if (command !== 'dev') return;
+      injectRoute({ pattern: '/edit/[...slug]', entrypoint: './src/editor/EditPage.astro', prerender: false });
+      injectRoute({ pattern: '/api/edit/[slug]', entrypoint: './src/editor/api.ts', prerender: false });
+    },
+  },
+};
+
 // https://astro.build/config
 export default defineConfig({
   integrations: [
@@ -37,6 +51,7 @@ export default defineConfig({
       ],
     }),
     react(),
+    devEditor,
   ],
   site: 'https://patrickpynadath1.github.io',
 });

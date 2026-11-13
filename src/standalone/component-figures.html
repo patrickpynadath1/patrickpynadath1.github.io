@@ -323,13 +323,11 @@
 
   <!-- Corruption -->
   <p data-key="corr.masked">Masked: each token is independently hidden behind [M]. A hidden token carries no information about its word.</p>
-  <p data-key="corr.gidd">GIDD: one process that mixes both kinds of discrete noise. A corrupted token is usually masked, but sometimes swapped for a random word (red).</p>
   <p data-key="corr.uniform">Uniform: each token is independently replaced by a random word (red). It looks real, so the model must work out which ones changed.</p>
   <p data-key="corr.gaussian-onehot">Gaussian on one-hot vectors: noise is added to every entry. As t grows the true word’s bar sinks into the noise.</p>
   <p data-key="corr.gaussian-embed">Gaussian on embeddings: noise pushes each point off its word. The blob shows how far noise can reach at this t.</p>
   <p data-key="corr.simplex">Simplex: each token is a probability vector. Noise drifts it from its corner toward the uniform middle while it always sums to one.</p>
   <p data-key="corr.spherical">Spherical: embeddings live on the unit sphere. Noise picks a random point and moves along the arc toward it, so the state never leaves the sphere.</p>
-  <p data-key="corr.blurring">Blurring: each embedding feature is smoothed along the sequence, so neighboring tokens bleed into each other. Higher features blur first.</p>
   <p data-key="corr.combined">Two corruptions run on the same clean sequence, each in its own representation and with its own schedule. The network sees both views at once. (CANDI is masked + Gaussian.)</p>
 
   <!-- Noise schedule -->
@@ -358,7 +356,6 @@
   <p data-key="loss.elbo">The ELBO is a bound on the data likelihood.</p>
   <p data-key="loss.elbo-masked">For masking the ELBO is cross-entropy weighted by 1/t (as in MDLM), so nearly clean examples count much more.</p>
   <p data-key="loss.elbo-uniform">For uniform noise the ELBO has its own exact form (as in DUO).</p>
-  <p data-key="loss.elbo-gidd">For GIDD the ELBO is composed from its masking and uniform parts (gidd_elbo).</p>
   <p data-key="loss.elbo-score">For score-ratio outputs the ELBO is score entropy (SEDD).</p>
   <p data-key="loss.elbo-gaussian">For Gaussian noise, RePlaid’s three loss terms fall straight out of the ELBO. The endpoint at t = 0 gives a reconstruction cross-entropy, the endpoint at t = 1 gives a prior KL, and everything in between is an integral of a weighted MSE between the expected embedding ē and the true embedding.</p>
 
@@ -375,7 +372,7 @@
   <p data-key="samp.ancestral">Ancestral sampling reveals tokens a few at a time in random order, one network call per step.</p>
   <p data-key="samp.eb">Entropy-bounded sampling commits every token the model is confident about at once, so it needs fewer steps.</p>
   <p data-key="samp.ode">A Gaussian solver (Euler, Heun, adaptive ODE or DDPM) moves every vector a little each step; all words sharpen together.</p>
-  <p data-key="samp.flow">The process’s own reverse step (simplex bridge, spherical flow or un-blurring) sharpens all positions together.</p>
+  <p data-key="samp.flow">The process’s own reverse step (simplex bridge or spherical flow) sharpens all positions together.</p>
   <p data-key="samp.hybrid">Each view takes its own reverse step: masked tokens are revealed while the continuous view sharpens.</p>
   <p data-key="samp.analytic">SEDD's analytic step uses the score ratios to jump several masked tokens at once with exact transition probabilities.</p>
   <p data-key="samp.ctmc">Discrete flow matching follows a continuous-time Markov chain: tokens jump between states, and with uniform noise a filled-in word can still change later (red).</p>
@@ -406,8 +403,6 @@
   <p data-key="recipe.uniform_posterior">Uniform corruption with ordinary posterior CE; distinct from plug-in UDLM.</p>
   <p data-key="recipe.duo">Continuous-relaxation / discrete curriculum (uses one-hot relaxations), uniform reverse inference.</p>
   <p data-key="recipe.dfm_uniform">Posterior CE and base CTMC probability-velocity updates. No extra corrector.</p>
-  <p data-key="recipe.gidd_elbo">Mask / uniform mixture with composed ELBO. Not dynamic GIDD+.</p>
-  <p data-key="recipe.gidd_corruption">The GIDD mask / uniform mixture trained with plain CE, as a baseline. Not dynamic GIDD+.</p>
   <p data-key="recipe.candi_hybrid">Masked / Gaussian hybrid with mask-dependent fusion and rank calibration.</p>
   <p data-key="recipe.cadd">Gated Gaussian / masked hybrid. The YAML records missing dropout, sharing / detachment and schedule / sampler alignment.</p>
   <p data-key="recipe.cdcd">Learned-embedding Gaussian CE and adaptive clock; the adaptation machinery differs from the paper.</p>
@@ -417,7 +412,6 @@
   <p data-key="recipe.simplex">Dirichlet bridge construction, CE and churn. Not Dirichlet Flow Matching or SSD-LM.</p>
   <p data-key="recipe.spherical_flow_matching">Geodesic sphere path and tangent integration. Not every paper architecture / velocity approximation.</p>
   <p data-key="recipe.spherical_vmf">von Mises-Fisher spherical flows with predictor-corrector inference. Paper classifier / damping details differ.</p>
-  <p data-key="recipe.blurring_diffusion">Token-CE language adaptation of Blurring Diffusion.</p>
   <p data-key="recipe.bd3lm">Block diffusion with a clean prefix, configurable block size, and ancestral sampling. No claim to the optimized paper schedules. Block-causal clean context, as in the paper (<code>x0_causal: false</code>).</p>
   <p data-key="recipe.e2d2">BD3-LM with the E2D2 encoder-decoder split: a clean-context encoder and a denoising decoder with separate weights, block-causal context, MDLM objective. Reproduces the information flow on the local DiT, not the paper’s pretrained Qwen3 models or its specialized training schedule.</p>
   <p data-key="recipe.blockgen_masked">BlockGen’s fixed-block baseline: masked blocks of 16, token-causal clean context, plain CE with observed tokens kept, ancestral sampling (16 calls per block). The reference’s fixed-block scripts use a block-causal context instead. A TinyGSM version is <code>tinygsm_blockgen_masked</code>.</p>
@@ -429,7 +423,6 @@
   <p data-key="rsched.loglinear">Log-linear schedule: each token survives with probability α(t), which falls in a straight line from 1 to 0.</p>
   <p data-key="rsched.discrete">D3PM trains on a fixed grid of discrete time steps (orange dots) along the same log-linear path.</p>
   <p data-key="rsched.duo">DUO uses the log-linear schedule plus a curriculum: early in training the uniform noise is applied to a softened relaxation of the tokens, which anneals to hard tokens.</p>
-  <p data-key="rsched.gidd">GIDD’s path: a token stays clean, gets swapped for a random word, or gets masked. The random-word share peaks halfway, at p<sub>u</sub> = 0.2.</p>
   <p data-key="rsched.candi">CANDI runs two schedules at once. Masking follows a log-linear path, and the Gaussian view is rank-calibrated against it.</p>
   <p data-key="rsched.cadd">CADD-style hybrids also keep one schedule per view; the YAML records where its schedule alignment differs from the paper.</p>
   <p data-key="rsched.cdcd">CDCD-style: the base is an exponential VE schedule, and the adaptive clock refits it from the loss as training goes.</p>
@@ -439,7 +432,6 @@
   <p data-key="rsched.simplex">The simplex process ships its own schedule, paired with a loss-derivative time sampler.</p>
   <p data-key="rsched.spherical">S-FLM moves along the geodesic; the schedule sets how far along the arc the state is at time t.</p>
   <p data-key="rsched.vmf">vMF spherical flows spread noise as a von Mises-Fisher distribution whose concentration falls over time.</p>
-  <p data-key="rsched.blurring">Blurring diffusion blurs high-frequency feature bands first and low ones last, as in the image version.</p>
   <p data-key="rout.mdlm">Masked recipes only predict the masked positions; visible tokens are copied through unchanged.</p>
   <p data-key="rout.radd">RADD drops time conditioning: the posterior depends only on which tokens are still visible.</p>
   <p data-key="rout.candi">CANDI predicts a clean-token posterior at masked positions, fusing what the masked and Gaussian views say.</p>
@@ -447,7 +439,6 @@
   <p data-key="rloss.d3pm">D3PM’s bound is a sum over discrete steps: a reconstruction term at the start, a KL term per step, and a prior term at the end.</p>
   <p data-key="rloss.mdlm">The masked ELBO reduces to cross-entropy on masked tokens, weighted by 1/t under the log-linear schedule.</p>
   <p data-key="rloss.sedd">SEDD trains score ratios with score entropy, using the same ELBO weighting.</p>
-  <p data-key="rloss.gidd">GIDD’s ELBO is assembled from its masking and uniform parts. Shapes are illustrative.</p>
   <!-- Grouped recipes: several configs that build the same pipeline -->
   <p data-key="recipe.group-mdlm">Several papers, one construction: absorbing (mask) noise, a clean-token posterior at masked positions, the 1/t-weighted ELBO, and ancestral unmasking. The configs below differ only in details this figure does not draw.</p>
   <p data-key="recipe.group-uniform_posterior">Uniform noise trained with plain posterior cross-entropy. The two configs differ only in how the sampler takes each step.</p>
@@ -456,12 +447,10 @@
   <p data-key="family.sedd">Masking noise, but the network predicts score ratios instead of clean tokens.</p>
   <p data-key="family.uniform">Tokens are swapped for random words instead of masked. Variants differ in the output and loss, and DUO adds a training curriculum.</p>
   <p data-key="family.dfm">The same flow-matching recipe on two kinds of discrete noise; only the corruption changes.</p>
-  <p data-key="family.gidd">GIDD’s mask/uniform mixture, trained with its ELBO or with plain CE as a baseline.</p>
   <p data-key="family.hybrid">Masking and Gaussian noise run side by side. CANDI and CADD differ in how the views are arranged and fused, and in the sampler.</p>
   <p data-key="family.gauss">Gaussian noise on vectors, solved back to tokens. The variants mostly differ in the schedule, plus self-conditioning, the loss and the sampler.</p>
   <p data-key="family.sphere">Noise on the unit sphere of embeddings. The variants differ in the output and the sampler.</p>
   <p data-key="family.simplex">Noise on the probability simplex with a Dirichlet bridge.</p>
-  <p data-key="family.blur">Blurring of embedding features along the sequence.</p>
   <p data-key="recipe.blockgen_masked_mixture">BlockGen’s mixture model with masked blocks: one model trained on block sizes 1 and 16 (5% / 95%, stratified across GPUs), token-causal context. Size 1 is pure noise + CE, the AR component. Mixture likelihood evaluation and the ARPC/EIPC samplers are not implemented.</p>
   <p data-key="recipe.blockgen_uniform_mixture">The same 1 + 16 mixture with uniform-state blocks; size 16 keeps the plug-in uniform ELBO. Mixture likelihood evaluation and ARPC/EIPC are not implemented.</p>
   <p data-key="family.block">Generate blocks left to right and diffuse inside each block. Training reads the noisy and clean sequence together (2L) under a structured mask. The variants differ in how the clean context attends (BD3-LM: block causal; BlockGen: token causal), in the noise inside each block, and in whether one model is trained on several block sizes.</p>
@@ -704,12 +693,10 @@
     gaussian: { label: 'Gaussian', reps: ['onehot', 'embed'], nat: 'embed', why: 'Needs vectors: Gaussian noise is added to numbers, not to token IDs.' },
     simplex: { label: 'Simplex', reps: ['onehot'], nat: 'onehot', why: 'Needs one-hot vectors: it moves on the probability simplex.' },
     spherical: { label: 'Spherical', reps: ['embed'], nat: 'embed', why: 'Needs unit-length embeddings: it moves along a sphere.' },
-    blurring: { label: 'Blurring', reps: ['embed'], nat: 'embed', why: 'Needs embeddings: it blurs embedding features across the sequence.' },
-    gidd: { label: 'GIDD (mask + uniform mix)', reps: ['tokens'], nat: 'tokens', why: 'Needs token IDs: each token is masked or swapped for a random word.' }
   };
   var COMBINE = { none: 'Nothing' };
   Object.keys(CORR).forEach(function (k) { COMBINE[k] = '+ ' + CORR[k].label; });
-  var DISCRETE = ['masked', 'uniform', 'gidd'];
+  var DISCRETE = ['masked', 'uniform'];
 
   var SCHED = {
     fixed: { label: 'Predefined', ok: function () { return true; } },
@@ -735,13 +722,13 @@
   var LOSS = {
     ce: { label: 'Cross-entropy', ok: function () { return S.param !== 'score'; }, why: 'Score ratios are trained with score entropy, which is an ELBO.' },
     elbo: { label: 'ELBO', ok: function () { return S.combine === 'none' && ['masked', 'uniform', 'gidd', 'gaussian'].indexOf(S.corr) !== -1; },
-      why: 'No ELBO is implemented yet for this corruption (simplex, spherical, blurring, or two combined).' }
+      why: 'No ELBO is implemented yet for this corruption (simplex, spherical, or two combined).' }
   };
   var SAMP = {
     ancestral: { label: 'Ancestral', ok: function () { return DISCRETE.indexOf(S.corr) !== -1 && S.combine === 'none'; }, why: 'Reverses discrete noise one step at a time.' },
     eb: { label: 'Entropy-bounded', ok: function () { return DISCRETE.indexOf(S.corr) !== -1 && S.combine === 'none'; }, why: 'Commits discrete tokens by confidence.' },
     ode: { label: 'Gaussian solver', ok: function () { return S.corr === 'gaussian' && S.combine === 'none'; }, why: 'Integrates a Gaussian velocity field.' },
-    flow: { label: 'Process sampler', ok: function () { return ['simplex', 'spherical', 'blurring'].indexOf(S.corr) !== -1 && S.combine === 'none'; }, why: 'Simplex, spherical and blurring each have their own reverse step.' },
+    flow: { label: 'Native reverse step', ok: function () { return ['simplex', 'spherical', 'blurring'].indexOf(S.corr) !== -1 && S.combine === 'none'; }, why: 'Simplex, spherical and blurring each have their own reverse step.' },
     hybrid: { label: 'Hybrid', ok: function () { return S.combine !== 'none'; }, why: 'Only when two corruptions are combined: each view takes its own reverse step.' },
     analytic: { label: 'Analytic', ok: function () { return S.param === 'score'; }, why: 'The analytic step uses score-ratio outputs (SEDD).' },
     ctmc: { label: 'CTMC jumps', ok: function () { return DISCRETE.indexOf(S.corr) !== -1 && S.combine === 'none'; }, why: 'Discrete flow matching steps on token states.' },
@@ -771,8 +758,6 @@
     {"id": "uniform_posterior", "name": "Uniform posterior", "url": "", "set": {"rep": "tokens", "corr": "uniform", "sched": "fixed", "tcond": "on", "param": "posterior", "loss": "ce", "samp": "ancestral"}},
     {"id": "duo", "name": "DUO", "url": "https://arxiv.org/abs/2506.10892", "set": {"rep": "tokens", "corr": "uniform", "sched": "fixed", "tcond": "on", "param": "plugin", "loss": "elbo", "samp": "ancestral"}},
     {"id": "dfm_uniform", "name": "Discrete Flow Matching (uniform)", "url": "https://arxiv.org/abs/2407.15595", "set": {"rep": "tokens", "corr": "uniform", "sched": "fixed", "tcond": "on", "param": "posterior", "loss": "ce", "samp": "ctmc"}},
-    {"id": "gidd_elbo", "name": "GIDD (ELBO)", "url": "https://proceedings.mlr.press/v267/von-rutte25a.html", "set": {"rep": "tokens", "corr": "gidd", "sched": "fixed", "tcond": "on", "param": "posterior", "loss": "elbo", "samp": "ancestral"}},
-    {"id": "gidd_corruption", "name": "GIDD corruption, CE baseline", "url": "https://proceedings.mlr.press/v267/von-rutte25a.html", "set": {"rep": "tokens", "corr": "gidd", "sched": "fixed", "tcond": "on", "param": "posterior", "loss": "ce", "samp": "ancestral"}},
     {"id": "candi_hybrid", "name": "CANDI", "url": "https://arxiv.org/abs/2510.22510", "set": {"rep": "tokens", "corr": "masked", "combine": "gaussian", "sched": "fixed", "tcond": "on", "param": "posterior", "loss": "ce", "samp": "hybrid"}},
     {"id": "cadd", "name": "CADD-style", "url": "https://arxiv.org/abs/2510.01329", "set": {"rep": "embed", "corr": "gaussian", "combine": "masked", "sched": "fixed", "tcond": "on", "param": "posterior", "loss": "ce", "samp": "hybrid"}},
     {"id": "cdcd", "name": "CDCD-style", "url": "https://arxiv.org/abs/2211.15089", "set": {"rep": "embed", "corr": "gaussian", "sched": "full", "tcond": "on", "param": "gpost", "loss": "ce", "samp": "ode"}},
@@ -782,7 +767,6 @@
     {"id": "simplex", "name": "Simplex Diffusion", "url": "https://arxiv.org/abs/2609.35553", "set": {"rep": "onehot", "corr": "simplex", "sched": "fixed", "tcond": "on", "param": "gpost", "loss": "ce", "samp": "flow", "tsamp": "lossd"}},
     {"id": "spherical_flow_matching", "name": "S-FLM (spherical)", "url": "https://arxiv.org/abs/2605.11125", "set": {"rep": "embed", "corr": "spherical", "sched": "fixed", "tcond": "on", "param": "gpost", "loss": "ce", "samp": "flow"}},
     {"id": "spherical_vmf", "name": "vMF spherical flows", "url": "https://arxiv.org/abs/2605.05629", "set": {"rep": "embed", "corr": "spherical", "sched": "fixed", "tcond": "on", "param": "posterior", "loss": "ce", "samp": "flow"}},
-    {"id": "blurring_diffusion", "name": "Blurring Diffusion", "url": "https://arxiv.org/abs/2209.05557", "set": {"rep": "embed", "corr": "blurring", "sched": "fixed", "tcond": "on", "param": "gpost", "loss": "ce", "samp": "flow"}},
     {"id": "bd3lm", "name": "BD3-LM (block diffusion)", "url": "https://arxiv.org/abs/2503.09573", "set": {"rep": "tokens", "corr": "masked", "sched": "fixed", "tcond": "none", "param": "posterior", "loss": "elbo", "samp": "ancestral", "block": "bc"}},
     {"id": "e2d2", "name": "E2D2 (encoder-decoder blocks)", "url": "https://arxiv.org/abs/2510.22852", "set": {"rep": "tokens", "corr": "masked", "sched": "fixed", "tcond": "none", "param": "posterior", "loss": "elbo", "samp": "ancestral", "block": "bc", "split": "e2d2"}},
     {"id": "eb_masked", "name": "Entropy-bounded unmasking", "url": "https://arxiv.org/abs/2505.24857", "set": {"rep": "tokens", "corr": "masked", "sched": "fixed", "tcond": "none", "param": "posterior", "loss": "elbo", "samp": "eb"}},
@@ -797,12 +781,10 @@
     {"id": "sedd", "group": "Masked and uniform", "name": "Score entropy (SEDD)", "variants": ["sedd_absorb"]},
     {"id": "uniform", "group": "Masked and uniform", "name": "Uniform diffusion", "variants": ["udlm", "duo", "uniform_posterior"]},
     {"id": "dfm", "group": "Masked and uniform", "name": "Discrete flow matching", "variants": ["dfm_masked", "dfm_uniform"]},
-    {"id": "gidd", "group": "Masked and uniform", "name": "GIDD", "variants": ["gidd_elbo", "gidd_corruption"]},
     {"id": "hybrid", "group": "Hybrid", "name": "Masked + Gaussian hybrids", "variants": ["candi_hybrid", "cadd"]},
     {"id": "gauss", "group": "Continuous", "name": "Gaussian embedding diffusion", "variants": ["cdcd", "langflow", "replaid", "flm_gaussian"]},
     {"id": "sphere", "group": "Continuous", "name": "Spherical flows", "variants": ["spherical_flow_matching", "spherical_vmf"]},
     {"id": "simplex", "group": "Continuous", "name": "Simplex diffusion", "variants": ["simplex"]},
-    {"id": "blur", "group": "Continuous", "name": "Blurring diffusion", "variants": ["blurring_diffusion"]},
     {"id": "block", "group": "Sequence modifiers", "name": "Block diffusion", "variants": ["bd3lm", "e2d2", "blockgen_masked", "blockgen_uniform", "blockgen_masked_mixture", "blockgen_uniform_mixture"]},
     {"id": "flex", "group": "Sequence modifiers", "name": "Insertion (FlexMDM-style)", "variants": ["flexmdm_style"]}
   ];
@@ -1041,6 +1023,11 @@
   }
   function hitBy(i, a, salt) { return rnd(i, salt || 3) < a; }
   function randomWord(i) { var w = Math.floor(rnd(i, 9) * V); return w === SEQ[i] ? (w + 1) % V : w; }
+  // How a hidden position looks, as in the corruption picture: masked shows [M], uniform a
+  // random word, GIDD alternates. The discrete view of a hybrid counts too.
+  function discreteKind() { return DISCRETE.indexOf(S.corr) !== -1 ? S.corr : DISCRETE.indexOf(S.combine) !== -1 ? S.combine : null; }
+  function swapsWord(i) { var k = discreteKind(); return k === 'uniform' || (k === 'gidd' && i % 2 === 1); }
+  var SWAP_STYLE = 'font-style:italic;fill:var(--rose)';
   function scatterFrame(x0, y0, w, h) {
     return '<rect x="' + x0 + '" y="' + y0 + '" width="' + w + '" height="' + h + '" rx="10" fill="var(--surface-2)"/>' +
       '<line x1="' + (x0 + w / 2) + '" x2="' + (x0 + w / 2) + '" y1="' + (y0 + 8) + '" y2="' + (y0 + h - 8) + '" stroke="var(--border)"/>' +
@@ -1476,9 +1463,9 @@
     // Inputs
     b += '<text class="head" x="16" y="14">noisy input</text>';
     SEQ.forEach(function (w, i) {
-      var x = 50 + i * 58, m = discrete && hitBy(i, 0.45);
-      b += '<rect x="' + (x - 25) + '" y="22" width="50" height="28" rx="6" fill="' + (m ? 'transparent' : 'var(--surface-2)') + '" stroke="var(--faint)" ' + (m ? 'stroke-dasharray="3 3"' : '') + '/>';
-      b += '<text class="lbl" x="' + x + '" y="40" text-anchor="middle">' + (m ? '[M]' : 'xₜ' + (i + 1)) + '</text>';
+      var x = 50 + i * 58, m = discrete && hitBy(i, 0.45), sw = m && swapsWord(i), mk = m && !sw;
+      b += '<rect x="' + (x - 25) + '" y="22" width="50" height="28" rx="6" fill="' + (mk ? 'transparent' : 'var(--surface-2)') + '" stroke="' + (sw ? 'var(--rose)' : 'var(--faint)') + '" ' + (mk ? 'stroke-dasharray="3 3"' : '') + '/>';
+      b += '<text class="lbl" x="' + x + '" y="40" text-anchor="middle"' + (sw ? ' style="' + SWAP_STYLE + '"' : '') + '>' + (sw ? esc(VOCAB[randomWord(i)]) : mk ? '[M]' : 'xₜ' + (i + 1)) + '</text>';
     });
     if (sc !== 'off') {
       b += '<rect x="330" y="22" width="120" height="28" rx="7" fill="var(--accent-wash)" stroke="var(--accent)" stroke-dasharray="4 4"/>';
@@ -1662,9 +1649,11 @@
   }
   function drawSamp() {
     var rows = sampRows(), b = '', x0 = 150, rowH = 34, shown = Math.min(Math.round(S.step), rows.length);
-    var startLbl = DISCRETE.indexOf(S.corr) !== -1 || S.samp === 'ar' ? '[M]' : 'noise';
+    // Sampling starts from the prior: all [M] for masked and GIDD, random words for uniform.
+    var disc = discreteKind() !== null && S.samp !== 'ar', uniStart = disc && discreteKind() === 'uniform';
+    function startLbl(i) { return S.samp === 'ar' ? '[M]' : !disc ? 'noise' : uniStart ? '<tspan style="' + SWAP_STYLE + '">' + esc(VOCAB[randomWord(i)]) + '</tspan>' : '[M]'; }
     b += '<text class="lbl" x="20" y="31">start</text>';
-    SEQ.forEach(function (_, i) { b += '<rect x="' + (x0 + i * 112 - 40) + '" y="14" width="80" height="26" rx="6" fill="transparent" stroke="var(--faint)" stroke-dasharray="3 3"/><text class="lbl" x="' + (x0 + i * 112) + '" y="31" text-anchor="middle">' + startLbl + '</text>'; });
+    SEQ.forEach(function (_, i) { b += '<rect x="' + (x0 + i * 112 - 40) + '" y="14" width="80" height="26" rx="6" fill="transparent" stroke="var(--faint)" stroke-dasharray="3 3"/><text class="lbl" x="' + (x0 + i * 112) + '" y="31" text-anchor="middle">' + startLbl(i) + '</text>'; });
     rows.forEach(function (r, k) {
       var y = 52 + k * rowH, vis = k < shown;
       b += '<text class="lbl" x="20" y="' + (y + 17) + '" opacity="' + (vis ? 1 : 0.35) + '">step ' + (k + 1) + '</text>';
@@ -1672,6 +1661,8 @@
         var x = x0 + i * 112, f = r[i], prev = k ? rows[k - 1][i] : 0, fresh = vis && f !== prev && f !== 0;
         b += '<rect x="' + (x - 40) + '" y="' + y + '" width="80" height="26" rx="6" fill="var(--surface-2)" stroke="' + (fresh ? 'var(--accent)' : 'var(--border)') + '" stroke-width="' + (fresh ? 1.6 : 1) + '" opacity="' + (vis ? 1 : 0.35) + '"/>';
         if (vis && f < 0) b += '<text style="font:italic 400 15px var(--font-display);fill:var(--rose)" x="' + x + '" y="' + (y + 18) + '" text-anchor="middle">' + VOCAB[randomWord(i)] + '</text>';
+        // Uniform noise: a position not yet decided still holds its random word.
+        if (vis && f === 0 && uniStart) b += '<text style="font:italic 400 15px var(--font-display);fill:var(--rose)" x="' + x + '" y="' + (y + 18) + '" text-anchor="middle" opacity="0.55">' + VOCAB[randomWord(i)] + '</text>';
         if (vis && f > 0) b += '<text style="font:400 15px var(--font-display);fill:var(--fg)" x="' + x + '" y="' + (y + 18) + '" text-anchor="middle" opacity="' + (0.25 + 0.75 * f).toFixed(2) + '">' + VOCAB[w] + '</text>';
       });
     });
@@ -1839,7 +1830,9 @@
         b += '<rect x="' + xl + '" y="' + (y + 16) + '" width="' + (xr - xl) + '" height="66" rx="12" fill="' + (state === 'now' ? 'var(--accent-wash)' : 'transparent') + '" stroke="' + (state === 'now' ? 'var(--accent)' : 'var(--border)') + '" stroke-dasharray="' + (state === 'later' ? '4 4' : '0') + '"/>';
         bl.forEach(function (i) {
           var shown = state === 'done' || (state === 'now' && (step % 2 === 1 || bl.length === 1));
-          b += tokenBox(colX(i), y + 27, shown ? VOCAB[SEQ[i]] : '[M]', shown ? {} : { fill: 'transparent', stroke: 'var(--faint)', color: 'var(--muted)', dash: true });
+          b += shown ? tokenBox(colX(i), y + 27, VOCAB[SEQ[i]])
+            : swapsWord(i) ? tokenBox(colX(i), y + 27, VOCAB[randomWord(i)], { stroke: 'var(--rose)', color: 'var(--rose)', italic: true })
+            : tokenBox(colX(i), y + 27, '[M]', { fill: 'transparent', stroke: 'var(--faint)', color: 'var(--muted)', dash: true });
         });
         b += '<text class="lbl" x="' + ((xl + xr) / 2) + '" y="' + (y + 98) + '" text-anchor="middle">block ' + (k + 1) + ' · ' + (state === 'done' ? 'finished, kept fixed' : state === 'now' ? 'being denoised' : 'waits') + '</text>';
       });

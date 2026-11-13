@@ -47,9 +47,11 @@ const SAMPLERS_GEN = [
 const SAMPLERS_POST = [
   { label: "native", trials: 16 },
   { label: "native greedy", trials: 2 },
-  { label: "EB greedy", trials: 16 },
-  { label: "renoise sample", trials: 16 },
+  { label: "renoise", trials: 16 },
   { label: "renoise greedy", trials: 2 },
+  { label: "EB greedy", trials: 16 },
+  { label: "EB churn", trials: 24 },
+  { label: "\u03a8", trials: 24 },
 ];
 
 function Box({ x, y, w, h, title, sub, code, color, active, onEnter, dim }) {
@@ -89,7 +91,7 @@ function PipelineInner() {
   const detail = LINE.find((b) => b.id === hover)?.info || CASE[hover]?.info;
   const detailTitle = LINE.find((b) => b.id === hover)?.title || CASE[hover]?.title;
 
-  const innerTop = cy0 + 74, rowH = post ? 30 : 40;
+  const innerTop = cy0 + 74, rowH = post ? 26 : 40;
   const innerX = 206, innerW = 234;
 
   return (
@@ -99,7 +101,7 @@ function PipelineInner() {
       subtitle="How an experiment moves through the codebase. The bottom panel opens up one experiment. Hover any part for what it does."
       controls={<Pills value={mode} onChange={setMode} options={[{ id: "gen", label: "The pipeline" }, { id: "post", label: "This post's run" }]} />}
       note={post
-        ? "This post uses a small slice of the pipeline: one training run per experiment (no training search), five samplers, 128 NFE, one training seed. It is a demonstration, not a full study."
+        ? "This post uses a small slice of the pipeline: one training run per experiment (no training search), seven samplers tuned on validation (two more for pure continuous models), 128 NFE, one training seed. It is a demonstration, not a full study."
         : "Each experiment is one recipe × task × training seed. All selection happens on validation."}
     >
       <svg viewBox="0 0 720 482" style={{ width: "100%", height: "auto", display: "block", fontFamily: FONT }}>
@@ -176,7 +178,7 @@ function PipelineInner() {
                   fill={rgba(vColor, hover === "inner" ? 0.16 : 0.08)} stroke={rgba(vColor, hover === "inner" ? 0.85 : 0.4)} />
                 <text x={innerX + 10} y={y + (rowH - 6) / 2 + 3.5} fill={P.text} fontSize={10}>{s.label}</text>
                 {n > 0 ? Array.from({ length: n }, (_, j) => (
-                  <circle key={j} cx={innerX + 112 + j * 7.2} cy={y + (rowH - 6) / 2} r={2.4} fill={vColor} opacity={0.85} />
+                  <circle key={j} cx={innerX + 112 + j * Math.min(7.2, (innerW - 122) / n)} cy={y + (rowH - 6) / 2} r={n > 16 ? 2 : 2.4} fill={vColor} opacity={0.85} />
                 )) : s.trials && (
                   <text x={innerX + 112} y={y + (rowH - 6) / 2 + 3.5} fill={P.muted} fontSize={9}>{s.trials}</text>
                 )}
@@ -184,7 +186,7 @@ function PipelineInner() {
             );
           })}
           <text x={innerX} y={innerTop - 8 + samplers.length * rowH + 8} fill={P.dim} fontSize={9}>
-            {post ? "each dot: one try, two seeds, 128 examples" : "each try: a GPU evaluation on validation"}
+            {post ? "each dot: one try on 64 prompts; each sampler\u2019s top 3 re-scored on 256 more" : "each try: a GPU evaluation on validation"}
           </text>
         </g>
 
@@ -237,9 +239,9 @@ function PipelineInner() {
               <rect x={cx0 + 14} y={y} width={160} height={20} rx={5} fill={rgba(P.dim2, 0.12)} stroke={P.line2} />
               <text x={cx0 + 22} y={y + 13.5} fill={P.muted}>training data</text>
               <rect x={innerX} y={y} width={wallX - innerX - 10} height={20} rx={5} fill={rgba(vColor, 0.12)} stroke={rgba(vColor, 0.5)} />
-              <text x={innerX + 8} y={y + 13.5} fill={vColor}>{post ? "validation: 128 examples · seeds 41, 42" : "validation examples · validation seeds"}</text>
+              <text x={innerX + 8} y={y + 13.5} fill={vColor}>{post ? "validation: 64 + 256 · seeds 41, 42 / 2041" : "validation examples · validation seeds"}</text>
               <rect x={wallX + 10} y={y} width={cx0 + cw - wallX - 24} height={20} rx={5} fill={rgba(tColor, 0.12)} stroke={rgba(tColor, 0.5)} />
-              <text x={wallX + 18} y={y + 13.5} fill={tColor}>{post ? "test: 256 · 1041/42" : "test examples, seeds"}</text>
+              <text x={wallX + 18} y={y + 13.5} fill={tColor}>{post ? "test: 976 to 2,048 · 1041/42" : "test examples, seeds"}</text>
             </g>
           );
         })()}
