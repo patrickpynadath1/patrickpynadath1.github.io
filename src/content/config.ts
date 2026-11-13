@@ -11,7 +11,7 @@ const blog = defineCollection({
     heroImage: z.string().optional(),
     draft: z.boolean().optional(),
     wip: z.boolean().optional(),
-    // Shows a comment box under the post (GitHub sign-in, stored as issues on the site repo).
+    // Lets readers highlight text in the post and comment on it (Hypothesis).
     comments: z.boolean().optional(),
   }),
 });

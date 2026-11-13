@@ -26,7 +26,7 @@ and render through `src/layouts/BlogLayout.astro` and `src/styles/post.css`.
   - The Astro components in `src/components/sections`, `project`, `layout` are from the old homepage and are not used by it.
 - **Blog:** content collection in `src/content/config.ts`. `draft: true` hides a post from `/blog/` but it still builds at `/blog/<slug>/`.
   - Math is KaTeX (`remark-math` + `rehype-katex`).
-  - Comments: `comments: true` in a post's frontmatter adds a comment box under it (utterances, set up in `BlogLayout.astro`). Each post gets one GitHub issue on this repo, labelled `blog-comment`. It needs the utterances GitHub app installed on the repo.
+  - Comments: `comments: true` in a post's frontmatter lets readers highlight text and attach a note to it (Hypothesis, loaded in `BlogLayout.astro`). Readers need a free Hypothesis account. Notes anchor to the text, so they can come loose if that text is rewritten.
   - Citations (`[@key]`) use `rehype-citation` with `src/content/blog/dlm_bibliography.bib` (older hand-kept entries) plus `src/content/bibliography.bib` (set in `astro.config.mjs`).
   - `src/content/bibliography.bib` is written by Zotero's Better BibTeX auto-export of the "Blog" collection ("Keep updated"); never edit it by hand. It is skipped while empty. `scripts/add_citation.py` adds arXiv/DOI entries to `dlm_bibliography.bib`.
   - Interactive figures are React components in `src/components/*.jsx`, with shared colors in `vizTheme.js`.
