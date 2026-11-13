@@ -37,6 +37,12 @@ Patrick Pynadath<sup>1</sup>, Ruqi Zhang<sup>1</sup>
 
 Series: [Part 1](/blog/diffusion-lm-design-choices/) · [Part 2](/blog/diffusion-lm-design-choices-self-conditioning/) · [Part 3](/blog/diffusion-lm-design-choices-sc-interpretation/)
 
+<div className="tldr" style={{ border: "1px solid var(--border)", borderLeft: "4px solid var(--accent)", background: "var(--surface)", borderRadius: 10, padding: "12px 16px", margin: "18px 0 8px" }}>
+
+**TL;DR:** At every step, the model works out more than the next state can hold, because a state carrying all of its beliefs would be out of distribution for a model trained without simulation. Self conditioning keeps what the state drops, at the cost of a one-step roll out in training. This simple view explains several results from Part 2 across discrete, continuous and hybrid methods: samplers matter less, self conditioning improves how commitment based samplers perform for pure continuous methods, and the entropy profiles across the sequence for different methods become more similar.
+
+</div>
+
 
 ## Introduction
 

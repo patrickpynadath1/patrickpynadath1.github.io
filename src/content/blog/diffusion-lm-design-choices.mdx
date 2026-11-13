@@ -27,6 +27,12 @@ Patrick Pynadath<sup>1</sup>, Ruqi Zhang<sup>1</sup>
 
 Series: [Part 1](/blog/diffusion-lm-design-choices/) · [Part 2](/blog/diffusion-lm-design-choices-self-conditioning/) · [Part 3](/blog/diffusion-lm-design-choices-sc-interpretation/)
 
+<div className="tldr" style={{ border: "1px solid var(--border)", borderLeft: "4px solid var(--accent)", background: "var(--surface)", borderRadius: 10, padding: "12px 16px", margin: "18px 0 8px" }}>
+
+**TL;DR:** Many techniques in diffusion language models, like self conditioning and block diffusion, started in one family and spread to others. But a borrowed technique does not always work the same way, or for the same reason. SDDC is a codebase that makes each part of a recipe swappable, so we can move one part and hold everything else fixed. As a first example: self conditioning changes whether continuous models can commit tokens during sampling, a method they were never trained for.
+
+</div>
+
 ## Introduction
 
 All autoregressive models follow the same left-to-right generative path. In diffusion, the generative path itself is a design choice. Diffusion language models (DLMs) have come to mean any generative method that leverages some form of parallel, iterative refinement in the generative process. This encompasses discrete methods (masked and uniform token corruption); continuous methods (Gaussian diffusion, diffusion on the simplex, and Riemannian flow matching on the sphere); hybrids that combine a discrete and a continuous process; and latent methods, such as diffusion in a latent space with an autoregressive decoder. For recent overviews, see Li et al. [@li2025dlmsurvey] for diffusion language models broadly, and Tang et al. [@tang2026survey] for continuous diffusion and flow language models. 
@@ -41,21 +47,6 @@ To answer questions like this, we introduce **SDDC**: **S**ome **D**LM **D**esig
 3. ***Inference Settings***: How do we actually use both the learned model and information path to generate samples? 
 
 Outside of these questions, we define recipe modifiers as components that require changes across all three facets. In this blog, we briefly describe the core design philosophy of this design approach, and why we believe this is a useful approach for studying DLMs. 
-
-## Inspiration: Hackable Diffusion
-
-The structure of SDDC borrows heavily from [Hackable Diffusion](https://github.com/google/hackable_diffusion) [@hackablediffusion2026], a JAX toolbox for experimenting with and teaching diffusion models. Hackable Diffusion is built on two principles: assemble models from small objects with well-defined contracts, and give each part of the pipeline (architecture, corruption, inference, loss and sampling) its own sub-library. Its core file, `hd_api.py`, defines nothing but the interfaces between these parts, so a training or sampling loop never needs to know which schedule, network or data type sits behind them.
-
-SDDC applies the same split to diffusion language models. Most of its components have a direct counterpart in Hackable Diffusion:
-
-
-<HackableComparison />
-
-SDDC departs from Hackable Diffusion in three places, each driven by its focus on language:
-
-- **Same data, several views.** Hackable Diffusion's `Nested` pattern applies different processes to different parts of the data, such as an image and its label. A hybrid view in SDDC applies several processes to the *same* tokens. The views share one clean sequence and one clean-token prediction, and their noisy states never need to map into each other.
-- **Representation as its own part.** In Hackable Diffusion, mapping tokens into vectors happens inside the network. SDDC pulls it out into a representation with three operations (`encode`, `posterior_mean`, `decode`). That boundary is what lets one-hot and embedding Gaussian diffusion share one algorithm and one set of samplers, and it is where most continuous language-model recipes actually differ.
-- **Recipes as configurations.** Hackable Diffusion composes Python objects directly. SDDC assembles the same kind of pieces from Hydra configs, ships published methods as named recipes, and checks at build time that the chosen parts fit together. The goal is to run many controlled comparisons, where changing one part should be a one-line override.
 
 ## Scope: What is this Codebase?
 
@@ -1274,6 +1265,21 @@ The modular approach of this codebase is motivated by two core reasons: first, a
 This is a fairly nuanced finding, and it would have been hard to find without being able to plug and play different components across recipes, especially for inference settings. 
 
 Second, it makes it quite easy to produce new recipes from existing components. Most of the work is re-using the existing components and wiring everything together through a config file, instead of designing each recipe from scratch.
+
+## Inspiration: Hackable Diffusion
+
+The structure of SDDC borrows heavily from [Hackable Diffusion](https://github.com/google/hackable_diffusion) [@hackablediffusion2026], a JAX toolbox for experimenting with and teaching diffusion models. Hackable Diffusion is built on two principles: assemble models from small objects with well-defined contracts, and give each part of the pipeline (architecture, corruption, inference, loss and sampling) its own sub-library. Its core file, `hd_api.py`, defines nothing but the interfaces between these parts, so a training or sampling loop never needs to know which schedule, network or data type sits behind them.
+
+SDDC applies the same split to diffusion language models. Most of its components have a direct counterpart in Hackable Diffusion:
+
+
+<HackableComparison />
+
+SDDC departs from Hackable Diffusion in three places, each driven by its focus on language:
+
+- **Same data, several views.** Hackable Diffusion's `Nested` pattern applies different processes to different parts of the data, such as an image and its label. A hybrid view in SDDC applies several processes to the *same* tokens. The views share one clean sequence and one clean-token prediction, and their noisy states never need to map into each other.
+- **Representation as its own part.** In Hackable Diffusion, mapping tokens into vectors happens inside the network. SDDC pulls it out into a representation with three operations (`encode`, `posterior_mean`, `decode`). That boundary is what lets one-hot and embedding Gaussian diffusion share one algorithm and one set of samplers, and it is where most continuous language-model recipes actually differ.
+- **Recipes as configurations.** Hackable Diffusion composes Python objects directly. SDDC assembles the same kind of pieces from Hydra configs, ships published methods as named recipes, and checks at build time that the chosen parts fit together. The goal is to run many controlled comparisons, where changing one part should be a one-line override.
 
 ## Next in this series
 

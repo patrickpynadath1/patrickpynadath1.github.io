@@ -31,7 +31,7 @@ import ExpandableSection from "../../components/ExpandableSection.jsx"
 <div style={{ border: "2px solid #e5484d", background: "rgba(229, 72, 77, 0.10)", borderRadius: 10, padding: "12px 16px", margin: "8px 0 18px" }}>
 <strong style={{ color: "#e5484d" }}>In progress (remove before release)</strong>
 
-- **TinyStories untuned baseline** is not yet scored with MAUVE. Until it is, the untuned marks are missing for TinyStories in the anchoring figure, and TinyStories is hidden in the tuning-ranking and top-3 sampler figures.
+- **TinyStories untuned baseline** is MAUVE-scored on test only, so the anchoring figure (which compares validation scores) still has no untuned tick for TinyStories. Results prose on tuning has not yet been checked against the TinyStories numbers (e.g. masked-simplex + SC: renoising wins on validation but scores 0.794 on test vs 0.929 untuned).
 - **Rank-linear hybrids on TinyStories** were tuned on the old metric (ref_w1) and need a MAUVE re-tune. The linear-schedule statements in the hybrid section rest on Sudoku and text8 only.
 
 </div>
@@ -43,6 +43,12 @@ Patrick Pynadath<sup>1</sup>, Ruqi Zhang<sup>1</sup>
 <sup>1</sup> Purdue Department of Computer Science
 
 Series: [Part 1](/blog/diffusion-lm-design-choices/) · [Part 2](/blog/diffusion-lm-design-choices-self-conditioning/) · [Part 3](/blog/diffusion-lm-design-choices-sc-interpretation/)
+
+<div className="tldr" style={{ border: "1px solid var(--border)", borderLeft: "4px solid var(--accent)", background: "var(--surface)", borderRadius: 10, padding: "12px 16px", margin: "18px 0 8px" }}>
+
+**TL;DR:** We ablate self conditioning across masked, uniform, continuous and hybrid recipes, tuning the sampler for every model. Three findings stand out. First, sampler tuning can flip a ranking: without self conditioning, untuned masked diffusion places fifth of six on Sudoku; tuned, it places first. Second, self conditioning makes the choice of sampler matter less, and lets continuous models commit tokens with less damage. Third, hybrids without self conditioning often beat both of their parts, but with self conditioning the pure methods catch up.
+
+</div>
 
 ## Introduction
 
