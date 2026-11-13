@@ -44,9 +44,10 @@ Patrick Pynadath<sup>1</sup>, Ruqi Zhang<sup>1</sup>
 
 Series: [Part 1](/blog/diffusion-lm-design-choices/) · [Part 2](/blog/diffusion-lm-design-choices-self-conditioning/) · [Part 3](/blog/diffusion-lm-design-choices-sc-interpretation/)
 
-<div className="tldr" style={{ border: "1px solid var(--border)", borderLeft: "4px solid var(--accent)", background: "var(--surface)", borderRadius: 10, padding: "12px 16px", margin: "18px 0 8px" }}>
+<div className="tldr">
+<span className="tldr-tag" aria-label="TL;DR">TL;DR</span>
 
-**TL;DR:** We ablate self conditioning across masked, uniform, continuous and hybrid recipes, tuning the sampler for every model. Three findings stand out. First, sampler tuning can flip a ranking: without self conditioning, untuned masked diffusion places fifth of six on Sudoku; tuned, it places first. Second, self conditioning makes the choice of sampler matter less, and lets continuous models commit tokens with less damage. Third, hybrids without self conditioning often beat both of their parts, but with self conditioning the pure methods catch up.
+We ablate self conditioning across masked, uniform, continuous and hybrid recipes, *tuning the sampler for every model*. Three findings stand out. *First*, **sampler tuning can flip a ranking**: without self conditioning, untuned masked diffusion places fifth of six on Sudoku; tuned, it places first. *Second*, self conditioning makes **the choice of sampler matter less**, and lets continuous models commit tokens with less damage. *Third*, **hybrids without self conditioning often beat both of their parts**, but with self conditioning the pure methods catch up.
 
 </div>
 
@@ -226,6 +227,13 @@ We also investigate whether pure continuous methods are able to leverage discret
 
 <AnchoringContinuous client:visible />
 
+<div className="takeaway">
+<span className="takeaway-label">Takeaway</span>
+
+Self conditioning helps every continuous method we test on Sudoku and text8, and the learned noise schedules do not seem to care whether it is on or off. Pure continuous methods also anchor better with self conditioning, even though they are never trained on committed tokens. Since self conditioning always provides soft inputs, it is not directly obvious that it should improve performance with discrete commitments.
+
+</div>
+
 ### Self Conditioning and Discrete Corruption 
 
 In this section, we show results pertaining to discrete corruption methods and self conditioning. We observe that the effect depends on the method: for masked diffusion, self conditioning does not reliably improve the best tuned result, while for uniform diffusion it improves it on every task ([figure](#difference-in-behavior-of-masked-vs-uniform)). Next, we check whether self conditioning changes which sampler works best. Generally, performance becomes more even across sampler families, with the exception of the renoising samplers for masked diffusion on text8 ([figure](#on-renoising-sampler-for-text8)). Finally, the entropy profile during sampling for masked and uniform diffusion is compared in the [trajectory figure](#self-conditioning-changes-trajectories-in-roughly-the-same-way) in the general takeaways.
@@ -241,6 +249,13 @@ With each model's best tuned sampler, self conditioning lowers masked diffusion'
 The figure below breaks the masked text8 result down by sampler. Self conditioning improves most samplers, including native (+2.1 words), the EB samplers and both Ψ variants. The exception is renoising: renoise drops from 13.2 to 1.0 words, and renoise greedy from 4.0 to 0.2. One possible reason: the renoising samplers re-corrupt the predicted clean tokens at each step, so the self conditioning input may no longer match the state the model is denoising. Uniform diffusion's renoising samplers also lose ground on text8 with self conditioning (renoise 16.4 to 11.5 words), but far less, and on Sudoku both masked and uniform renoising improve with self conditioning. 
 
 <DiscreteSamplers client:visible />
+
+<div className="takeaway">
+<span className="takeaway-label">Takeaway</span>
+
+For discrete methods, the effect of self conditioning depends on the method: uniform diffusion improves on every task with its best tuned sampler, while masked diffusion does not reliably improve. However, self conditioning does help the samplers that were weak without it, which is why performance becomes more even across sampler families. The exception is renoising for masked diffusion on text8.
+
+</div>
 
 ### Self Conditioning, Hybrid Corruption, and Learned Noise Schedule
 
@@ -270,6 +285,13 @@ When random anchoring is tuned on a pure continuous model, the chosen commitment
 
 <AnchorPower client:visible />
 
+<div className="takeaway">
+<span className="takeaway-label">Takeaway</span>
+
+Without self conditioning, hybrids often beat both of the pure methods they are built from. With self conditioning, the pure methods catch up, and the hybrids mostly tie or fall behind. Thus hybrids seem to capture part of what self conditioning provides, but not all of it.
+
+</div>
+
 ### General Takeaways 
 
 Here we discuss some observations that sit outside each group of ablations. We first discuss the importance of tuning samplers: comparing the untuned native sampler of each method can lead to a completely different conclusion than comparing the best tuned samplers ([figure](#importance-of-tuning-samplers)). For example, the untuned samplers suggest that masked diffusion lags far behind the other methods. Yet switching to renoising or EB yields a large gain on Sudoku, making it the best method of those tested, with the qualification that most methods perform well once tuned appropriately. Furthermore, we find that self conditioning reduces the sensitivity to sampler tuning across recipes ([figure](#self-conditioning-changes-sensitivity-to-tuning)). Finally, self conditioning tends to make all methods behave similarly, in terms of the entropy per predicted position during the sampling trajectory of the native sampler ([figure](#self-conditioning-changes-trajectories-in-roughly-the-same-way)). 
@@ -291,6 +313,13 @@ The figure below shows, for every model, the untuned native sampler next to the 
 The figure below follows the native sampler, untuned, through sampling. At each step it records the entropy of the model's prediction at every position and summarises it across positions. On text8 and TinyStories, self conditioning lowers the spread of entropy across positions (the gap between the 75th and 25th percentile, averaged over sampling) for every method, masked, uniform and continuous alike, so their trajectories look more alike with self conditioning than without. These runs use the untuned native sampler, so they describe the models themselves rather than the tuned results above. 
 
 <ScOrdering client:visible />
+
+<div className="takeaway">
+<span className="takeaway-label">Takeaway</span>
+
+Comparing recipes with one fixed, untuned sampler mostly measures how well that sampler suits each recipe -- tuning can change the ranking entirely. Self conditioning makes this matter less: methods become less sensitive to sampler tuning, and their trajectories start to look alike.
+
+</div>
 
 ## Limitations, and the Future 
 

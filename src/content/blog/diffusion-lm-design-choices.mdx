@@ -27,9 +27,10 @@ Patrick Pynadath<sup>1</sup>, Ruqi Zhang<sup>1</sup>
 
 Series: [Part 1](/blog/diffusion-lm-design-choices/) · [Part 2](/blog/diffusion-lm-design-choices-self-conditioning/) · [Part 3](/blog/diffusion-lm-design-choices-sc-interpretation/)
 
-<div className="tldr" style={{ border: "1px solid var(--border)", borderLeft: "4px solid var(--accent)", background: "var(--surface)", borderRadius: 10, padding: "12px 16px", margin: "18px 0 8px" }}>
+<div className="tldr">
+<span className="tldr-tag" aria-label="TL;DR">TL;DR</span>
 
-**TL;DR:** Many techniques in diffusion language models, like self conditioning and block diffusion, started in one family and spread to others. But a borrowed technique does not always work the same way, or for the same reason. SDDC is a codebase that makes each part of a recipe swappable, so we can move one part and hold everything else fixed. As a first example: self conditioning changes whether continuous models can commit tokens during sampling, a method they were never trained for.
+Many techniques in diffusion language models, like self conditioning and block diffusion, started in one family and spread to others. But **a borrowed technique does not always work the same way, or for the same reason.** SDDC is a codebase that makes **each part of a recipe swappable**, so we can move one part and *hold everything else fixed*. As a first example: self conditioning seems to change **how sensitive methods are to sampler tuning**.
 
 </div>
 
@@ -75,6 +76,13 @@ It rules out methods that learn their own segmentation or work on dynamic patche
 Training never runs the model's own sampler. Each training example is built in closed form: sample a time, corrupt the clean sequence with the forward process, and ask the model to undo it. The one exception is self conditioning, which runs one extra forward pass to produce the feedback it trains on.
 
 This rules out distillation, consistency, and flow map methods that train on the model's own trajectories [@roos2026categoricalflowmaps; @lee2026onesteplanguagemodelingcontinuous], as well as RL-style fine-tuning. These methods are central to fast sampling. They are also expensive to train, and their results depend on the base model they start from, which makes them hard to compare at this scale.
+
+<div className="takeaway">
+<span className="takeaway-label">Takeaway</span>
+
+SDDC covers a narrow slice of DLMs on purpose: noise is applied to factorized representations, the tokenizer is fixed before diffusion starts, and training is simulation free, with self conditioning as the one exception.
+
+</div>
 
 ## The design space
 
@@ -1258,13 +1266,20 @@ The **native** sampler takes each process's own reverse step. **Renoise** discar
 Switch to "Paper recipes" at the top to see how published methods fill in the map. Boxes that change across a family of recipes are highlighted. Many well-known methods differ in only one or two boxes, which is what makes it tempting to swap parts between them.
 
 ## Why modular? (And some Teasers)
-The modular approach of this codebase is motivated by two core reasons: first, a modular set up makes it easier to design experiments that tease out otherwise subtle interactions that different components can have on downstream performance. For pure continuous methods (Gaussian diffusion, the hyperspherical flows from [@deschenaux2026language], the spherical vMF trajectories from [@chemseddine2026spherical], and simplex diffusion from [@deschenaux2026simplex]), we notice that these methods can run samplers that commit tokens during generation, such as a hybrid formulation of the EB sampler from [@benhamu2025accelerated] or random anchoring. This is surprising, given that none of these methods are trained to handle committed tokens. What is more surprising is that how well this works is contingent on whether self conditioning is used: without self conditioning, committing samplers are erratic and often perform quite poorly. With self conditioning, they land much closer to the best samplers that never commit a token. This seems to support two conclusions: 
-1. Self conditioning makes discrete commitment look more in-distribution for continuous methods. 
-2. This is a change in how generation unfolds rather than a guaranteed gain: even with self conditioning, committing tokens rarely beats the best sampler that does not commit. 
+The modular approach of this codebase is motivated by two core reasons: first, a modular set up makes it easier to design experiments that tease out otherwise subtle interactions that different components can have on downstream performance. As an example, we take each recipe (masked, uniform, the pure continuous methods, and their hybrids) and tune its sampler over the same set of sampler families, once for a model trained without self conditioning and once for a model trained with it. We notice that how much tuning matters is contingent on whether self conditioning is used: without self conditioning, tuning the sampler gives a large gain over the untuned native sampler, and it can even flip the ranking between methods. With self conditioning, the gain from tuning is much smaller, and this holds for every recipe we test on both Sudoku and text8. This seems to support two conclusions: 
+1. Without self conditioning, a method's untuned score can say more about its default sampler than about the method itself. 
+2. Self conditioning seems to change how sensitive methods are to sampler tuning. This is a change in how much the sampler matters rather than a guaranteed gain in performance. 
 
 This is a fairly nuanced finding, and it would have been hard to find without being able to plug and play different components across recipes, especially for inference settings. 
 
 Second, it makes it quite easy to produce new recipes from existing components. Most of the work is re-using the existing components and wiring everything together through a config file, instead of designing each recipe from scratch.
+
+<div className="takeaway">
+<span className="takeaway-label">Takeaway</span>
+
+Being able to swap one part and hold the rest fixed is what makes findings like this possible to see. It is also what makes new recipes cheap to build -- most of the work is wiring existing parts together through a config file.
+
+</div>
 
 ## Inspiration: Hackable Diffusion
 

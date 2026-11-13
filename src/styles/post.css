@@ -5,6 +5,7 @@
   --hue: 266;
   --bg: #121321; --fg: #efedf6; --muted: #aaa9bd; --border: #323240; --surface: #1c1d2d;
   --accent: hsl(266 72% 78%); --code-bg: #0d0e19;
+  --warm: hsl(38 92% 66%); --warm-line: hsl(38 92% 66%); --teal: hsl(172 55% 62%); --tldr: var(--warm);
   --accent-wash: color-mix(in srgb, var(--accent) 12%, transparent);
   --accent-line: color-mix(in srgb, var(--accent) 45%, transparent);
   --font-display: Georgia, 'Times New Roman', serif;
@@ -19,6 +20,7 @@
     color-scheme: light;
     --bg: #f6f5fa; --fg: #302e42; --muted: #646174; --border: #d8d6e2; --surface: #eeecf5;
     --accent: hsl(266 43% 40%); --code-bg: #ebe9f3;
+    --warm: hsl(24 88% 36%); --warm-line: hsl(26 96% 50%); --teal: hsl(177 85% 27%); --tldr: var(--warm);
     --viz-bg: #f6f5fa; --viz-inset: #ffffff; --viz-panel: #eeecf5; --viz-grid: #dedbe8; --viz-line: #d8d6e2; --viz-line2: #c9c6d6; --viz-faint: #b4b1c4; --viz-dim: #8a879d; --viz-dim2: #7a778e; --viz-muted: #646174; --viz-text: #302e42; --viz-accent: #603a92; --viz-accent-soft: #4a2a75; --viz-accent-dim: #af9cc9; --viz-accent2: #ae6113; --viz-good: #1f8f55; --viz-bad: #c4344a; --viz-warn: #9a7d00; --viz-orange: #b86e00; --viz-orange2: #c2541a; --viz-lime: #5a8f1c; --viz-candi: #2f8f4e; --viz-mdlm: #c43c3c; --viz-duo: #2f6fae; --viz-highlight: #9a5a0c; --viz-pink-text: #8a2f63; --viz-accent-rgb: 96, 58, 146; --viz-highlight-rgb: 174, 97, 19; --viz-pink-rgb: 196, 60, 130; --viz-panel-rgb: 238, 236, 245; --viz-border-rgb: 216, 214, 226; --viz-shadow-rgb: 48, 46, 66; --viz-orange-rgb: 194, 84, 26; --viz-text-rgb: 48, 46, 66;
   }
 }
@@ -26,6 +28,7 @@
   color-scheme: light;
   --bg: #f6f5fa; --fg: #302e42; --muted: #646174; --border: #d8d6e2; --surface: #eeecf5;
   --accent: hsl(266 43% 40%); --code-bg: #ebe9f3;
+    --warm: hsl(24 88% 36%); --warm-line: hsl(26 96% 50%); --teal: hsl(177 85% 27%); --tldr: var(--warm);
   --viz-bg: #f6f5fa; --viz-inset: #ffffff; --viz-panel: #eeecf5; --viz-grid: #dedbe8; --viz-line: #d8d6e2; --viz-line2: #c9c6d6; --viz-faint: #b4b1c4; --viz-dim: #8a879d; --viz-dim2: #7a778e; --viz-muted: #646174; --viz-text: #302e42; --viz-accent: #603a92; --viz-accent-soft: #4a2a75; --viz-accent-dim: #af9cc9; --viz-accent2: #ae6113; --viz-good: #1f8f55; --viz-bad: #c4344a; --viz-warn: #9a7d00; --viz-orange: #b86e00; --viz-orange2: #c2541a; --viz-lime: #5a8f1c; --viz-candi: #2f8f4e; --viz-mdlm: #c43c3c; --viz-duo: #2f6fae; --viz-highlight: #9a5a0c; --viz-pink-text: #8a2f63; --viz-accent-rgb: 96, 58, 146; --viz-highlight-rgb: 174, 97, 19; --viz-pink-rgb: 196, 60, 130; --viz-panel-rgb: 238, 236, 245; --viz-border-rgb: 216, 214, 226; --viz-shadow-rgb: 48, 46, 66; --viz-orange-rgb: 194, 84, 26; --viz-text-rgb: 48, 46, 66;
 }
 
@@ -237,3 +240,30 @@ button { font: inherit; color: inherit; cursor: pointer; }
 .post-comments strong { color: var(--fg); }
 .post-comments a { color: var(--accent); }
 @media (max-width: 900px) { .post-grid > .post-comments { grid-column: 1 / -1; } }
+
+/* TL;DR box at the top of a post: a soft card with a sticker-style tag on its corner.
+   It uses its own warm color (--tldr) so it stands apart from the purple theme. */
+.prose .tldr { position: relative; margin: 34px 0 18px; padding: 22px 20px 16px; border: 1px solid color-mix(in srgb, var(--tldr) 50%, transparent); border-radius: 14px; background: color-mix(in srgb, var(--tldr) 11%, transparent); box-shadow: none; }
+.prose .tldr > p { margin: 0; }
+.prose .tldr strong { color: var(--fg); font-weight: 700; }
+.prose .tldr em { color: var(--tldr); font-style: italic; }
+.prose .tldr-tag { position: absolute; top: -14px; left: 16px; padding: 5px 12px 4px; border-radius: 8px; background: var(--tldr); color: var(--bg); font: 700 12px/1 Helvetica, Arial, sans-serif; letter-spacing: 0.14em; transform: rotate(-4deg); box-shadow: 0 2px 0 color-mix(in srgb, var(--tldr) 45%, transparent), 0 6px 14px color-mix(in srgb, var(--bg) 60%, transparent); user-select: none; }
+
+/* Second and third colors, so the page is not all one purple.
+   Warm (--warm): progress bar, block quotes, the current section in the table of contents, the TL;DR box.
+   Teal (--teal): callouts, side notes and citation numbers. */
+.progress span { background: linear-gradient(90deg, var(--accent), var(--warm-line)); }
+.toc a.active { color: var(--warm); border-left: 3px solid var(--warm-line); margin-left: -2px; }
+.toc li.open > a.active { color: var(--warm); }
+.prose blockquote { border-left: 3px solid var(--warm-line); }
+.prose .callout { background: color-mix(in srgb, var(--teal) 10%, transparent); box-shadow: inset 3px 0 0 var(--teal); }
+.prose .callout-label, .prose .sidenote-label { color: var(--teal); }
+.prose a[href^="#bib-"], .prose .csl-left-margin { color: var(--teal); }
+.prose li::marker { color: var(--teal); }
+.prose .expandable-icon { color: var(--teal); background: color-mix(in srgb, var(--teal) 12%, transparent); }
+/* Inline code in light mode: the default chip was almost the same color as the page, so code read as plain text. */
+:root[data-theme="light"] .prose :is(code):not(pre code) { color: var(--accent); background: var(--accent-wash); }
+/* Teal summary box at the end of a section. Separate from .callout, which some posts hide. */
+.prose .takeaway { margin: 28px 0; padding: 16px 20px; border-radius: 12px; background: color-mix(in srgb, var(--teal) 10%, transparent); box-shadow: inset 3px 0 0 var(--teal); }
+.prose .takeaway > p { margin: 0; }
+.prose .takeaway-label { display: block; font-size: 11px; font-weight: 600; letter-spacing: .13em; text-transform: uppercase; color: var(--teal); margin-bottom: 6px; }

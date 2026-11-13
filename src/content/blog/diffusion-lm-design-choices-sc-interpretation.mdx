@@ -37,9 +37,10 @@ Patrick Pynadath<sup>1</sup>, Ruqi Zhang<sup>1</sup>
 
 Series: [Part 1](/blog/diffusion-lm-design-choices/) · [Part 2](/blog/diffusion-lm-design-choices-self-conditioning/) · [Part 3](/blog/diffusion-lm-design-choices-sc-interpretation/)
 
-<div className="tldr" style={{ border: "1px solid var(--border)", borderLeft: "4px solid var(--accent)", background: "var(--surface)", borderRadius: 10, padding: "12px 16px", margin: "18px 0 8px" }}>
+<div className="tldr">
+<span className="tldr-tag" aria-label="TL;DR">TL;DR</span>
 
-**TL;DR:** At every step, the model works out more than the next state can hold, because a state carrying all of its beliefs would be out of distribution for a model trained without simulation. Self conditioning keeps what the state drops, at the cost of a one-step roll out in training. This simple view explains several results from Part 2 across discrete, continuous and hybrid methods: samplers matter less, self conditioning improves how commitment based samplers perform for pure continuous methods, and the entropy profiles across the sequence for different methods become more similar.
+At every step, **the model works out more than the next state can hold**, because a state carrying all of its beliefs would be *out of distribution* for a model trained without simulation. **Self conditioning keeps what the state drops**, at the cost of a *one-step roll out* in training. This simple view explains several results from Part 2 across discrete, continuous and hybrid methods: samplers matter less, self conditioning improves how commitment based samplers perform for pure continuous methods, and the entropy profiles across the sequence for different methods become more similar.
 
 </div>
 
@@ -77,6 +78,13 @@ The sum over positions is exact, because a single forward pass predicts each pos
 It is useful to separate the unresolved bits into two kinds. **Open bits** have not been decided at all: the randomness that will pick them has not been drawn yet. **Hidden bits** are already fixed by the state and the weights, but working them out takes more than one forward pass. An observer with unlimited compute would only see the open bits. A one-pass model sees both, mixed together. Most of this post is about the hidden bits.
 
 <TwoObservers client:visible />
+
+<div className="takeaway">
+<span className="takeaway-label">Takeaway</span>
+
+The quantity we track is $h_t$: how surprised the model is by its own final sample, given the current state. Some of these bits are open, meaning they have not been decided yet. Others are hidden -- already fixed by the state and the weights, but too costly to work out in one forward pass. This post is mostly about the hidden bits.
+
+</div>
 
 ## The information path
 
@@ -130,6 +138,13 @@ Ideally, the update would keep everything the pass worked out. The obstacle is t
 
 We view this as the price of simulation-free training. Training a model on its own outputs would mean running it on itself many times to produce each training input. Noise avoids this: it gives us training states for free, and a sampler that follows the same corruption in reverse visits the same kind of states. The gap is what we pay for that convenience.
 
+<div className="takeaway">
+<span className="takeaway-label">Takeaway</span>
+
+A forward pass works out more than the next state keeps. We cannot simply keep everything, as a state carrying all of the model's beliefs would be out of distribution. We view this as the price of simulation-free training.
+
+</div>
+
 ## Self conditioning as a second channel
 
 Self conditioning relaxes the simulation-free requirement by allowing a small part of the roll out. Instead of doing the entire roll out, or doing no roll out at all, it does a single-step roll out. The same general idea appears in recursive methods, which also avoid rolling out or training on the entire trajectory [@Savinov_Chung_Binkowski_Elsen_Oord_2022; @bai2019deep; @wang2025hierarchical; @jolicoeur2025less; @rozonoyer2026relay].
@@ -155,6 +170,13 @@ where $\mathrm{sg}$ stops the gradient and both passes use the same $z_t$ [@chen
 Self conditioning also changes the order in which bits are recovered. Every forward pass already resolves the easy bits first: the model is confident wherever its input makes the answer easy. Without self conditioning, the state update ignores this order, and the forward process decides what survives. With self conditioning, the model's own order survives between steps. The effective information path is then set partly by the model, and not only by the schedule.
 
 The second channel is not perfect. In training, the fed-back prediction comes from one pass on the same state. In sampling, it comes from the previous step, which was itself fed by the step before it, a chain many passes deep. This mismatch is known to hurt few-step sampling and to encourage overconfident, repetitive samples, and several recent methods target it directly [@nguyencong2026fastdiss; @li2026untied; @liu2024trec; @zhang2026ace; @shabalin2025tencdm].
+
+<div className="takeaway">
+<span className="takeaway-label">Takeaway</span>
+
+Self conditioning gives the model a second channel between steps: the state carries decisions, and self conditioning carries beliefs. The cost is a single-step roll out during training, which is what teaches the model to read its own prediction.
+
+</div>
 
 ### Relation to fixed-point flows
 
@@ -185,6 +207,13 @@ For discrete methods, masked positions get a place to hold partial beliefs. A po
 None of this says that self conditioning improves the final sample. It changes how recovery unfolds, and a more gradual path can help on one task and hurt on another. Nor is self conditioning the sole reason information spreads across positions. Committing a single token already tells the model something about its neighbors, through context, and this holds for a purely discrete model too. Self conditioning adds to this: it gives that partial progress somewhere to live between steps, so more of it reaches the positions that are still masked.
 
 <BitRecovery client:visible sc />
+
+<div className="takeaway">
+<span className="takeaway-label">Takeaway</span>
+
+Self conditioning pulls each family away from its own extreme. Discrete methods can hold partial beliefs at masked positions, and continuous methods can keep confident positions settled. This is a claim about how recovery unfolds, not about whether the final score improves.
+
+</div>
 
 ## Evidence
 
