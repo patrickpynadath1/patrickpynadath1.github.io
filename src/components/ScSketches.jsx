@@ -1,6 +1,6 @@
 // Explanatory figures for Part 3 (the interpretation of self conditioning).
 // Most are sketches of ideas, labeled as illustrations with no measured data. One plots
-// numbers reported by Yoo et al. (2026), Table 2, and one shows two numbers from Davis et al. (2026).
+// numbers reported by Yoo et al. (2026), Table 1, and one shows two numbers from Davis et al. (2026).
 // They share the vocabulary of BitRecovery.jsx: the sentence "the cat sat on the mat",
 // four bit boxes per word, blue for a bit with value 0 and orange for value 1.
 import { useState } from "react";
@@ -229,7 +229,7 @@ function TwoWiresInner() {
   );
 }
 
-// ── 5. More refinement per step (numbers from Yoo et al., Table 2) ────────────
+// ── 5. More refinement per step (numbers from Yoo et al., Table 1) ────────────
 const YOO = [
   { id: "elf", label: "ELF, 32 steps", color: () => P.duo, ppl: [101.19, 66.5, 56.67, 50.25, 46.31], ent: [5.51, 5.42, 5.37, 5.33, 5.31] },
   { id: "langflow", label: "LangFlow, 64 steps", color: () => P.accent2, ppl: [77.26, 57.99, 52.63, 49.37, 47.27], ent: [5.49, 5.42, 5.4, 5.38, 5.36] },
@@ -243,9 +243,9 @@ function FixedPointInner() {
   const y2 = (v) => T2 + (1 - (v - 5.25) / 0.3) * H2;
   const path = (arr, y) => arr.map((v, k) => `${k ? "L" : "M"}${x(k)},${y(v)}`).join("");
   return (
-    <Frame kicker="Numbers from Yoo et al. (2026), Table 2" title="More refinement per step keeps helping, even with a warm start"
+    <Frame kicker="Numbers from Yoo et al. (2026), Table 1" title="More refinement per step keeps helping"
       subtitle="Generative perplexity (lower is better) as the number of self-conditioning iterations per sampling step grows. One iteration is ordinary self-conditioned sampling. The strip below shows sample entropy, which drifts below the data's."
-      note="Values as reported by Yoo et al. for warm-start sampling; we did not rerun them. The entropy also falls, so part of the drop in perplexity may come from less diverse samples. They report no cold-start numbers in this table, only that a cold start needs about 100 iterations per step to match.">
+      note="Values as reported by Yoo et al. in their Table 1; we did not rerun them. The entropy also falls, so part of the drop in perplexity may come from less diverse samples. Separately, they report that a cold start and a warm start reach the same quality at 100 iterations per step.">
       <div ref={tip.box} style={{ position: "relative" }}>
         <svg viewBox={`0 0 ${W} ${H}`} style={{ width: "100%", height: "auto", display: "block", fontFamily: FONT, overflow: "visible" }} role="img"
           aria-label="Line chart: generative perplexity falls as iterations per step go from one to five, for ELF and LangFlow">
