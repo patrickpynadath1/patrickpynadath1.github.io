@@ -11,10 +11,13 @@ interface Props {
   publishDate?: Date;
   tags?: string[];
   wip?: boolean;
+  comments?: boolean;
   headings?: Heading[];
 }
 
-const { title, description, publishDate, tags = [], headings = [], wip = false } = Astro.props as Props;
+const { title, description, publishDate, tags = [], headings = [], wip = false, comments = false } = Astro.props as Props;
+// Comments use utterances: each post gets one GitHub issue on this repo, matched by its URL path.
+const COMMENTS_REPO = 'patrickpynadath1/patrickpynadath1.github.io';
 // Sections (##) hold subsections (###), which hold their parts (####).
 // A #### directly under a ## (no ### yet) is listed as a subsection.
 type Node = Heading & { children: Node[] };
@@ -89,6 +92,12 @@ const formattedDate = publishDate
         <article class="prose" id="article">
           <slot />
         </article>
+        {comments && (
+          <section class="post-comments" id="comments" aria-label="Comments" data-repo={COMMENTS_REPO}>
+            <h2>Comments</h2>
+            <p class="post-comments-note">Sign in with GitHub to leave a comment.</p>
+          </section>
+        )}
       </main>
 
       <footer class="site-footer">
@@ -98,6 +107,30 @@ const formattedDate = publishDate
     </div>
 
     <div class="cite-pop" id="cite-pop" role="tooltip" hidden></div>
+
+    <!-- Loads the comment box only on posts that have one (frontmatter comments: true). -->
+    <script is:inline>
+        (function () {
+          var box = document.getElementById('comments');
+          if (!box) return;
+          var root = document.documentElement;
+          var themeName = function () { return root.dataset.theme === 'light' ? 'github-light' : 'github-dark'; };
+          var s = document.createElement('script');
+          s.src = 'https://utteranc.es/client.js';
+          s.async = true;
+          s.crossOrigin = 'anonymous';
+          s.setAttribute('repo', box.dataset.repo);
+          s.setAttribute('issue-term', 'pathname');
+          s.setAttribute('label', 'blog-comment');
+          s.setAttribute('theme', themeName());
+          box.appendChild(s);
+          // Keep the comment box in step with the page theme.
+          new MutationObserver(function () {
+            var frame = box.querySelector('iframe.utterances-frame');
+            if (frame && frame.contentWindow) frame.contentWindow.postMessage({ type: 'set-theme', theme: themeName() }, 'https://utteranc.es');
+          }).observe(root, { attributes: true, attributeFilter: ['data-theme'] });
+        })();
+    </script>
 
     <script is:inline define:vars={{ lightImages }}>
       // Figures made for the dark theme have a "-light" twin (scripts/relight_images.py).
