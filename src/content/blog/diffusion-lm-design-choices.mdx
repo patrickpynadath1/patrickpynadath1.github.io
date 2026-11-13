@@ -29,18 +29,18 @@ Series: [Part 1](/blog/diffusion-lm-design-choices/) · [Part 2](/blog/diffusion
 
 ## Introduction
 
-The design space for DLMs is combinatorially larger than autoregressive, as it encompasses a wide range of different generative trajectories. All autoregressive models follow the same left-to-right generative path. Diffusion language models have come to mean any generative method that leverages some form of parallel, iterative refinement in the generative process. This encompasses Gaussian diffusion; Riemannian Flow Matching on the sphere; Diffusion on the Simplex; Discrete Corruption via uniform random token corruption; diffusion in a latent space with an autoregressive decoder; masked token corruption, or both. For recent overviews, see Li et al. [@li2025dlmsurvey] for diffusion language models broadly, and Tang et al. [@tang2026survey] for continuous diffusion and flow language models. 
+All autoregressive models follow the same left-to-right generative path. In diffusion, the generative path itself is a design choice. Diffusion language models (DLMs) have come to mean any generative method that leverages some form of parallel, iterative refinement in the generative process. This encompasses discrete methods (masked and uniform token corruption); continuous methods (Gaussian diffusion, diffusion on the simplex, and Riemannian flow matching on the sphere); hybrids that combine a discrete and a continuous process; and latent methods, such as diffusion in a latent space with an autoregressive decoder. For recent overviews, see Li et al. [@li2025dlmsurvey] for diffusion language models broadly, and Tang et al. [@tang2026survey] for continuous diffusion and flow language models. 
 
-This rapid expansion in diffusion approaches have resulted in many common techniques being introduced under one diffusion family, but gradually becoming used in many others. As an example, we look at self-conditioning, or feeding the model's previous predictions as part of the next input. This technique was first introduced within a [@chen2022analog] within a binary Gaussian diffusion method. However, this technique has been shown to be effective Gaussian diffusion on embeddings [@strudel2022self] [@dieleman2022continuous], spherical flow matching [@chemseddine2026spherical], and simplex diffusion [@deschenaux2026simplex]. Block diffusion was introduced for masked diffusion, but the general approach has been adopted into uniform diffusion [@diffusiongemma2026], and gaussian diffusion [@yang2026sigma], where it blends naturally with continuous noise schedules that increase positionally left to right [@chavan2026lafa; @schiff2026clock]. 
+This rapid expansion in diffusion approaches has resulted in many common techniques being introduced under one diffusion family, but gradually becoming used in many others. As an example, we look at self conditioning, or feeding the model's previous predictions as part of the next input. This technique was first introduced in Analog Bits [@chen2022analog], a Gaussian diffusion method on binary codes. However, this technique has been shown to be effective for Gaussian diffusion on embeddings [@strudel2022self; @dieleman2022continuous], spherical flow matching [@chemseddine2026spherical], and simplex diffusion [@deschenaux2026simplex]. Block diffusion was introduced for masked diffusion, but the general approach has been adopted into uniform diffusion [@diffusiongemma2026], and Gaussian diffusion [@yang2026sigma], where it blends naturally with continuous noise schedules that increase positionally left to right [@chavan2026lafa; @schiff2026clock]. 
 
-The fields shift to more flexible recipes has led to both the need to more thoroughly understand when and where certain techniques improve performance, along with the convenience of being able to quickly incorporate techniques across recipes from different papers. Teasing apart why techniques transfer requires being able to quickly evaluate them within new recipes through careful ablations. Furthermore, designing effective recipes requires understanding when and where different techniques are needed. Returning to the example of self conditioning -- in [@pynadath2025candihybriddiscretecontinuousdiffusion], we hypthesized that self-conditioning corrects an imbalance induced by long-tailed pathalogies of continuous corruption behavior in high dimensions. But if this is the case, then why does it benefit pure discrete diffusion in DiffusionGemma [@diffusiongemma2026]? And what other recipes will self conditioning be beneficial towards? 
+The field's shift to more flexible recipes has led to both the need to more thoroughly understand when and where certain techniques improve performance, and the need to quickly incorporate techniques across recipes from different papers. Teasing apart why techniques transfer requires being able to quickly evaluate them within new recipes through careful ablations. Furthermore, designing effective recipes requires understanding which techniques each recipe needs. Returning to the example of self conditioning: in CANDI [@pynadath2025candihybriddiscretecontinuousdiffusion], we hypothesized that self conditioning corrects an imbalance induced by long-tailed pathologies of continuous corruption behavior in high dimensions. But if this is the case, then why does it benefit purely discrete diffusion in DiffusionGemma [@diffusiongemma2026]? And which other recipes will self conditioning help? 
 
-To answer questions like this, we introduce **SDDC**: **S**ome **D**LM **D**esign **C**hoices, a codebase designed to make DLM recipe's as modular as possible. We focus our attention on a specific archetype of DLM recipes: we address recipes where 1) noise is applied to factorized representations, as opposed to contextual; 2) the recipe is generally tokenizer agnostic; and 3) training is simulation free. We explain DLM recipes as answering three core questions: 
+To answer questions like this, we introduce **SDDC**: **S**ome **D**LM **D**esign **C**hoices, a codebase designed to make DLM recipes as modular as possible. We focus our attention on a specific archetype of DLM recipes: we address recipes where 1) noise is applied to factorized representations, as opposed to contextual; 2) the recipe is generally tokenizer agnostic; and 3) training is simulation free. We explain DLM recipes as answering three core questions: 
 1. ***Information Path***: How is information represented, and how is it destroyed during the generative path? 
 2. ***Denoising Task***: How do we learn to traverse this information path? 
 3. ***Inference Settings***: How do we actually use both the learned model and information path to generate samples? 
 
-Outside of these questions, we define recipe modifiers as components that require changes across all three facets. In this blog, we briefly the core design philosophy of this design approach, and why we believe this is the right approach for studying DLMs. 
+Outside of these questions, we define recipe modifiers as components that require changes across all three facets. In this blog, we briefly describe the core design philosophy of this design approach, and why we believe this is the right approach for studying DLMs. 
 
 ## Inspiration: Hackable Diffusion
 
@@ -75,7 +75,7 @@ This rules out contextual representations, even ones that keep one vector per to
 
 ### Tokenizer Agnostic
 
-The tokenizer is fixed before diffusion starts. Every recipe sees the same token sequence, and the diffusion process never merges, splits, or learns tokens. This lets us swap tokenizers as an experimental variable (we do this below, from raw bytes up to a 10k-token BPE vocabulary) without changing anything else in the recipe.
+The tokenizer is fixed before diffusion starts. Every recipe sees the same token sequence, and the diffusion process never merges, splits, or learns tokens. This lets us swap tokenizers as an experimental variable without changing anything else in the recipe.
 
 It rules out methods that learn their own segmentation or work on dynamic patches. It also rules out methods that split each token into smaller units and diffuse those. CoBit [@batzolis2026towards] is one example: it writes each token's ID as a fixed-width binary code and runs continuous diffusion over the resulting bitstream, so the model predicts about $\log_2 V$ bits per token instead of one choice among $V$ tokens. The insertion and deletion modifier changes sequence length, but it inserts and deletes whole tokens from the same fixed vocabulary.
 
@@ -106,7 +106,7 @@ The figure below is a map of these parts. The top half shows how the parts conne
 
 <MapText name="about.rep">
 
-Within our framework, representation means the space the noise lives in. In the codebase, we focus on a fairly narrow selection of representations: tokens, one-hot vectors, and embeddings. We choose these as they can be thought of as "factorized" representations: within the representation being noised, there is a one-to-one correspendence between the original tokens in the sequence and the noised elements in the sequence. This is in contrast to contextual representations, where the representation are a function of the entire sequence.
+Within our framework, representation means the space the noise lives in. In the codebase, we focus on a fairly narrow selection of representations: tokens, one-hot vectors, and embeddings. We choose these as they can be thought of as "factorized" representations: within the representation being noised, there is a one-to-one correspondence between the original tokens in the sequence and the noised elements in the sequence. This is in contrast to contextual representations, where the representation are a function of the entire sequence.
 
 
 
@@ -120,7 +120,7 @@ Within our framework, representation means the space the noise lives in. In the 
 
 <MapText name="rep.tokens">
 
-Here, the corruption is defined to occur on tokens directly, rather than some continuous vector. This does not mean that the process is free of continuous vectors: every token is eventually mapped to a continuous vector in the embeding table. Does working with tokens allow for a more "native" corruption process for text? Or is it just disguising the fact that the network must operate on continuous vectors? This is still an open debate. 
+Here, the corruption is defined to occur on tokens directly, rather than some continuous vector. This does not mean that the process is free of continuous vectors: every token is eventually mapped to a continuous vector in the embedding table. Does working with tokens allow for a more "native" corruption process for text? Or is it just disguising the fact that the network must operate on continuous vectors? This is still an open debate. 
 
 
 
@@ -132,7 +132,7 @@ Here, the corruption is defined to occur on tokens directly, rather than some co
 
 <MapText name="rep.onehot">
 
-Each token is mapped to a vector of dimension $|V|$ where very coordinate is zero, except for the coordinate correspending to the original token index. Such representations are convenient, as they are learning free and still provide a meaningful map from discrete to the continuous domain. However, these representations are generally expensive to work with, especially with modern LLM vocabularies.  
+Each token is mapped to a vector of dimension $|V|$ where every coordinate is zero, except for the coordinate corresponding to the original token index. Such representations are convenient, as they are learning free and still provide a meaningful map from discrete to the continuous domain. However, these representations are generally expensive to work with, especially with modern LLM vocabularies.  
 
 
 
@@ -162,7 +162,7 @@ Each word is a learned point in a vector space (two dimensions shown). Highlight
 
 <MapText name="about.corr">
 
-How we decide to remove information from the clean sequence, and consequently create information during inference. This is one of the more consequential decisons in terms of the overal DLM recipe: many continuous methods share some form of self-conditioning and an adaptive noise schedule akin to [@dieleman2022continuous]. If we chose to work with discrete corruption, some components of the network -- such as time conditioning -- would no longer be necessary. 
+How we decide to remove information from the clean sequence, and consequently create information during inference. This is one of the more consequential decisions in terms of the overall DLM recipe: many continuous methods share some form of self conditioning and an adaptive noise schedule akin to [@dieleman2022continuous]. If we chose to work with discrete corruption, some components of the network -- such as time conditioning -- would no longer be necessary. 
 
 
 - The codebase has six corruption processes: absorbing (masking), uniform, uniform with a posterior reverse step, Gaussian, spherical, and Dirichlet (simplex).
@@ -212,7 +212,7 @@ Gaussian on one-hot vectors: noise is added to every entry. As t grows the true 
 
 <MapText name="corr.gaussian-embed">
 
-Gaussian on embeddings: noise pushes each point off its word. The blob shows how far noise can reach at this t. Embedding diffusion can be difficult to train stably, as using an MSE objective would result in the embeddings collapsing to the same vector; whereas using a cross-entropy objective results in 
+Gaussian on embeddings: noise pushes each point off its word. The blob shows how far noise can reach at this t. Embedding diffusion can be difficult to train stably, as using an MSE objective would result in the embeddings collapsing to the same vector; whereas using a cross-entropy objective lets the embeddings grow without bound unless they are normalized [@dieleman2022continuous].
 
 
 
@@ -334,7 +334,7 @@ A transformer reads the noisy sequence and produces predictions.
 
 
 
-- Every diffusion recipe uses the same network: a DiT [@peebles2023scalable] whose input, time conditioning, self-conditioning and output head are swappable slots. Autoregressive baselines use a causal version with a KV cache.
+- Every diffusion recipe uses the same network: a DiT [@peebles2023scalable] whose input, time conditioning, self conditioning and output head are swappable slots. Autoregressive baselines use a causal version with a KV cache.
 - The default size is width 512, 8 blocks and 8 heads.
 - The time input can be raw time or a transform of it, such as $-\log(1-t)$, the log keep rate, or log SNR. This changes only what the network sees, not the noise.
 - The transformer blocks can also be changed: other sublayers in place of the MLP, and other ways for a block to read earlier blocks.
@@ -344,13 +344,13 @@ A transformer reads the noisy sequence and produces predictions.
 
 <MapText name="net.self-off">
 
-Self-conditioning off: each pass starts fresh from the noisy input.
+Self conditioning off: each pass starts fresh from the noisy input.
 
 </MapText>
 
 <MapText name="net.self-mean">
 
-Self-conditioning on the expected embedding: the previous pass’s probabilities p are multiplied by the embedding table E, giving the average embedding ē the model expects. That vector is fed back in.
+Self conditioning on the expected embedding: the previous pass’s probabilities p are multiplied by the embedding table E, giving the average embedding ē the model expects. That vector is fed back in.
 
 
 
@@ -358,14 +358,14 @@ Self-conditioning on the expected embedding: the previous pass’s probabilities
 - In training, 90% of examples first get a no-gradient pass on the same noisy input, and that prediction is fed back. In generation the previous step's prediction is reused, so no extra network calls are needed.
 - A second option re-runs the two passes fresh at every step, at twice the cost.
 - It works with every method that predicts a clean-token posterior. Plug-in and score methods (UDLM, DUO, SEDD) cannot use it, and neither can the adaptive ODE solver.
-- Self-conditioning was introduced in Analog Bits [@chen2022analog]. Proposed explanations include fixed-point refinement [@yooSelfconditionedFlowMap2026a] and making tokens identifiable under heavy noise [@davis2026design]. It can also push models toward repetition [@zhang2026ace].
-- Self-conditioning sits here as a network input, but it also changes the effective information path. [Part 3](/blog/diffusion-lm-design-choices-sc-interpretation/) gives our working interpretation.
+- Self conditioning was introduced in Analog Bits [@chen2022analog]. Proposed explanations include fixed-point refinement [@yooSelfconditionedFlowMap2026a] and making tokens identifiable under heavy noise [@davis2026design]. It can also push models toward repetition [@zhang2026ace].
+- Self conditioning sits here as a network input, but it also changes the effective information path. [Part 3](/blog/diffusion-lm-design-choices-sc-interpretation/) gives our working interpretation.
 
 </MapText>
 
 <MapText name="net.self-hidden">
 
-Self-conditioning on the hidden state: the previous pass’s last hidden vector h is fed back directly, before it is turned into word probabilities.
+Self conditioning on the hidden state: the previous pass’s last hidden vector h is fed back directly, before it is turned into word probabilities.
 
 
 
@@ -434,7 +434,7 @@ A plug-in estimate for uniform noise: the posterior mixed with a uniform floor t
 
 
 
-- Only uniform-noise recipes (UDLM, DUO) use this output. Hybrid views and expected-embedding self-conditioning need a true posterior, so they reject it.
+- Only uniform-noise recipes (UDLM, DUO) use this output. Hybrid views and expected-embedding self conditioning need a true posterior, so they reject it.
 
 </MapText>
 
@@ -717,7 +717,7 @@ A Gaussian solver (Euler, Heun, adaptive ODE or DDPM) moves every vector a littl
 
 
 
-- Euler takes one network call per step, Heun two, and the adaptive-step ODE solver picks its own steps within an error tolerance and a call budget. Integration stops just short of the clean endpoint, then decodes. The adaptive solver does not support self-conditioning.
+- Euler takes one network call per step, Heun two, and the adaptive-step ODE solver picks its own steps within an error tolerance and a call budget. Integration stops just short of the clean endpoint, then decodes. The adaptive solver does not support self conditioning.
 
 </MapText>
 
@@ -759,7 +759,7 @@ DDPM takes stochastic Gaussian reverse steps: every vector sharpens, with a litt
 
 
 
-- DDPM takes stochastic steps from the reverse Gaussian posterior; it is not Euler with noise added. It has its own self-conditioning options and supports score temperature.
+- DDPM takes stochastic steps from the reverse Gaussian posterior; it is not Euler with noise added. It has its own self conditioning options and supports score temperature.
 
 </MapText>
 
@@ -805,7 +805,7 @@ Each one changes several parts at once. Block diffusion changes the input layout
 
 
 
-- Available modifiers: block diffusion (default block size 32, with an optional next-token loss on the clean context and a cache for the clean prefix), the E2D2 encoder-decoder split, BlockGen's mix of block sizes, insertion, self-conditioning, and hybrid views.
+- Available modifiers: block diffusion (default block size 32, with an optional next-token loss on the clean context and a cache for the clean prefix), the E2D2 encoder-decoder split, BlockGen's mix of block sizes, insertion, self conditioning, and hybrid views.
 - Block diffusion wraps an existing recipe and leaves its process, schedule, output and loss unchanged. RePlaid is not supported yet.
 - Insertion treats deletion as the forward corruption and insertion as the reverse step. The number of new tokens in each gap is drawn from a Poisson distribution, and each view initializes new positions its own way: as [M], as uniform noise, or as a noised guess of the clean token. It is an approximate model, not FlexMDM's exact objective.
 - Insertion also works inside block diffusion.
@@ -980,7 +980,7 @@ Gaussian one-hot linear flow and error-based clock; finite calibration bounds an
 
 <MapText name="recipe.langflow">
 
-Embedding Gaussian CE, Gumbel clock, expected-embedding self-conditioning. Normalization, conditioning and architectural details still differ.
+Embedding Gaussian CE, Gumbel clock, expected-embedding self conditioning. Normalization, conditioning and architectural details still differ.
 
 </MapText>
 
@@ -1208,7 +1208,7 @@ Masking and Gaussian noise run side by side. CANDI and CADD differ in how the vi
 
 <MapText name="family.gauss">
 
-Gaussian noise on vectors, solved back to tokens. The variants mostly differ in the schedule, plus self-conditioning, the loss and the sampler.
+Gaussian noise on vectors, solved back to tokens. The variants mostly differ in the schedule, plus self conditioning, the loss and the sampler.
 
 </MapText>
 
@@ -1258,18 +1258,20 @@ Each recipe is a named config in the codebase (`+experiment=&lt;name&gt;`). Pres
 
 ### The samplers, as one loop
 
-{/* PROSE: to be written */}
+Every sampler in the codebase is one loop with a few slots. At each step the model reads the current state and predicts the clean tokens, and the sampler then builds the next state from that prediction. The samplers differ only in how they fill the slots: which positions they update, whether they commit a position to a token and freeze it, and whether they add fresh noise.
+
+The **native** sampler takes each process's own reverse step. **Renoise** discards the state and re-noises the model's predicted tokens to the next noise level. **Ψ** mixes the two [@deschenaux2026psi]: at each step, every position takes the native step with some probability and is re-noised otherwise, so one setting recovers native and the other recovers renoise. The Ψ-samplers were introduced for discrete diffusion, and we extend them to continuous processes by re-noising with each process's own forward kernel. **Entropy-bounded (EB)** samplers commit the positions the model is surest about [@benhamu2025accelerated], and **random anchoring** commits positions at random on a schedule. The block below writes out each one.
 
 <SamplerAlgo client:visible general />
 
 Switch to "Paper recipes" at the top to see how published methods fill in the map. Boxes that change across a family of recipes are highlighted. Many well-known methods differ in only one or two boxes, which is what makes it tempting to swap parts between them.
 
 ## Why modular? (And some Teasers)
-The modular approach of this codebase is motvated by two core reasons: first, a modular set up makes it easier to design experiments that tease out otherwise subtle interactions that different components can have on downstream performance. For pure continuous methods (Gaussian diffusion, the hyperspherical flows from [@deschenaux2026language], the spherical vMF trajectories from [@chemseddine2026spherical], and simplex diffusion from [@deschenaux2026simplex]), we notice that these methods can run samplers that commit tokens during generation, such as a hybrid formulation of the EB sampler from [@benhamu2025accelerated] or random anchoring. This is surprising, given that none of these methods are trained to handle committed tokens. What is more surprising is that how well this works is contingent on whether self-conditioning is used: without self conditioning, committing samplers are erratic and often perform quite poorly. With self conditioning, they land much closer to the best samplers that never commit a token. This seems to support two conclusions: 
+The modular approach of this codebase is motivated by two core reasons: first, a modular set up makes it easier to design experiments that tease out otherwise subtle interactions that different components can have on downstream performance. For pure continuous methods (Gaussian diffusion, the hyperspherical flows from [@deschenaux2026language], the spherical vMF trajectories from [@chemseddine2026spherical], and simplex diffusion from [@deschenaux2026simplex]), we notice that these methods can run samplers that commit tokens during generation, such as a hybrid formulation of the EB sampler from [@benhamu2025accelerated] or random anchoring. This is surprising, given that none of these methods are trained to handle committed tokens. What is more surprising is that how well this works is contingent on whether self conditioning is used: without self conditioning, committing samplers are erratic and often perform quite poorly. With self conditioning, they land much closer to the best samplers that never commit a token. This seems to support two conclusions: 
 1. Self conditioning makes discrete commitment look more in-distribution for continuous methods. 
 2. This is a change in how generation unfolds rather than a guaranteed gain: even with self conditioning, committing tokens rarely beats the best sampler that does not commit. 
 
-This is a fairly naunced finding, and it wouldn't have been discovered without being able to plug and play different components across recipes, especially for inference settings. 
+This is a fairly nuanced finding, and it wouldn't have been discovered without being able to plug and play different components across recipes, especially for inference settings. 
 
 Second, it makes it quite easy to produce new recipes from existing components. Most of the work is re-using the existing components and wiring everything together through a config file, instead of designing each recipe from scratch.
 

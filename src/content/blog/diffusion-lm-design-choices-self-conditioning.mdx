@@ -46,9 +46,9 @@ Series: [Part 1](/blog/diffusion-lm-design-choices/) · [Part 2](/blog/diffusion
 
 ## Introduction
 
-In [Part 1](/blog/diffusion-lm-design-choices/) of the blog series, we introduced a modular codebase that covers a wide range of DLM recipes. In this part, we show how we can use that range to tease out answers for interesting questions, such as self-conditioning. We first start by outlining the question, prior work within this direction, and why we think it is important. We then discuss what results we would ideally like to obtain, and what conclusions they could allow us to make. We dive into the experimental pipeline: the training setup, the choice of tasks, and the sampler tuning protocol. We then provide an overview of the results, which we summarize below: 
-1. Self-conditioning reduces the spread in performance across different sampler groups. 
-2. Self-conditioning makes pure continuous diffusion models amenable to discrete commitment, with performance in some cases close to the default untuned sampler for each recipe. 
+In [Part 1](/blog/diffusion-lm-design-choices/) of the blog series, we introduced a modular codebase that covers a wide range of DLM recipes. In this part, we show how we can use that range to tease out answers for interesting questions, such as self conditioning. We first start by outlining the question, prior work within this direction, and why we think it is important. We then discuss what results we would ideally like to obtain, and what conclusions they could allow us to make. We dive into the experimental pipeline: the training setup, the choice of tasks, and the sampler tuning protocol. We then provide an overview of the results, which we summarize below: 
+1. Self conditioning reduces the spread in performance across different sampler groups. 
+2. Self conditioning makes pure continuous diffusion models amenable to discrete commitment, with performance in some cases close to the default untuned sampler for each recipe. 
 3. Hybrid methods capture some of the benefits of self conditioning: without it, they often beat both pure discrete and pure continuous models, but some variants still gain from self conditioning, and with it the pure models catch up. 
 
 We leave our interpretation of these observations to [Part 3](/blog/diffusion-lm-design-choices-sc-interpretation/).
@@ -57,21 +57,21 @@ Finally, we discuss the limitations of this experimental framework due to scale,
 
 ## The question: What does Self Conditioning Do? 
 
-Self conditioning was originally introduced in Chen et al [@chen2022analog] for a Gaussian diffusion method, where it demonstrated significant performance improvements. It was then adapted into embedding diffusion [@dieleman2022continuous] [@strudel2022self] [@gulrajani2023likelihood], and can be considered a standard part of Gaussian diffusion models [@huELFEmbeddedLanguage2026] [@chen2026langflow] [@yang2026continuousdiffusionscalescompetitively] [@chavan2026lafa] [@yang2026sigma] [@shabalin2025tencdm] [@meshchaninov2026cosmoscompressedsmoothlatent] [@meshchaninov2026train]. It also provides benefits for non-Gaussian methods, such as simplex diffusion, spherical interpolation, uniform diffusion, and masked diffusion [@deschenaux2026simplex] [@chemseddine2026spherical] [@joLoopholingDiscreteDiffusion2026]. Recently, Deschenaux et al [@deschenaux2026loopholingwaylanguagemodeling] has demonstrated it can be used as a stand-alone generative method in its own right. 
+Self conditioning was originally introduced in Chen et al [@chen2022analog] for a Gaussian diffusion method, where it demonstrated significant performance improvements. It was then adapted into embedding diffusion [@dieleman2022continuous] [@strudel2022self] [@gulrajani2023likelihood], and can be considered a standard part of Gaussian diffusion models [@huELFEmbeddedLanguage2026] [@chen2026langflow] [@yang2026continuousdiffusionscalescompetitively] [@chavan2026lafa] [@yang2026sigma] [@shabalin2025tencdm] [@meshchaninov2026cosmoscompressedsmoothlatent] [@meshchaninov2026train]. It also provides benefits for non-Gaussian methods, such as simplex diffusion, spherical interpolation, uniform diffusion, and masked diffusion [@deschenaux2026simplex] [@chemseddine2026spherical] [@joLoopholingDiscreteDiffusion2026]. Recently, Deschenaux et al [@deschenaux2026loopholingwaylanguagemodeling] have demonstrated it can be used as a stand-alone generative method in its own right. 
 
-While self conditioning is undeniably effective for DLM recipes, articulating what self-conditioning does is still an active area of research. In [@pynadath2025candihybriddiscretecontinuousdiffusion], we hypothesized that it served as pseudo-conditioning input to address the long-tailed behavior of Gaussian noise in high dimensions. In [@davisDesignSpaceContinuous2026], they hypothesize that it serves to correct a training / inference mismatch. [@yooSelfconditionedFlowMap2026a] demonstrates that self conditioning in flow models can be related to fixed point solvers. 
+While self conditioning is undeniably effective for DLM recipes, articulating what self conditioning does is still an active area of research. In [@pynadath2025candihybriddiscretecontinuousdiffusion], we hypothesized that it served as pseudo-conditioning input to address the long-tailed behavior of Gaussian noise in high dimensions. In [@davisDesignSpaceContinuous2026], they hypothesize that it serves to correct a training / inference mismatch. [@yooSelfconditionedFlowMap2026a] demonstrates that self conditioning in flow models can be related to fixed point solvers. 
 
 Many of these explanations are restricted to explanations of why self conditioning is effective in continuous diffusion recipes. However, self conditioning is also effective in discrete settings -- DiffusionGemma [@diffusiongemma2026] uses self conditioning within a uniform diffusion model to great effectiveness. [@joLoopholingDiscreteDiffusion2026] reports that loopholing, a very similar technique, also improves discrete diffusion performance. 
 
-Most explanations fall short of explaining why it helps in these cases. If we take the explanation we proposed in [@pynadath2025candihybriddiscretecontinuousdiffusion], then it is unclear why discrete anchoring would be beneficial for discrete diffusion methods. In [@davisDesignSpaceContinuous2026], while they devise a multi-layer diffusion with Gaussian, simplex, and discrete anchoring, they still find that self-conditioning provides performance improvements, implying that there is still some benefit not fully explained. This leaves open a general theory of what self conditioning does, and how it impacts different DLM recipes spanning discrete, continuous, and hybrid methods. 
+Most explanations fall short of explaining why it helps in these cases. If we take the explanation we proposed in [@pynadath2025candihybriddiscretecontinuousdiffusion], then it is unclear why discrete anchoring would be beneficial for discrete diffusion methods. In [@davisDesignSpaceContinuous2026], while they devise a multi-layer diffusion with Gaussian, simplex, and discrete anchoring, they still find that self conditioning provides performance improvements, implying that there is still some benefit not fully explained. This leaves open a general theory of what self conditioning does, and how it impacts different DLM recipes spanning discrete, continuous, and hybrid methods. 
 
 ## Experimental Methodology
 
 Here we provide information on how experiments were run for this blog. First, we discuss what experimental results we would want. Next, we discuss the tasks we choose to study towards this question, and why we feel they are well balanced. We then discuss the experimental protocol in detail, focusing especially on the automated sampler tuning protocol we use to ensure we get close to the best performance for each checkpoint as possible. 
 
-### Experimental Wishlist 
+### Methods Studied 
 
-We break down the general goal of understanding self-conditioning into more digestible interaction studies -- we hold one family of methods fixed and ablate self-conditioning to investigate performance differences. For continuous methods, we include the following corruption approaches: 
+We break down the general goal of understanding self conditioning into more digestible interaction studies -- we hold one family of methods fixed and ablate self conditioning to investigate performance differences. For continuous methods, we include the following corruption approaches: 
 1. Gaussian embedding diffusion, essentially the recipe used in [@dieleman2022continuous]
 2. Spherical interpolants, both the variant proposed in [@deschenaux2026language] and [@chemseddine2026spherical]
 3. Simplex Diffusion Models as used in [@deschenaux2026simplex]
@@ -86,7 +86,7 @@ For all the continuous methods, we use the CDCD adaptive noise schedule [@dielem
 <StudyMap client:visible />
 
 ### Tasks 
-We pick sudoku, text8, and tinystories as the tasks we apply each DLM recipe towards. Even at a small scale, these are not necessarily ideal -- the more informative battery of experiments would be to use pretraining on OpenWebText to understand convergence and generative quality; and tiny GSM as used in [@liu2023tinygsmachieving80gsm8k] [@deschenaux2026language]. However, given the sheer breadth of the design space we want to investigate for this study, it is simply not practical to use these tasks. 
+We pick Sudoku, text8, and TinyStories as the tasks we apply each DLM recipe towards. Even at a small scale, these are not necessarily ideal -- the more informative battery of experiments would be to use pretraining on OpenWebText to understand convergence and generative quality; and TinyGSM as used in [@liu2023tinygsmachieving80gsm8k] [@deschenaux2026language]. However, given the sheer breadth of the design space we want to investigate for this study, it is simply not practical to use these tasks. 
 
 While not ideal, we believe these tasks do span a useful range of behaviors that may be indicative of how these methods would behave on OWT and TinyGSM, which also may be indicative of how they behave at scale. 
 
@@ -96,9 +96,9 @@ While not ideal, we believe these tasks do span a useful range of behaviors that
 
 Sudoku is a classic reasoning task used in a variety of recent papers [@deschenaux2026language] [@ye2024beyond] [@kim2025train] [@agarwal2026posterior] [@tang2026dbtm] [@wang2025hierarchical] [@jolicoeur2025less] [@rozonoyer2026relay]. Additionally, it is the easiest to evaluate as we can directly read accuracy metrics. However, it is further from how actual language is structured for the following reasons: 
 1. Given a prompt, the distribution is collapsed to a single point. Real text allows for multiple correct ways of responding to a prompt. 
-2. The tokens are essentially uniform in terms of frequency. Real language is extremely assymetric. 
+2. The tokens are essentially uniform in terms of frequency. Real language is extremely asymmetric. 
 
-For this reason, we need additional tasks to be able to properly gauge each methods performance under ablations.
+For this reason, we need additional tasks to be able to properly gauge each method's performance under ablations.
 
 **Text8**
 
@@ -108,12 +108,12 @@ However, it is still quite distant from real language, as we work in the charact
 
 **Tiny Stories**
 
-The most realistic task we look at is TinyStories, where we train a model to generate meaningful continuations of some story. This is the closest, as it uses a somewhat realistic vocabulary size (10k BPE) and is actual language generation. However, this also makes it the hardest to evaluate. It would not be appropriate to use generative perplexity and entropy, as these measure KL to distribution encoded by the AR model. Furthermore, we would ideally like to take advantage of the ground truth continuations we have. We can choose SOL from [@sol2026], but this would pose significant difficulties for tuning, as our tuning stage of the pipeline is quite involved. Bleu would reward repeating generic phrases, which could result in overly generic stories. We choose to proceed with Mauve from [@pillutla2021mauvemeasuringgapneural], using an AR model trained on TinyStories as the feature extractor. 
+The most realistic task we look at is TinyStories, where we train a model to generate meaningful continuations of some story. This is the closest, as it uses a somewhat realistic vocabulary size (10k BPE) and is actual language generation. However, this also makes it the hardest to evaluate. It would not be appropriate to use generative perplexity and entropy, as these measure KL to distribution encoded by the AR model. Furthermore, we would ideally like to take advantage of the ground truth continuations we have. We can choose SOL from [@sol2026], but this would pose significant difficulties for tuning, as our tuning stage of the pipeline is quite involved. BLEU would reward repeating generic phrases, which could result in overly generic stories. We choose to proceed with MAUVE from [@pillutla2021mauvemeasuringgapneural], using an AR model trained on TinyStories as the feature extractor. 
 
 ### Training Protocol 
 For training, we use the same core architecture, learning rate, and optimizer for all methods. We list them below. 
 
-- **Architecture.** A diffusion transformer (DiT) with 8 blocks, hidden size 512, 8 attention heads and dropout 0.1. Methods that diffuse in an embedding space (Gaussian, spherical, vMF) use 512-dimensional token embeddings. The depth arm in Misc Results doubles the depth to 16 blocks.
+- **Architecture.** A diffusion transformer (DiT) with 8 blocks, hidden size 512, 8 attention heads and dropout 0.1. Methods that diffuse in an embedding space (Gaussian, spherical, vMF) use 512-dimensional token embeddings.
 - **Optimizer.** AdamW, learning rate 3e-4 with 2,500 linear warmup steps and no decay afterwards; betas (0.9, 0.999), no weight decay, gradient clipping at 1.0.
 - **Length of training.** 20,000 optimizer steps at a global batch of 256 sequences (4 gradient-accumulation steps), bf16 mixed precision, on a single GPU.
 - **EMA.** We keep an exponential moving average of the weights with decay 0.9999 and evaluate the EMA weights.
@@ -121,7 +121,7 @@ For training, we use the same core architecture, learning rate, and optimizer fo
 - **Self conditioning.** On 90% of each training batch, the model first runs a no-gradient forward pass, and the expected embedding under that prediction is fed back as an extra input. At sampling time the previous step's prediction is fed back, so self conditioning adds no network calls.
 - **Seeds.** One training seed per model. The noise this leaves in the results is discussed in the protocol callout below.
 
-The choice of using the same training settings for all methods is not based on principle, but practicality -- the ideal case would be to take each recipe and search for the best architectural choices, learning rate schedule, and optimizer as there is no guarantuee that different generative methods have identical optimal settings. However, we choose not to do this as 1) these experiments are at such a small scale that the settings would not transfer to any practical scale; and 2) even without training sweeps, the number of runs and compute needed is large, for an academic scale. 
+The choice of using the same training settings for all methods is not based on principle, but practicality -- the ideal case would be to take each recipe and search for the best architectural choices, learning rate schedule, and optimizer as there is no guarantee that different generative methods have identical optimal settings. However, we choose not to do this as 1) these experiments are at such a small scale that the settings would not transfer to any practical scale; and 2) even without training sweeps, the number of runs and compute needed is large, for an academic scale. 
 
 {/* <div className="callout">
 <span className="callout-label">TinyStories tuning metric: MAUVE</span>
@@ -144,11 +144,11 @@ The choice of using the same training settings for all methods is not based on p
 - **Models.** 8-layer diffusion transformer, width 512, 8 heads; 16 layers for the depth arm. 20,000 steps, batch 256, learning rate 3e-4 after 2,500 warmup steps, no decay. One training seed per model. Embedding methods (Gaussian, spherical, vMF) use 512 dimensions.
 - **SC.** The model receives the expected embedding under its previous prediction. Training: an extra no-grad forward pass on 90% of each batch. Sampling: the previous step's prediction, so no extra network calls.
 - **Tasks and metrics.** Sudoku, hard split (exact-solve accuracy, higher is better; 976 test puzzles). text8 (mean distinct valid words of 5+ letters per sample, higher is better; held-out real text scores 16.53; 2,048 test samples). TinyStories, 10k BPE (validation MAUVE on TinyStories-33M features, higher is better; test MAUVE plus SOL and a judge, see below; 2,048 test prompts).
-- **Samplers.** Eight for every model: native, native greedy, renoise, renoise greedy, EB greedy, EB churn, and Ψ on two clocks (Ψ·c: the corruption level; Ψ·t: the controller time). Ψ·t was tuned in a separate run (psi2-20261111) on the same checkpoints, prompts and seeds. Two more for the 24 pure continuous models: anchor native and anchor renoise (separate run, same checkpoints, prompts and seeds).
+- **Samplers.** Eight for every model: native, native greedy, renoise, renoise greedy, EB greedy, EB churn, and Ψ on two clocks (Ψ·c: the corruption level; Ψ·t: the controller time). Ψ·t was tuned in a separate run on the same checkpoints, prompts and seeds. Two more for the 24 pure continuous models: anchor native and anchor renoise (separate run, same checkpoints, prompts and seeds).
 - **Tuning and selection.** Optuna on validation only (GP for native, renoise and EB; multivariate TPE for Ψ and anchoring; both values for the two-option samplers), 2 to 24 trials per sampler. Stage 1: 64 prompts, two seeds. Stage 2: each sampler's top 3 on 256 fresh prompts, fresh seed, bootstrap interval. The stage-2 winner is tested once at NFE 128 with two seeds. NFE counts every network call.
 - **NFE 512 check.** Each sampler's winning settings at 512 calls on a fixed 128 test prompts, one seed. Reported only; no selection reads it.
 - **Noise for one seed.** The two test seeds differ by up to 1.7 points (Sudoku) and 0.13 words (text8); stage-2 intervals are ±2 to ±6 points (Sudoku), ±0.3 to ±0.5 words (text8). Working thresholds: about 3 points (Sudoku), 0.5 words (text8). TinyStories: about 0.018 MAUVE (twice the median k-means SD).
-- **Exact settings.** candi `configs/sweep/{rerun_protocol,rerun_common}.yaml`, `configs/inference/inference_policies/{hybrid_renoising,eb_churn,psi,anchoring}.yaml`, `experiments/rerun/evaluation/*.json`.
+- **Exact settings.** sddc `configs/sweep/{rerun_protocol,rerun_common}.yaml`, `configs/inference/inference_policies/{hybrid_renoising,eb_churn,psi,anchoring}.yaml`, `experiments/rerun/evaluation/*.json`.
 
 </div>
 
@@ -168,6 +168,8 @@ We assess recipes by the final samples produced, making our results heavily cont
 6. **Stage 2 (confirmation).** Each sampler's top 3 settings are re-scored on 256 fresh validation prompts with a fresh seed, with a bootstrap interval. The best stage-2 result across all samplers is the model's tuned sampler. Re-scoring on fresh prompts guards against picking a setting that only got lucky on the stage-1 prompts.
 7. **Test.** Only the winner is scored on the test split, once, at 128 NFE with two seeds. Untuned results use each model's native sampler at temperature 1 with the same budget.
 
+Three terms from this list are used throughout the results. A sampler **commits** a position when it sets that position to one token and freezes it for the rest of sampling. **Entropy-bounded (EB)** samplers commit the positions the model is surest about [@benhamu2025accelerated]: at each step they take positions from most to least certain, for as long as the summed entropy of the chosen positions, not counting the largest one, stays under a tuned bound. **Random anchoring** ignores the model's confidence and commits positions at random on a schedule, which mimics the order a masked process imposes. Finally, **Ψ** mixes the native and renoise samplers [@deschenaux2026psi]: at each step, every position takes the native step with some probability and is re-noised from the model's prediction otherwise.
+
 The metric that drives selection is the task metric: exact-solve accuracy for Sudoku, distinct valid words of five or more letters for text8, and MAUVE for TinyStories. The full sampler-tuning protocol is summarised in [Figure T](#sampler-pipeline).
 
 
@@ -178,7 +180,7 @@ The metric that drives selection is the task metric: exact-solve accuracy for Su
 - **Non-committing (ring).** Native and renoise never freeze a position: every position moves at every step, and tokens are read off only at the final step.
 - **Entropy-bounded (EB greedy, EB churn).** At each step, the model's predicted token distribution at every uncommitted position is scored by its entropy. Positions are taken from most to least certain while the summed entropy, excluding the largest, stays under a bound (tuned, 0.02 to 0.5 nats). At least one position is committed each step. Each committed position gets its most likely token. EB churn also un-commits a few random committed positions each step and re-noises them, with a probability that shrinks to zero partway through sampling.
 - **Random anchoring (anchor native, anchor renoise).** Which positions commit ignores the model entirely. After step k of S, a share (k/S)^p of positions is committed: the new ones are picked uniformly at random from those not yet committed, and the last step commits the rest. p is tuned (0.33 to 3; p = 1 is linear, larger commits later). Each new position is set to a token drawn from (or, if tuned so, the argmax of) the model's prediction at that step, then frozen. Uncommitted positions take the native step (anchor native) or are re-noised from the predicted clean tokens (anchor renoise). This mimics the schedule a masked process imposes, without a model deciding the order.
-- Code: candi `configs/inference/inference_policies/{eb_churn,anchoring}.yaml`; `core/samplers/policies.py` (`EntropyPositions`, `ScheduledRandomPositions`), `core/samplers/churn.py`.
+- Code: sddc `configs/inference/inference_policies/{eb_churn,anchoring}.yaml`; `core/samplers/policies.py` (`EntropyPositions`, `ScheduledRandomPositions`), `core/samplers/churn.py`.
 
 </div>
 
@@ -222,7 +224,7 @@ We also investigate whether pure continuous methods are able to leverage discret
 
 In this section, we show results pertaining to discrete corruption methods and self conditioning. We observe that the effect depends on the method: for masked diffusion, self conditioning does not reliably improve the best tuned result, while for uniform diffusion it improves it on every task ([figure](#difference-in-behavior-of-masked-vs-uniform)). Next, we check whether self conditioning changes which sampler works best. Generally, performance becomes more even across sampler families, with the exception of the renoising samplers for masked diffusion on text8 ([figure](#on-renoising-sampler-for-text8)). Finally, the entropy profile during sampling for masked and uniform diffusion is compared in the [trajectory figure](#self-conditioning-changes-trajectories-in-roughly-the-same-way) in the general takeaways.
 
-#### Difference in Behavior of Masked v.s Uniform
+#### Difference in Behavior of Masked vs. Uniform
 
 With each model's best tuned sampler, self conditioning lowers masked diffusion's Sudoku accuracy by 3.7 points, raises its text8 score by 1.3 words, and leaves TinyStories unchanged. Uniform diffusion improves on all three tasks, by 16.8 points on Sudoku, 0.28 words on text8 (within the one-seed noise level) and 0.045 MAUVE on TinyStories. Switching the figure to the native sampler shows a different side of masked diffusion: with self conditioning, its native sampler gains 45 points on Sudoku. Self conditioning helps the samplers that were weak without it, but not the entropy-bounded samplers that were already near the top. 
 
@@ -230,7 +232,7 @@ With each model's best tuned sampler, self conditioning lowers masked diffusion'
 
 #### On Renoising Sampler for Text8
 
-The figure below breaks the masked text8 result down by sampler. Self conditioning improves most samplers, including native (+2.1 words), the EB samplers and both Ψ variants. The exception is renoising: renoise drops from 13.2 to 1.0 words, and renoise greedy from 4.0 to 0.2. One possible reason: the renoising samplers re-corrupt the predicted clean tokens at each step, so the self-conditioning input may no longer match the state the model is denoising. Uniform diffusion's renoising samplers also lose ground on text8 with self conditioning (renoise 16.4 to 11.5 words), but far less, and on Sudoku both masked and uniform renoising improve with self conditioning. 
+The figure below breaks the masked text8 result down by sampler. Self conditioning improves most samplers, including native (+2.1 words), the EB samplers and both Ψ variants. The exception is renoising: renoise drops from 13.2 to 1.0 words, and renoise greedy from 4.0 to 0.2. One possible reason: the renoising samplers re-corrupt the predicted clean tokens at each step, so the self conditioning input may no longer match the state the model is denoising. Uniform diffusion's renoising samplers also lose ground on text8 with self conditioning (renoise 16.4 to 11.5 words), but far less, and on Sudoku both masked and uniform renoising improve with self conditioning. 
 
 <DiscreteSamplers client:visible />
 
@@ -250,7 +252,7 @@ The answer depends on the discrete view and the task. Uniform hybrids gain 7 to 
 
 <HybridGain client:visible />
 
-#### Hybrid Performance v.s Pure Discrete v.s Pure Continuous
+#### Hybrid Performance vs. Pure Discrete vs. Pure Continuous
 
 Each row of the figure below places a hybrid next to the two pure models it is built from. Without self conditioning, half of the hybrids on each task beat both of their parts by more than the noise level. With self conditioning, the pure models improve more than the hybrids do: on Sudoku every hybrid ties its better part, and on text8 none is better while four are worse. 
 
@@ -293,7 +295,7 @@ This study trades depth for breadth, and its conclusions carry the limits of tha
 2. **One training seed.** Each recipe is trained once. We report the noise across sampling seeds and the bootstrap intervals of the tuning, but not the variation from retraining.
 3. **Shared training settings.** All recipes use the same architecture, optimizer and learning rate. Some recipes may be disadvantaged by settings that suit others.
 4. **Task metrics.** Sudoku accuracy, text8 valid words and TinyStories MAUVE each capture one aspect of quality.
-6. **Schedules.** All continuous and hybrid models use the CDCD adaptive schedule. The fixed linear schedule is tested only for the hybrids. For discrete, we use uniform time sampling. 
+5. **Schedules.** All continuous and hybrid models use the CDCD adaptive schedule. The fixed linear schedule is tested only for the hybrids. For discrete, we use uniform time sampling. 
 
 ### Towards a Method Factory 
 
