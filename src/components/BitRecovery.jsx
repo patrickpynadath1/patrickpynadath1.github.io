@@ -196,8 +196,8 @@ function BitRecoveryInner({ sc = false }) {
         </>}
       </>}
       note={sc
-        ? "A sketch of the idea, with hand-set timings. Without self conditioning (left), the two methods look very different. With it (right), each keeps its own bias, but both settle the easy bits first, so they look more alike."
-        : "A sketch of the idea, with hand-set timings. Discrete settles one whole word at a time: a word is either blank or complete. Continuous settles a little of every word at each step. Both settle all the bits over the same number of steps."}
+        ? "A sketch of the idea, with hand-set timings. The boxes are drawn as separate bits for simplicity; in practice the bits of different words overlap, since settling one word also tells the model something about the others. Without self conditioning (left), the two methods look very different. With it (right), each keeps its own bias, but both settle the easy bits first, so they look more alike."
+        : "A sketch of the idea, with hand-set timings. The boxes are drawn as separate bits for simplicity; in practice the bits of different words overlap, since settling one word also tells the model something about the others. Discrete settles one whole word at a time: a word is either blank or complete. Continuous settles a little of every word at each step. Both settle all the bits over the same number of steps."}
     >
       <Key />
       {sc && (

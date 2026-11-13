@@ -40,7 +40,7 @@ To answer questions like this, we introduce **SDDC**: **S**ome **D**LM **D**esig
 2. ***Denoising Task***: How do we learn to traverse this information path? 
 3. ***Inference Settings***: How do we actually use both the learned model and information path to generate samples? 
 
-Outside of these questions, we define recipe modifiers as components that require changes across all three facets. In this blog, we briefly describe the core design philosophy of this design approach, and why we believe this is the right approach for studying DLMs. 
+Outside of these questions, we define recipe modifiers as components that require changes across all three facets. In this blog, we briefly describe the core design philosophy of this design approach, and why we believe this is a useful approach for studying DLMs. 
 
 ## Inspiration: Hackable Diffusion
 
@@ -1271,7 +1271,7 @@ The modular approach of this codebase is motivated by two core reasons: first, a
 1. Self conditioning makes discrete commitment look more in-distribution for continuous methods. 
 2. This is a change in how generation unfolds rather than a guaranteed gain: even with self conditioning, committing tokens rarely beats the best sampler that does not commit. 
 
-This is a fairly nuanced finding, and it wouldn't have been discovered without being able to plug and play different components across recipes, especially for inference settings. 
+This is a fairly nuanced finding, and it would have been hard to find without being able to plug and play different components across recipes, especially for inference settings. 
 
 Second, it makes it quite easy to produce new recipes from existing components. Most of the work is re-using the existing components and wiring everything together through a config file, instead of designing each recipe from scratch.
 
