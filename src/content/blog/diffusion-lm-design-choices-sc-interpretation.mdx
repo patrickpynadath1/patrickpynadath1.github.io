@@ -12,7 +12,6 @@ comments: true
 
 import { ScOrdering } from "../../components/ScOrdering.jsx"
 import { ScAlike } from "../../components/ScAlike.jsx"
-import ExpandableSection from "../../components/ExpandableSection.jsx"
 import { BitRecovery } from "../../components/BitRecovery.jsx"
 import { ScInteraction } from "../../components/ScInteraction.jsx"
 import { TwoObservers, ThreeSources, UpdateKeeps, TwoWires, FixedPointIterations, WhereProgressLives } from "../../components/ScSketches.jsx"
@@ -59,33 +58,19 @@ The rest of this part is organized as follows. We first make "what the model has
 
 Any sample from a discrete distribution can be described by a number of bits: the answers to a series of yes-or-no questions that, taken together, pin the sample down [@shannon1948; @cover2006elements]. Generating a sample means settling all of these bits. Each token accounts for some of them, and how many depends on how predictable that token is from the rest of the sequence.
 
-The classic way to count bits assumes an observer with unlimited compute. Under that assumption, a deterministic computation can never add information, since its output is fully explained by its input. This is a poor fit for our setting. A denoiser is a fixed function of its input, yet its prediction is clearly more useful to the next step than the noisy input alone. To describe this, we follow [@finzi2026epiplexity] and treat information as relative to a compute budget. For an observer with limited compute, whatever it cannot work out within its budget counts as unresolved, even if the answer is fully determined by what it sees.
+The classic way to count bits assumes an observer with unlimited compute. Under that assumption, a deterministic computation can never add information, since its output is fully explained by its input. This is a poor fit for our setting. A denoiser is a fixed function of its input, yet its prediction is clearly more useful to the next step than the noisy input alone. The idea we need is that usable information depends on the observer's compute [@xu2020theory; @finzi2026epiplexity]. A model with one forward pass cannot extract everything its input implies, so some bits stay out of its reach even when they are already decided.
 
-In our case the observer is the model, and its budget is a single forward pass. This gives the quantity we track throughout this post. Fix the final sample $x_0$ that a sampling trajectory ends at. At each step, we ask how many bits of $x_0$ the model cannot determine from its current input in one pass. In the notation of [@finzi2026epiplexity] this is a time-bounded entropy, $H_T(x_0 \mid z_t, \theta)$, where $z_t$ is the current state, $\theta$ are the weights, and $T$ is one forward pass of $f_\theta$. For a single trajectory, we measure it per position as the model's surprise at its own final output:
+In our case the observer is the model, and its budget is a single forward pass. This gives the quantity we track throughout this post. Fix the final sample $x_0$ that a sampling trajectory ends at. At each step, we ask how surprised the model is by $x_0$, given its current state $z_t$. We measure this per position:
 
 $$
 h_{t,i} = -\log p_{\theta,i}(x_{0,i} \mid z_t), \qquad h_t = \sum_i h_{t,i}.
 $$
 
-The sum over positions is exact, because a single forward pass predicts each position separately given the state. Since $x_0$ is the sample the trajectory actually produces, $h_t$ is defined during generation and needs no reference data. In training, where $x_0$ is a real sequence, the same quantity is the familiar per-position denoising cross-entropy used by masked and continuous models alike [@sahooSimpleEffectiveMasked2024; @shiSimplifiedGeneralizedMasked2024; @dieleman2022continuous; @gulrajani2023likelihood]. We note that a trained model only gives an estimate of $H_T$: the formal definition uses the best possible model within the budget, not the one we happened to train.
+The sum over positions is exact, because a single forward pass predicts each position separately given the state. Since $x_0$ is the sample the trajectory actually produces, $h_t$ is defined during generation and needs no reference data. In training, where $x_0$ is a real sequence, the same quantity is the familiar per-position denoising cross-entropy used by masked and continuous models alike [@sahooSimpleEffectiveMasked2024; @shiSimplifiedGeneralizedMasked2024; @dieleman2022continuous; @gulrajani2023likelihood]. [@finzi2026epiplexity] formalize a related quantity, time-bounded entropy, which is defined for the best model within a compute budget. We borrow only the intuition. $h_t$ is the surprise of the model we actually trained, and we make no claim that it matches their quantity.
 
 It is useful to separate the unresolved bits into two kinds. **Open bits** have not been decided at all: the randomness that will pick them has not been drawn yet. **Hidden bits** are already fixed by the state and the weights, but working them out takes more than one forward pass. An observer with unlimited compute would only see the open bits. A one-pass model sees both, mixed together. Most of this post is about the hidden bits.
 
 <TwoObservers client:visible />
-
-<ExpandableSection title="Time-bounded entropy, as defined in the paper" client:load>
-
-- Source: [@finzi2026epiplexity].
-- Models allowed: programs $P$ that can both sample and score probabilities within $T$ steps. Call this set $\mathcal{P}_T$.
-- Best model: $P^\star = \arg\min_{P \in \mathcal{P}_T} \; |P| + \mathbb{E}\big[-\log P(X)\big]$, where $|P|$ is the length of the program in bits.
-- Epiplexity (structure): $S_T(X) = |P^\star|$.
-- Time-bounded entropy (what still looks random): $H_T(X) = \mathbb{E}\big[-\log P^\star(X)\big]$.
-- Conditional version: the same, with a model that takes an input $Y$ first, written $H_T(X \mid Y)$. The input can also be a fixed string, such as a set of weights.
-- Stated without proof, more compute never hurts the total: $S_{T'}(X) + H_{T'}(X) \le S_T(X) + H_T(X)$ whenever $T' \ge T$.
-- Stated without proof, computation can raise time-bounded information for a bounded observer (their Paradox 1).
-- We use only $H_T$. We do not measure $S_T$. Applying the idea to generation, one sampling step at a time, is our extension and not a result of the paper.
-
-</ExpandableSection>
 
 ## The information path
 
