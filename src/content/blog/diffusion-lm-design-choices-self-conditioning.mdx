@@ -32,7 +32,6 @@ import ExpandableSection from "../../components/ExpandableSection.jsx"
 <strong style={{ color: "#e5484d" }}>In progress (remove before release)</strong>
 
 - **TinyStories untuned baseline** is not yet scored with MAUVE. Until it is, the untuned marks are missing for TinyStories in the anchoring figure, and TinyStories is hidden in the tuning-ranking and top-3 sampler figures.
-- **TinyStories top-3 sampler family tests** (ts-families-20261113) are still running; the top-3 figure needs them for TinyStories.
 - **Rank-linear hybrids on TinyStories** were tuned on the old metric (ref_w1) and need a MAUVE re-tune. The linear-schedule statements in the hybrid section rest on Sudoku and text8 only.
 
 </div>
@@ -58,7 +57,7 @@ Finally, we discuss the limitations of this experimental framework due to scale,
 
 ## The question: What does Self Conditioning Do? 
 
-Self conditioning was originally introduced in Chen et al [@chen2022analog] for a Gaussian diffusion method, where it demonstrated significant performance improvements. It was then adapted into embedding diffusion [@dieleman2022continuous] [@strudel2022self] [@gulrajani2023likelihood], and can be considered a standard part of Gaussian diffusion models [@huELFEmbeddedLanguage2026] [@chen2026langflow] [@yang2026continuousdiffusionscalescompetitively] [@chavan2026lafa] [@yang2026sigma] [cite meschinov works here as well]. It also provides benefits for non-Gaussian methods, such as simplex diffusion, spherical interpolation, uniform diffusion, and masked diffusion [@deschenaux2026simplex] [@chemseddine2026spherical] [@joLoopholingDiscreteDiffusion2026]. Recently, Deschenaux et al [@deschenaux2026loopholingwaylanguagemodeling] has demonstrated it can be used as a stand-alone generative method in its own right. 
+Self conditioning was originally introduced in Chen et al [@chen2022analog] for a Gaussian diffusion method, where it demonstrated significant performance improvements. It was then adapted into embedding diffusion [@dieleman2022continuous] [@strudel2022self] [@gulrajani2023likelihood], and can be considered a standard part of Gaussian diffusion models [@huELFEmbeddedLanguage2026] [@chen2026langflow] [@yang2026continuousdiffusionscalescompetitively] [@chavan2026lafa] [@yang2026sigma] [@shabalin2025tencdm] [@meshchaninov2026cosmoscompressedsmoothlatent] [@meshchaninov2026train]. It also provides benefits for non-Gaussian methods, such as simplex diffusion, spherical interpolation, uniform diffusion, and masked diffusion [@deschenaux2026simplex] [@chemseddine2026spherical] [@joLoopholingDiscreteDiffusion2026]. Recently, Deschenaux et al [@deschenaux2026loopholingwaylanguagemodeling] has demonstrated it can be used as a stand-alone generative method in its own right. 
 
 While self conditioning is undeniably effective for DLM recipes, articulating what self-conditioning does is still an active area of research. In [@pynadath2025candihybriddiscretecontinuousdiffusion], we hypothesized that it served as pseudo-conditioning input to address the long-tailed behavior of Gaussian noise in high dimensions. In [@davisDesignSpaceContinuous2026], they hypothesize that it serves to correct a training / inference mismatch. [@yooSelfconditionedFlowMap2026a] demonstrates that self conditioning in flow models can be related to fixed point solvers. 
 
@@ -77,7 +76,7 @@ We break down the general goal of understanding self-conditioning into more dige
 2. Spherical interpolants, both the variant proposed in [@deschenaux2026language] and [@chemseddine2026spherical]
 3. Simplex Diffusion Models as used in [@deschenaux2026simplex]
 
-For discrete diffusion, we focus on masked diffusion [@sahooSimpleEffectiveMasked2024] and uniform diffusion. For uniform, we choose to work with a denoiser parameterization, as this allows us to fix the model parameterization across all methods [citation of revisiting UDLM from Samson Gouvreche here]. 
+For discrete diffusion, we focus on masked diffusion [@sahooSimpleEffectiveMasked2024] and uniform diffusion. For uniform, we choose to work with a denoiser parameterization, as this allows us to fix the model parameterization across all methods [@gourevitch2026uniform]. 
 
 For hybrid methods, we investigate the product space produced by the discrete methods and continuous methods. While our codebase does allow for combining different continuous views, we focus on discrete and continuous combinations as part of our goal is to understand how self conditioning affects performance if discrete anchoring is already provided to a continuous method. 
 
@@ -87,7 +86,7 @@ For all the continuous methods, we use the CDCD adaptive noise schedule [@dielem
 <StudyMap client:visible />
 
 ### Tasks 
-We pick sudoku, text8, and tinystories as the tasks we apply each DLM recipe towards. Even at a small scale, these are not necessarily ideal -- the more informative battery of experiments would be to use pretraining on OpenWebText to understand convergence and generative quality; and tiny GSM as used in [tiny gsm citation here] [@deschenaux2026language]. However, given the sheer breadth of the design space we want to investigate for this study, it is simply not practical to use these tasks. 
+We pick sudoku, text8, and tinystories as the tasks we apply each DLM recipe towards. Even at a small scale, these are not necessarily ideal -- the more informative battery of experiments would be to use pretraining on OpenWebText to understand convergence and generative quality; and tiny GSM as used in [@liu2023tinygsmachieving80gsm8k] [@deschenaux2026language]. However, given the sheer breadth of the design space we want to investigate for this study, it is simply not practical to use these tasks. 
 
 While not ideal, we believe these tasks do span a useful range of behaviors that may be indicative of how these methods would behave on OWT and TinyGSM, which also may be indicative of how they behave at scale. 
 
@@ -95,7 +94,7 @@ While not ideal, we believe these tasks do span a useful range of behaviors that
 
 **Sudoku**
 
-Sudoku is a classic reasoning task used in a variety of recent papers [@deschenaux2026language] [other citations here, some flow reasoning papers maybe, FMLM+?]. Additionally, it is the easiest to evaluate as we can directly read accuracy metrics. However, it is further from how actual language is structured for the following reasons: 
+Sudoku is a classic reasoning task used in a variety of recent papers [@deschenaux2026language] [@ye2024beyond] [@kim2025train] [@agarwal2026posterior] [@tang2026dbtm] [@wang2025hierarchical] [@jolicoeur2025less] [@rozonoyer2026relay]. Additionally, it is the easiest to evaluate as we can directly read accuracy metrics. However, it is further from how actual language is structured for the following reasons: 
 1. Given a prompt, the distribution is collapsed to a single point. Real text allows for multiple correct ways of responding to a prompt. 
 2. The tokens are essentially uniform in terms of frequency. Real language is extremely assymetric. 
 
