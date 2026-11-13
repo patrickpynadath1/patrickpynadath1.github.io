@@ -16,17 +16,14 @@ const FAMS = [
 ];
 // entropy in nats = normalised entropy x log V; std and quantile gaps scale the same way
 export const LOGV = { sudoku: Math.log(12), text8: Math.log(35), tinystories: Math.log(10000) };
-const CV_FLOOR = 0.02; // nats: below this mean entropy, std / mean is dominated by rounding, so it is not drawn
 
 const METRICS = [
   { id: "std", label: "Std across positions", unit: "nats", desc: "standard deviation of entropy across a sample's positions" },
   { id: "gap", label: "75th − 25th percentile", unit: "nats", desc: "gap between the 75th and 25th percentile of entropy across a sample's positions" },
-  { id: "cv", label: "Std / mean", unit: "", desc: "standard deviation divided by mean entropy: unevenness relative to how much entropy is left" },
 ];
 
 function values(c, metric, lv) {
   const a = c.all;
-  if (metric === "cv") return a.std.map((s, k) => (s == null || a.mean[k] == null || a.mean[k] * lv < CV_FLOOR ? null : s / a.mean[k]));
   return a[metric].map((v) => (v == null ? null : v * lv));
 }
 const num = (v) => (v == null ? "–" : v.toFixed(2));
@@ -89,7 +86,7 @@ function OrderingInner() {
   const npos = Math.round(cs[0]?.positions ?? 0);
   const lv = LOGV[task], m = METRICS.find((x) => x.id === metric);
   const top = Math.max(...cs.flatMap((c) => values(c, metric, lv).filter((v) => v != null)));
-  const yMax = metric === "cv" ? Math.min(Math.ceil(top), 4) : Math.ceil(top * 2) / 2;
+  const yMax = Math.ceil(top * 2) / 2;
   return (
     <Frame
       kicker="Figure S · recovery across positions"

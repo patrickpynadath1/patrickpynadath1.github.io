@@ -185,7 +185,7 @@ Several other recent results fit this picture. Loopholing adds a deterministic l
 
 ## A counterbalance for discrete and continuous
 
-Putting these pieces together, the order in which the model itself resolves bits is neither uniform across positions nor strictly one position at a time. Some positions are easy early and others need more context. Self conditioning lets this order survive between steps. As a result, it pulls each family away from its own extreme.
+Putting these pieces together, the order in which the model itself resolves bits is neither uniform across positions nor strictly one position at a time. Some bits within a position are easy; others are hard. Some positions have a lot of easy bits, others a lot of hard bits. Self conditioning lets this order survive between steps. As a result, it pulls each family away from its own extreme.
 
 For discrete methods, masked positions get a place to hold partial beliefs. A position no longer has to be either unknown or committed, and all-or-nothing recovery becomes gradual. For continuous methods, confident positions stay settled between steps instead of being blurred along with everything else. Uniform progress becomes uneven, which is what anchoring provides in hybrid methods [@pynadath2025candihybriddiscretecontinuousdiffusion; @zheng2025continuouslyaugmenteddiscretediffusion]. In both cases the result moves toward the middle, and the two families begin to look alike.
 

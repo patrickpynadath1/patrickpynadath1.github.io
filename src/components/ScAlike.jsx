@@ -21,7 +21,6 @@ const FAMS = [
 const LOGV = { text8: Math.log(35), tinystories: Math.log(10000) }; // entropy in nats = normalised entropy x log V
 const METRICS = [
   { id: "gap", label: "75th − 25th percentile", desc: "the gap between the 75th and 25th percentile of entropy across a sample's positions" },
-  { id: "mean", label: "Mean entropy", desc: "the mean entropy across a sample's positions" },
   { id: "std", label: "Std across positions", desc: "the standard deviation of entropy across a sample's positions" },
 ];
 
