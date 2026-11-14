@@ -105,7 +105,7 @@ The figure below is a map of these parts. The top half shows how the parts conne
 
 <MapText name="about.rep">
 
-Within our framework, representation means the space the noise lives in. In the codebase, we focus on a fairly narrow selection of representations: tokens, one-hot vectors, and embeddings. We choose these as they can be thought of as "factorized" representations: within the representation being noised, there is a one-to-one correspondence between the original tokens in the sequence and the noised elements in the sequence. This is in contrast to contextual representations, where the representation are a function of the entire sequence.
+Within our framework, representation means the space the noise lives in. In the codebase, we focus on a fairly narrow selection of representations: tokens, one-hot vectors, and embeddings. We choose these as they can be thought of as "factorized" representations: within the representation being noised, there is a one-to-one correspondence between the original tokens in the sequence and the noised elements in the sequence. This is in contrast to contextual representations, where the representations are a function of the entire sequence.
 
 
 
@@ -131,7 +131,7 @@ Here, the corruption is defined to occur on tokens directly, rather than some co
 
 <MapText name="rep.onehot">
 
-Each token is mapped to a vector of dimension $|V|$ where every coordinate is zero, except for the coordinate corresponding to the original token index. Such representations are convenient, as they are learning free and still provide a meaningful map from discrete to the continuous domain. However, these representations are generally expensive to work with, especially with modern LLM vocabularies.  
+Each token is mapped to a vector of dimension $|V|$ where every coordinate is zero, except for the coordinate corresponding to the original token index. Such representations are convenient, as they are learning free and still provide a meaningful map from the discrete to the continuous domain. However, these representations are generally expensive to work with, especially with modern LLM vocabularies.  
 
 
 
@@ -613,7 +613,7 @@ For Gaussian noise it is a weighted MSE between the expected embedding ē and th
 
 <MapText name="loss.likelihood-hybrid">
 
-For masked + Gaussian it is both at once: cross-entropy on the masked positions, weighted by how fast the keep rate falls, plus the Gaussian weighted MSE on the embeddings and the prior KL (the REPLAiD hybrid).
+For masked + Gaussian it is both at once: cross-entropy on the masked positions, weighted by how fast the keep rate falls, plus the Gaussian weighted MSE on the embeddings and the prior KL (the RePlaid hybrid).
 
 </MapText>
 
@@ -627,7 +627,7 @@ For score-ratio outputs it is score entropy (SEDD).
 
 <MapText name="about.tsamp">
 
-Which times t each training batch uses. It is worth explaining why the training time sampler is distinct from the noise schedule, as these are often grouped together. We treat these separately as they serve distinct purposes: the noise schedule defines the physical noise level at each time. In other words, the noise schedule defines what a time value $t$ means towards the actual denoising task difficulty. The training time sampler decides how to allocate budget across different denoising tasks -- for example, we may want to investigate what happens if we allocate more training towards the middle of the noise schedule. If we link the noising process and training time sampler, then this would require changing what noise level a value of $t$ correspends to. Decoupling the two allows us to keep the same interpretation of $t$ while altering the allocation of training budget. A principal goal of this codebase is to maximize the flexibility for DLM recipes. As decoupling training time sampler from the noise schedule increases the number of design choices, we opt towards separating the two. 
+Which times t each training batch uses. It is worth explaining why the training time sampler is distinct from the noise schedule, as these are often grouped together. We treat these separately as they serve distinct purposes: the noise schedule defines the physical noise level at each time. In other words, the noise schedule defines what a time value $t$ means towards the actual denoising task difficulty. The training time sampler decides how to allocate budget across different denoising tasks -- for example, we may want to investigate what happens if we allocate more training towards the middle of the noise schedule. If we link the noising process and training time sampler, then this would require changing what noise level a value of $t$ corresponds to. Decoupling the two allows us to keep the same interpretation of $t$ while altering the allocation of training budget. A principal goal of this codebase is to maximize the flexibility for DLM recipes. As decoupling the training time sampler from the noise schedule increases the number of design choices, we opt towards separating the two. 
 
 - Options: stratified uniform times (the default, spread evenly across GPUs and gradient-accumulation steps), D3PM's discrete steps, RePlaid's split between reconstruction and diffusion examples, and a learned importance density for the RePlaid hybrid.
 - Changing which times are trained does not change the inference grid, and it does not reweight the loss unless the recipe does so explicitly.
