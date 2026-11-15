@@ -358,7 +358,7 @@ Self conditioning on the expected embedding: the previous pass’s probabilities
 - A second option re-runs the two passes fresh at every step, at twice the cost.
 - It works with every method that predicts a clean-token posterior. Plug-in and score methods (UDLM, DUO, SEDD) cannot use it, and neither can the adaptive ODE solver.
 - Self conditioning was introduced in Analog Bits [@chen2022analog]. Proposed explanations include fixed-point refinement [@yooSelfconditionedFlowMap2026a] and making tokens identifiable under heavy noise [@davis2026design]. It can also push models toward repetition [@zhang2026ace].
-- Self conditioning sits here as a network input, but it also changes the effective information path. [Part 3](/blog/diffusion-lm-design-choices-sc-interpretation/) gives our working interpretation.
+- Self conditioning sits here as a network input, but it also changes the effective information path. [Part 3](/blog/diffusion-lm-design-choices-sc-interpretation/) reads it as a second, soft message passed between steps.
 
 </MapText>
 
@@ -1300,7 +1300,7 @@ SDDC departs from Hackable Diffusion in three places, each driven by its focus o
 
 Part 2, [Self Conditioning Across Recipes](/blog/diffusion-lm-design-choices-self-conditioning/), uses the breadth of the framework on one question. It swaps one part at a time to show how self conditioning interacts with the corruption process, the sampler and the noise schedule.
 
-Part 3, [An Interpretation of Self Conditioning](/blog/diffusion-lm-design-choices-sc-interpretation/), gives our working interpretation of those results.
+Part 3, [Interpreting Corruption Families and Self Conditioning](/blog/diffusion-lm-design-choices-sc-interpretation/), interprets those results through coding theory. It sorts corruption families by how hard their commitments are and by how much the noisy state tells the model about each position's reliability, and reads self conditioning as a message that pulls the families together.
 
 ## Future directions
 

@@ -1,6 +1,6 @@
 ---
 title: "Some DLM Design Choices: Self Conditioning Across Recipes"
-description: "Part 2 of Some DLM Design Choices. We use the breadth of the modular framework to ask what self conditioning does: the experimental pipeline, the initial results, and our observations. Part 3 gives our interpretation."
+description: "Part 2 of Some DLM Design Choices. We use the breadth of the modular framework to ask what self conditioning does: the experimental pipeline, the initial results, and our observations. Part 3 interprets them through coding theory."
 pubDate: 2026-10-28T12:00:00.000Z
 author: "Patrick Pynadath, Ruqi Zhang"
 tags: ["diffusion", "language models"]
@@ -49,7 +49,7 @@ In [Part 1](/blog/diffusion-lm-design-choices/) of the blog series, we introduce
 2. Self conditioning makes pure continuous diffusion models amenable to discrete commitment, with performance in some cases close to the default untuned sampler for each recipe. 
 3. Hybrid methods capture some of the benefits of self conditioning: without it, they often beat both pure discrete and pure continuous models, but some variants still gain from self conditioning, and with it the pure models catch up. 
 
-We leave our interpretation of these observations to [Part 3](/blog/diffusion-lm-design-choices-sc-interpretation/).
+[Part 3](/blog/diffusion-lm-design-choices-sc-interpretation/) interprets these observations through coding theory, placing each corruption family by how hard it commits and how much the noisy state tells the model about each position's reliability.
 
 Finally, we discuss the limitations of this experimental framework due to scale, and describe what a true "method factory" would enable. 
 
@@ -341,7 +341,7 @@ The pipeline here is inspired by the Model Factory series from Poolside [@rowell
 
 </div>
 
-In [Part 3](/blog/diffusion-lm-design-choices-sc-interpretation/), we provide our working interpretation of self conditioning, and why the experimental results seem to support this.
+In [Part 3](/blog/diffusion-lm-design-choices-sc-interpretation/), we interpret these results through coding theory: corruption families differ in how much the noisy state tells the model about each position's reliability, and self conditioning adds a soft message that pulls the families together. We also check that reading against the results above.
 
 ## Acknowledgements
 

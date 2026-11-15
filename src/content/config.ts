@@ -11,6 +11,8 @@ const blog = defineCollection({
     heroImage: z.string().optional(),
     draft: z.boolean().optional(),
     wip: z.boolean().optional(),
+    // Local-only posts exist on the dev server and are never built for the live site.
+    local: z.boolean().optional(),
     // Lets readers highlight text in the post and comment on it (Hypothesis).
     comments: z.boolean().optional(),
   }),

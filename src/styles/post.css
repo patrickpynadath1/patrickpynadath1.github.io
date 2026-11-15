@@ -153,6 +153,20 @@ button { font: inherit; color: inherit; cursor: pointer; }
 .prose .expandable-content { padding: 4px 20px 6px; border-top: 1px solid var(--border); }
 .prose .expandable-content > :first-child { margin-top: 16px; }
 
+/* Breakout: a large optional section that opens in place (native <details>, no JS). */
+.prose details.breakout { margin: 36px 0; border-radius: 14px; background: var(--surface); box-shadow: inset 0 0 0 1px var(--border); border-left: 4px solid var(--accent); overflow: hidden; }
+.prose details.breakout > summary { list-style: none; cursor: pointer; padding: 18px 56px 18px 22px; position: relative; display: grid; gap: 4px; }
+.prose details.breakout > summary::-webkit-details-marker { display: none; }
+.prose details.breakout > summary::after { content: "+"; position: absolute; right: 18px; top: 50%; transform: translateY(-50%); width: 32px; height: 32px; display: grid; place-items: center; border-radius: 50%; color: var(--accent); background: var(--accent-wash); font-size: 20px; }
+.prose details.breakout[open] > summary::after { content: "−"; }
+.prose details.breakout > summary:hover .breakout-title { color: var(--accent); }
+.prose .breakout-kicker { font: 500 11px/1.2 var(--font-mono); letter-spacing: .12em; text-transform: uppercase; color: var(--accent); }
+.prose .breakout-title { font: 400 22px/1.3 var(--font-display); color: var(--fg); }
+.prose .breakout-sub { font-size: 14.5px; line-height: 1.5; color: var(--muted); }
+.prose .breakout-body { padding: 4px 22px 10px; border-top: 1px solid var(--border); }
+.prose .breakout-body > :first-child { margin-top: 18px; }
+@media (max-width: 600px) { .prose .breakout-body { padding: 4px 12px 8px; } .prose details.breakout > summary { padding: 16px 52px 16px 16px; } }
+
 /* Post building blocks: TL;DR, side notes, callouts, derivations, figures, tables, footnotes. */
 .prose .label { display: block; font-size: 11px; letter-spacing: .13em; text-transform: uppercase; color: var(--muted); margin-bottom: 6px; }
 .prose .tldr { background: var(--surface); border-radius: 12px; padding: 20px 24px; margin: 28px 0 8px; box-shadow: inset 0 0 0 1px var(--border); }

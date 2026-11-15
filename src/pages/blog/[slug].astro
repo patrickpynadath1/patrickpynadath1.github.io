@@ -4,7 +4,9 @@ import BlogLayout from '../../layouts/BlogLayout.astro';
 
 export async function getStaticPaths() {
   const posts = await getCollection('blog');
-  return posts.map((post) => ({
+  return posts
+    .filter((post) => import.meta.env.DEV || !post.data.local) // local-only posts never build
+    .map((post) => ({
     params: { slug: post.slug },
     props: { post },
   }));
