@@ -13,7 +13,7 @@ export async function getStaticPaths() {
 const { post } = Astro.props;
 const { title, description, pubDate, tags, wip, comments } = post.data;
 // Draft posts keep their source but publish only a placeholder at their URL, so links to them still resolve.
-const draft = !!post.data.draft;
+const draft = !!post.data.draft && import.meta.env.PROD; // drafts stay readable on the local dev server
 const { Content, headings } = await post.render();
 ---
 <BlogLayout

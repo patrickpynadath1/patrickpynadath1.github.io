@@ -4,7 +4,7 @@ import homepage from '../../../public/home-draft/index.html?raw';
 import '../../styles/blog-index.css';
 
 const posts = (await getCollection('blog'))
-  .filter((post) => !post.data.draft)
+  .filter((post) => import.meta.env.DEV || !post.data.draft)
   .sort((a, b) => b.data.pubDate.valueOf() - a.data.pubDate.valueOf());
 const waveSvg = homepage.match(/<div class="art"[^>]*>(<svg[\s\S]*?<\/svg>)/)?.[1] ?? '';
 const waveScript = '/home-draft/' + (homepage.match(/src="\.\/(wave\.js\?v=[^"]+)"/)?.[1] ?? 'wave.js');
