@@ -11,7 +11,7 @@ comments: true
 
 import { LSpread } from "../../components/LSpread.jsx"
 import ExpandableSection from "../../components/ExpandableSection.jsx"
-import { MaskedUniformSC, SCResponse, RecipeSpread, SimplexDiversity } from "../../components/Part3Evidence.jsx"
+import { MaskedUniformSC, SCResponse, SimplexDiversity } from "../../components/Part3Evidence.jsx"
 import { BoxSetup, BoxDiscount, BoxThreeWays } from "../../components/BitBoxes.jsx"
 import { Constellation } from "../../components/CodingFigures.jsx"
 import { ReliabilityMap } from "../../components/ReliabilityMap.jsx"
@@ -36,9 +36,9 @@ In this blog, we draw on classical results from coding theory and argue that it 
    Under this view, **continuous methods sit between masked and uniform diffusion**, not on the other side of a discrete-continuous divide.
 2. **Together with commitment, reliability gives two axes instead of one.** Whether the state commits hard tokens or soft values still matters, so we place every recipe by both its commitment and its labels ([Figure 1](#figure-1)). Hybrids fill in the space between the corners.
 3. **Self conditioning pulls the corruption families toward each other.** It adds a soft, labeled message to every recipe, whatever corner the recipe starts in.
-4. **The results of [Part 2](/blog/diffusion-lm-design-choices-self-conditioning/) support this picture.** Masked and uniform diffusion behave like opposites, uniform diffusion responds to self conditioning like the continuous methods, and self conditioning makes recipes behave more alike.
+4. **The results of [Part 2](/blog/diffusion-lm-design-choices-self-conditioning/) support this picture.** Masked and uniform diffusion behave like opposites, uniform diffusion responds to self conditioning like the continuous methods, and self conditioning makes their sampling trajectories more alike.
 
-Self conditioning deserves a closer look, since it is where the two axes meet. Prior work reads it as a second channel between steps: it gets around the "sampling wall" of [@joLoopholingDiscreteDiffusion2026] and carries useful information from one step to the next without redoing computations [@yooSelfconditionedFlowMap2026a]. It also lets the model recover information in the order the model finds easiest, rather than the order the forward process imposes. Without self conditioning, the state is the only thing passed between steps, so the schedule decides which positions are revealed and when. With it, the model's previous prediction travels alongside the state, carrying the model's beliefs about which positions it has worked out and which remain hard. This second channel is soft and labeled for every recipe. It gives masked diffusion graded beliefs for its blanks, gives uniform diffusion the labels it lacks, and keeps the parts of a continuous prediction that fresh noise would otherwise blur away. In our reading, this is why the recipes behave more alike: **whatever corner of the map a recipe starts in, the shared channel pulls it toward the center** ([Figure 1](#figure-1)).
+Self conditioning deserves a closer look, since it is where the two axes meet. Prior work reads it as a second channel between steps: it gets around the "sampling wall" of [@joLoopholingDiscreteDiffusion2026] and carries useful information from one step to the next without redoing computations [@yooSelfconditionedFlowMap2026a]. It also lets the model recover information in the order the model finds easiest, rather than the order the forward process imposes. Without self conditioning, the state is the only thing passed between steps, so the schedule decides which positions are revealed and when. With it, the model's previous prediction travels alongside the state, carrying the model's beliefs about which positions it has worked out and which remain hard. This second channel is soft and labeled for every recipe. It gives masked diffusion graded beliefs for its blanks, gives uniform diffusion the labels it lacks, and keeps the parts of a continuous prediction that fresh noise would otherwise blur away. In our reading, this is why recipes sample more alike with self conditioning: **whatever corner of the map a recipe starts in, the shared channel pulls it toward the center** ([Figure 1](#figure-1)).
 
 <div id="figure-1"></div>
 
@@ -196,7 +196,7 @@ The framework makes predictions that can be checked within a single task, where 
 
 1. **Labels matter most when the answer is fixed.** On a task where the prompt determines the answer, the decoder must recover bits that already exist, and knowing which positions to trust is valuable. Masked diffusion, with exact labels and a confidence-ordered sampler, should beat uniform diffusion there. On an unconditional task, where many answers are valid and free choices must agree with each other, that advantage should shrink or reverse.
 2. **Self conditioning helps most where its message is missing.** It should help uniform diffusion (which lacks labels), continuous diffusion (whose sampler blurs its beliefs with fresh noise) and masked diffusion with random reveal orders. It should help least for masked diffusion with a confidence-ordered sampler, which already behaves like a peeling decoder.
-3. **Self conditioning shrinks the differences between recipes.** With it, scores across recipes and their behavior during sampling should move closer together.
+3. **Self conditioning makes recipes sample more alike.** With it, the way recipes settle positions during sampling should become more similar.
 
 The next section tests these predictions against the results of [Part 2](/blog/diffusion-lm-design-choices-self-conditioning/).
 
@@ -208,7 +208,7 @@ We now check the predictions against the experiments in [Part 2](/blog/diffusion
 
 Under the discrete-versus-continuous split, masked and uniform diffusion are siblings. **In our results they behave like opposites** ([Figure 3](#figure-3)). Without self conditioning, masked diffusion beats uniform diffusion on Sudoku by 20 points (97.4% against 77.4%), while uniform diffusion beats masked diffusion on text8 by 2.3 words (16.47 against 14.20). On TinyStories they tie. This matches the first prediction: exact labels and a confidence-ordered sampler pay off when the answer is fixed, and the advantage reverses when many answers are valid.
 
-Self conditioning then moves the two in opposite directions on Sudoku: uniform gains 16.8 points while masked loses 3.7. On text8 the pattern flips, with masked gaining 1.3 words and uniform gaining 0.28, within the noise level. With self conditioning, the two tie on Sudoku and the gap on text8 halves. This matches the second prediction. Self conditioning helps uniform most where labels matter, and it barely helps masked diffusion's best sampler, which already reveals positions in order of confidence.
+Self conditioning then moves the two in opposite directions on Sudoku: uniform gains 16.8 points while masked loses 3.7. On text8 the pattern flips, with masked gaining 1.3 words and uniform gaining 0.28, within the noise level. This matches the second prediction. Self conditioning helps uniform most where labels matter, and it barely helps masked diffusion's best sampler, which already reveals positions in order of confidence.
 
 <div id="figure-3"></div>
 
@@ -247,13 +247,9 @@ Without self conditioning, the best sampler for each recipe compensates for some
 
 On Sudoku the gap closes for every recipe except masked diffusion, whose untuned sampler still reveals positions in random order. On TinyStories the untuned sampler matches or beats the tuned one for every recipe except simplex, though the gaps there were small to begin with; a negative gap means the sampler selected on validation did slightly worse on the test set. On text8 the gaps shrink for most recipes but stay large, and Ψ-samplers remain the best choice for every recipe. **On the prompted tasks, self conditioning makes special samplers largely unnecessary; on unconditional text, the sampler still matters.**
 
-### Self conditioning pulls recipes toward the center
+### Self conditioning makes sampling behave more alike
 
-The third prediction says self conditioning should shrink the differences between recipes. [Figure 5](#figure-5) plots the score of each of the six pure recipes, without and with self conditioning. With the untuned sampler, the gap between the best and worst score shrinks from 22.3 to 12.9 points on Sudoku and from 4.71 to 1.14 words on text8. On TinyStories it shrinks from 0.135 to 0.041 for five of the recipes, but simplex, the one recipe that self conditioning hurts there, widens the gap when included. **The behavior during sampling converges as well**: in the untuned sampler's per-step entropy, the average distance between two recipes' curves falls by 84% on Sudoku, 35% on text8 and 31% on TinyStories.
-
-<div id="figure-5"></div>
-
-<RecipeSpread client:visible />
+The third prediction says self conditioning should make recipes behave more alike during sampling. It does, though not in their scores, which still differ by recipe and task. **The sampling trajectories converge**: in the untuned sampler's per-step entropy, the average distance between two recipes' curves falls by 84% on Sudoku, 35% on text8 and 31% on TinyStories.
 
 Self conditioning also weakens the commitment axis. Continuous models are never trained on committed tokens, so committing positions at random during sampling usually hurts them. On Sudoku, random anchoring scores 12%, 2%, 33% and 45% for Gaussian, simplex, spherical and vMF without self conditioning, and 91%, 84%, 91% and 94% with it, each close to that model's best tuned result. On text8 the same samplers gain 1.7 to 4.6 words. With a soft message carried alongside the state, a hard commitment no longer pushes the model far from what it saw in training.
 
@@ -275,9 +271,9 @@ The pattern fits this reading. On Sudoku, renoising improves with self condition
 
 Some results do not fit the picture. Small-concentration simplex diffusion should behave like uniform diffusion, yet on TinyStories self conditioning hurts simplex (0.889 to 0.858 with the best tuned sampler) while it helps uniform.
 
-The generated stories point to a cause. To separate the base model's behavior from the effect of tuning, we compare samples from each model's untuned native sampler, 4,096 stories per model. Self conditioning lowers diversity for every recipe, but for most it lands near the diversity of real stories. Simplex loses far more and ends well below it ([Figure 6](#figure-6)): distinct bigrams across its stories fall from 0.248 to 0.130, against 0.253 for real stories, and the share of stories that open with the same ten words rises from 3.3% to 11.0%.
+The generated stories point to a cause. To separate the base model's behavior from the effect of tuning, we compare samples from each model's untuned native sampler, 4,096 stories per model. Self conditioning lowers diversity for every recipe, but for most it lands near the diversity of real stories. Simplex loses far more and ends well below it ([Figure 5](#figure-5)): distinct bigrams across its stories fall from 0.248 to 0.130, against 0.253 for real stories, and the share of stories that open with the same ten words rises from 3.3% to 11.0%.
 
-<div id="figure-6"></div>
+<div id="figure-5"></div>
 
 <SimplexDiversity client:visible />
 
@@ -289,10 +285,10 @@ Every comparison rests on one training seed per model, so differences near the n
 
 Diffusion language models are usually divided into discrete and continuous methods. This post argues that **the division hides a second property**, one that coding theory treats as fundamental: how much the noisy state tells the model about each position's reliability. Masked diffusion is an erasure channel, where every position is known for certain or not at all and the model can see which. Uniform diffusion is a symmetric channel, where every token is equally suspect. Continuous methods sit between them, with reliability spread across positions. Together with whether the state commits hard tokens or soft values, this gives two axes in place of one ([Figure 1](#figure-1)).
 
-The two axes account for results from Part 2 that the discrete-versus-continuous split does not. Masked and uniform diffusion, both discrete, behave like opposites: masked diffusion wins when the prompt fixes the answer, uniform diffusion wins on unconditional text, and self conditioning moves them in opposite directions. By its response to self conditioning, uniform diffusion groups with the continuous methods rather than with masked diffusion. Self conditioning adds a soft, labeled message to every recipe, which pulls them toward the center: scores, sampling behavior and the cost of committing tokens all become more alike.
+The two axes account for results from Part 2 that the discrete-versus-continuous split does not. Masked and uniform diffusion, both discrete, behave like opposites: masked diffusion wins when the prompt fixes the answer, uniform diffusion wins on unconditional text, and self conditioning moves them in opposite directions. By its response to self conditioning, uniform diffusion groups with the continuous methods rather than with masked diffusion. Self conditioning adds a soft, labeled message to every recipe, which pulls them toward the center: their sampling trajectories and the cost of committing tokens become more alike, even though their scores still differ.
 
 For practice, the framework suggests questions to ask before choosing a recipe. Does the task have a fixed answer or many valid ones? Does the recipe's state tell the model which positions to trust? Does the sampler commit tokens before the model is sure of them? A recipe that lacks labels or commits too early is one that self conditioning, a continuous view, or a confidence-ordered sampler can repair.
 
-Several questions remain open. Our evidence rests on one training seed per model and on three small tasks. The spread of reliability is something we derived from each corruption process, not something we measured in trained models; the next step is to record the confidence a trained model assigns to each position and check that masked, uniform and Gaussian models show the two spikes, single spike and spread that the channels predict. Simplex diffusion on TinyStories does not fully fit the picture: at the small concentration we used, self conditioning over-sharpens it, which raising the concentration would very likely fix. And the claim that the kind of dependence in the data decides which corner suits a task is, for now, a prediction: measuring that dependence directly, and testing whether it forecasts which recipe wins, would turn the framework from an interpretation into a tool.
+Several questions remain open. Our evidence rests on one training seed per model and on three small tasks. Reliability is a property of each corruption process and follows from it exactly; what our evidence does not yet show is that it causes the differences we see. The results above fit the picture after the fact. A direct test would move a recipe along the reliability axis while holding everything else fixed, for example by giving uniform diffusion a flag that marks which positions were corrupted, or by raising the Dirichlet concentration of simplex diffusion, and check that its response to self conditioning and its preferred sampler move as the framework predicts. The second test would also check our reading of simplex diffusion on TinyStories, which self conditioning over-sharpens at the small concentration we used. And the claim that the kind of dependence in the data decides which corner suits a task is, for now, a prediction: measuring that dependence directly, and testing whether it forecasts which recipe wins, would turn the framework from an interpretation into a tool.
 
 ## References

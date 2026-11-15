@@ -243,7 +243,7 @@ function DiversityInner() {
   const H = top + DIV_ROWS.length * rowH + 24;
   return (
     <Frame
-      kicker="Figure 6"
+      kicker="Figure 5"
       title="With self conditioning, simplex loses far more diversity than any other recipe"
       subtitle={`TinyStories samples from each model's untuned sampler. Each line runs from the value without self conditioning (open dot) to the value with it (filled dot). The dashed line marks real stories. Shown: ${met.long}.`}
       controls={<Pills value={m} onChange={setM} options={DIV_METRICS.map((x) => ({ id: x.id, label: x.label }))} />}
