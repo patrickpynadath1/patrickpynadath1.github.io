@@ -84,16 +84,16 @@ function TwoObserversInner() {
     <Frame kicker={SKETCH} title="The same state, seen by two observers"
       subtitle="One state partway through sampling. An observer with unlimited compute can work out every bit the state already fixes. The model gets one forward pass, so some of those bits stay out of reach."
       note="A sketch of the idea. Which bits are hidden is made up here; the point is only that the two observers disagree on how much is left.">
-      <Key items={[["solid", "known to this observer", 0], ["hidden", "hidden: fixed, but not worked out in one pass", 4], ["empty", "open: not decided yet", 6]]} />
+      <Key items={[["solid", "known to this observer", 0], ["hidden", "hidden: fixed, but not worked out in one pass", 4], ["empty", "undecided: not decided yet", 6]]} />
       <div style={{ display: "grid", gap: 14 }}>
         <div>
           <Label>Observer with unlimited compute</Label>
-          <Sub>Unresolved: {count("o")} open bits.</Sub>
+          <Sub>Unresolved: {count("o")} undecided bits.</Sub>
           <RowSvg><BitRow y={16} kinds={top} labels /></RowSvg>
         </div>
         <div>
           <Label>The model, with one forward pass</Label>
-          <Sub>Unresolved: {count("o")} open bits and {count("h")} hidden bits.</Sub>
+          <Sub>Unresolved: {count("o")} undecided bits and {count("h")} hidden bits.</Sub>
           <RowSvg><BitRow y={16} kinds={bottom} labels /></RowSvg>
         </div>
       </div>

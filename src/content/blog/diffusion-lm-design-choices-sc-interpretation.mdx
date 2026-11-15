@@ -5,16 +5,19 @@ pubDate: 2026-11-12T12:00:00.000Z
 author: "Patrick Pynadath, Ruqi Zhang"
 tags: ["diffusion", "language models"]
 wip: true
-draft: false
+draft: true
 comments: true
 ---
 
 
 import { ScOrdering } from "../../components/ScOrdering.jsx"
 import { ScAlike } from "../../components/ScAlike.jsx"
-import { BitRecovery } from "../../components/BitRecovery.jsx"
+import { Constellation, GenAsDecoding, TurboDecoding, TurboSampling } from "../../components/CodingFigures.jsx"
+import { WasteChart } from "../../components/WasteChart.jsx"
 import { ScInteraction } from "../../components/ScInteraction.jsx"
-import { TwoObservers, ThreeSources, UpdateKeeps, TwoWires, FixedPointIterations, WhereProgressLives } from "../../components/ScSketches.jsx"
+import { BoxSetup, BoxTwoObservers, BoxDiscount, BoxLoop, BoxThreeWays, BoxBlends, CombineChart, BoxCapacity, BoxHybridUniform } from "../../components/BitBoxes.jsx"
+import ExpandableSection from "../../components/ExpandableSection.jsx"
+import { ThreeSources, UpdateKeeps, FixedPointIterations, WhereProgressLives } from "../../components/ScSketches.jsx"
 
 # Some DLM Design Choices: An Interpretation of Self Conditioning
 
@@ -25,7 +28,9 @@ import { TwoObservers, ThreeSources, UpdateKeeps, TwoWires, FixedPointIterations
 - **TinyStories is missing from Figures R, E and G.** Its untuned baseline is not yet scored with MAUVE, so the sampler, commitment and hybrid results in the Evidence section rest on Sudoku and text8 only.
 - **TinyStories top-3 sampler family tests** are still running. Figure R needs them before TinyStories can be added.
 - **Rank-linear hybrids on TinyStories** were tuned on the old metric (ref_w1) and need a MAUVE re-tune before they can go into Figure G.
-- **The text is a rough draft.**
+- **The text is a full draft (revised for cohesion and accuracy).** Every claim in the picture and theory sections has a source or is marked as our own reading.
+- **The Introduction is removed for now.** The "picture of bits" section replaces it. Its figures are second drafts, and the full simulation is still a placeholder.
+- **Uncited claims in the picture section:** the total-correlation identity (our calculation) and rounds per pass as the compute bound (our framing) are marked in the text. Check before release.
 
 </div>
 
@@ -40,141 +45,564 @@ Series: [Part 1](/blog/diffusion-lm-design-choices/) · [Part 2](/blog/diffusion
 <div className="tldr">
 <span className="tldr-tag" aria-label="TL;DR">TL;DR</span>
 
-At every step, **the model works out more than the next state can hold**, because a state carrying all of its beliefs would be *out of distribution* for a model trained without simulation. **Self conditioning keeps what the state drops**, at the cost of a *one-step roll out* in training. This simple view explains several results from Part 2 across discrete, continuous and hybrid methods: samplers matter less, self conditioning improves how commitment based samplers perform for pure continuous methods, and the entropy profiles across the sequence for different methods become more similar.
+Every exact method pays the same number of bits for a sample, but in a different order: masked diffusion settles whole positions, continuous diffusion pays a little everywhere. At every step, **the model works out more than the next state can hold**, because a state carrying all of its beliefs would be *out of distribution* for a model trained without simulation. The dropped part is mostly *hidden bits*: fixed by the state, but out of reach of one forward pass. **Self conditioning keeps what the state drops**, at the cost of a *one-step roll out* in training. It adds no Shannon information, but it adds usable information for a model with bounded compute. This view explains several results from Part 2: samplers matter less, commitment works better in pure continuous methods, and the entropy profiles of different methods become more alike.
 
 </div>
 
+This part has one goal: to say what self conditioning does, in terms precise enough to check against the results of [Part 2](/blog/diffusion-lm-design-choices-self-conditioning/). We build one picture, bits as colored boxes in stacks, and add one idea at a time. Each idea comes with its formal version. The main text gives the idea in words; the fold-out boxes hold the math and the sources for readers who want them. We start with masked diffusion only, because it is the one case where the picture is exact: masking is the *erasure channel* of coding theory, where each token is either shown exactly or hidden, and the model always knows which. Uniform and Gaussian corruption do not fit an all-or-nothing picture, so we bring them in later, in their own section, once the masked case is clear. The early layers are exact bookkeeping for a simple kind of data. The later layers are a cartoon of how real models behave, and we say where the switch happens.
 
-## Introduction
+Throughout, we mark which statements are standard results, with a source, and which are our own reading.
 
-In the previous part of the series, we did a study over how self conditioning interacts with the corruption form and noise schedule across various discrete, continuous, and hybrid recipes. In this part, we argue that self conditioning acts as a channel of information between sampling steps: it lets the model keep what it has already worked out about the sample, so that generation becomes more gradual and follows the order the model finds easiest.
+## Why coding theory: generation as decoding
 
-The argument has three parts.
+Before building the picture, it helps to say why we borrow from coding theory at all. Coding theory asks one question with unusual precision: how much can a receiver recover about a message from noisy observations, and how quickly does a given decoder recover it? It has exact answers for the channels that diffusion uses, and it has tools for decoders that work locally and in rounds, which is what a denoiser does in one forward pass. Diffusion models already sit close to it. Their training losses are standard identities of these channels [@guo2005mutual; @kong2023information], and DDPM already read the diffusion loss as the cost of transmitting a sample step by step [@ho2020denoising]. The work is in lining the two setups up so that the theory still holds.
 
-1. **The gap.** At every step, a forward pass works out more about the final sample than the next state is able to hold. Part of that work is dropped when the state is updated.
-2. **The second channel.** Self conditioning carries the dropped part forward. The next pass starts from the model's previous prediction, so it does not have to redo that work.
-3. **The consequence.** Discrete and continuous methods normally recover information in opposite ways: one position at a time, or a little of every position at once. With self conditioning, both move toward the order the model itself prefers, so they begin to behave alike.
+The table pairs the terms. In coding, a sender encodes a message, a noisy channel corrupts it, and a receiver decodes it. In generation nobody sends anything, which is the first thing to fix.
 
-This view will likely be unsurprising to many. It is close to the intuition that has accompanied the heuristic since it was introduced: a model's prediction is used to take a single step and is then thrown away, and feeding it back lets the model refine its answer instead of starting from scratch [@chen2022analog; @dieleman2022continuous]. Our goal is not to replace that intuition, but to make it precise enough to apply across recipes. We want to say what is being carried forward, why the state alone cannot carry it, and why the effect looks so different for discrete, continuous, and hybrid methods.
+| Coding | Generation |
+|---|---|
+| The codeword sent | The final sample $x_0$ |
+| The code's constraints (parity checks, the Tanner graph) | The dependencies in the data, which the model has learned (drawn as colors and blends in the picture below) |
+| The channel $p(y \mid x)$, one use per symbol | The forward corruption $q(z_t \mid x_0)$, one position at a time |
+| The noise level (erasure rate, flip rate, signal-to-noise ratio) | The time $t$, through the schedule |
+| The received word $y$ | The state $z_t$ |
+| A bit-wise decoder: the probability of each bit given $y$ | The denoiser: the probability of each token given $z_t$ |
+| Rounds of message passing | Compute inside one forward pass, and, with self conditioning, passes across steps |
+| Extrinsic information passed between decoders | The prediction fed back by self conditioning (the full prediction, not only the new part) |
+| The EXIT function: uncertainty about a bit given every other received bit | The masked denoiser's uncertainty at a masked position |
 
-It is important to note that this is a claim about how generation unfolds, not about whether performance improves. Whether a more gradual path helps is a separate question, and the results in [Part 2](/blog/diffusion-lm-design-choices-self-conditioning/) show that the answer depends on both the method and the task.
+**What has to hold for the theory to apply.** Four conditions. Each is true, or true by construction, for the models and figures in this post.
 
-The rest of this part is organized as follows. We first make "what the model has worked out" precise, using the idea that the information in a sample depends on the compute available to the observer. We then describe the gap, and why it is the price of training without simulation. Next, we describe self conditioning as a second channel, and relate this view to recent work, most closely the fixed-point view of [@yooSelfconditionedFlowMap2026a]. Finally, we return to the results from Part 2 and discuss which of them this interpretation explains, and where it falls short.
+1. *The corruption acts on each position separately.* In channel terms, the channel is memoryless across positions. Masked, uniform and Gaussian diffusion all corrupt each position on its own [@austin2021structured; @sahooSimpleEffectiveMasked2024].
+2. *The reverse step has the "draw, then corrupt" form.* The model predicts the clean sample, and the next state is the forward process's step applied to a draw from that prediction. This is the $x_0$-parameterization of D3PM [@austin2021structured], spelled out in the gap section.
+3. *The model is exact.* Then the bit counts below are equalities. With a real model they become bounds, and the difference is modeling error.
+4. *For the box picture only: the bits are independent fair bits, shared exactly or through parity.* This is a choice made for illustration, and the picture is a cartoon wherever real dependencies are softer.
 
-## What a "bit" is
+**Insert a sender.** The comparison becomes literal once we put a sender back in. Imagine someone who already holds a real sample $x_0$ and sends it to the model one step at a time over the forward process: first the noisiest state, then a slightly cleaner one, and so on. The model is the receiver. Each step costs the sender the KL divergence between the true next state and what the receiver expected, $\mathrm{KL}\big(q(z_s \mid z_t, x_0)\,\|\,p_\theta(z_s \mid z_t)\big)$, and the total over all steps is exactly the training loss. DDPM introduced this reading of the diffusion loss, under the name *progressive coding* [@ho2020denoising] (§4.3). Theis et al. built it into a working lossy codec [@theis2022lossy]. Sending a noisy sample at a cost of exactly its KL divergence needs a technique called *reverse channel coding*, which DDPM assumed and later work had to engineer. For masked models, ARDMs, which include absorbing diffusion as a special case, were used for lossless compression [@Hoogeboom_Gritsenko_Bastings_Poole_Berg_Salimans_2022].
 
-Any sample from a discrete distribution can be described by a number of bits: the answers to a series of yes-or-no questions that, taken together, pin the sample down [@shannon1948; @cover2006elements]. Generating a sample means settling all of these bits. Each token accounts for some of them, and how many depends on how predictable that token is from the rest of the sequence.
+The idea underneath is older than diffusion: a model good enough to compress data can also generate it, because feeding random bits into its decoder produces samples [@mackay2003information] (§6.3). Generation is the receiver simulating its own sender. With a perfect model, the trajectory it produces on its own has the same distribution as one sent by a sender holding a real sample. The bill does not disappear; it is paid in random numbers instead of received bits. This also gives the box figures a literal meaning: the "bits the model paid" count is the sender's bill, and a hidden bit is an extra charge, a bit the sender pays only because the receiver could not work it out from what it already had.
 
-The classic way to count bits assumes an observer with unlimited compute. Under that assumption, a deterministic computation can never add information, since its output is fully explained by its input. This is a poor fit for our setting. A denoiser is a fixed function of its input, yet its prediction is clearly more useful to the next step than the noisy input alone. The idea we need is that usable information depends on the observer's compute [@xu2020theory; @finzi2026epiplexity]. A model with one forward pass cannot extract everything its input implies, so some bits stay out of its reach even when they are already decided.
+<GenAsDecoding client:visible />
 
-In our case the observer is the model, and its budget is a single forward pass. This gives the quantity we track throughout this post. Fix the final sample $x_0$ that a sampling trajectory ends at. At each step, we ask how surprised the model is by $x_0$, given its current state $z_t$. We measure this per position:
+**What is exact.** Two links are exact. First, each corruption family is a standard channel, applied to every position independently, as the channels section below shows. Second, the training loss of a diffusion model is a standard identity of that channel. For masked diffusion, the loss of an exact model adds up the uncertainty at masked positions over all mask rates, and the total equals the entropy of the data. That is the *area theorem* of the erasure channel [@richardson2008modern] (§3.14.3), and it is the same fact as masked diffusion being autoregression averaged over orders [@ou2024absorbing]. For Gaussian diffusion, the log-likelihood equals an integral of the denoising error over signal-to-noise ratio, which is the I-MMSE relation [@guo2005mutual]; Kong et al. derive diffusion's likelihood this way [@kong2023information], and the variational diffusion bound has the same form [@kingma2021variational]. In both cases, training a denoiser is learning the curve whose area is the information in the data.
+
+**What is a good analogy.** The denoiser plays the role of a bit-wise decoder: it outputs a probability for each position, not one for the whole sequence. In coding terms that is bit-wise maximum a posteriori decoding, not block-wise [@richardson2008modern] (§1.5, §2.5). Peeling, stopping sets, rounds and extrinsic information then become ways to describe what one pass of the model can and cannot work out. Using them that way is our reading.
+
+**Where the comparison breaks.** Three differences matter.
+
+1. *No message is chosen in advance.* In coding, the codeword exists before the channel touches it, and the decoder tries to recover it. In generation, the sample is chosen as the sampler goes: each step draws from the model and writes the draw into the state. The bit counts still match, because drawing each step from the right conditional produces a sample from the joint distribution, so the chain rule applies. But "decoding" here means decoding a message that is being chosen at the same time.
+2. *The decoder writes into the channel.* A receiver cannot change what it receives. A sampler does: every step, it writes into the state, and the state then looks like a less noisy channel output. The closest coding picture is a receiver that keeps getting extra looks, as in the incremental channel or in rateless fountain codes [@mackay2003information] (Ch. 50). Except here the receiver chooses what it will see next.
+3. *The code is learned, not given.* A coding-theory decoder knows its code exactly. A diffusion model learns the data's dependencies from examples, so its decoder is only as good as its training, and part of what we call hidden bits is plain modeling error.
+
+These breaks are why the coding tools describe a single pass well, and why sampling needs more: it combines decoding with choosing, and every choice is written back into what the next pass will read.
+
+<ExpandableSection title="The math: the masked diffusion loss as an area theorem" client:load>
+
+Take masked diffusion with a linear schedule, where each position is masked with probability $t$ independently. For an exact model, the negative ELBO is [@sahooSimpleEffectiveMasked2024; @shiSimplifiedGeneralizedMasked2024]
+
+$$
+\int_0^1 \frac{1}{t}\; \mathbb{E}\Big[\sum_{i \,:\, z_t^i = \mathrm{mask}} -\log p(x_0^i \mid z_t)\Big]\, dt .
+$$
+
+Position $i$ is masked with probability $t$. Given that it is masked, the other positions are masked independently with probability $t$, so the expected surprise at $i$ is $H(X_i \mid Y_{\sim i}(t))$, the entropy of position $i$ given all other positions seen through an erasure channel with erasure rate $t$. That is exactly the *EXIT function* $h_i(t)$ [@richardson2008modern] (§3.14.2). The $1/t$ cancels the probability of being masked, and the bound becomes
+
+$$
+\int_0^1 \sum_i h_i(t)\, dt \;=\; H(X),
+$$
+
+which is the *area theorem* at full erasure: the area under the EXIT curves equals the entropy [@richardson2008modern] (§3.14.3, Thm. 3.81). We derived this short identity ourselves from the two standard results; the same fact appears in the literature as masked diffusion being equivalent to autoregression averaged over orders [@ou2024absorbing].
+
+For Gaussian diffusion with $z_\gamma = \sqrt{\gamma}\, x + \epsilon$, the corresponding exact statement is
+
+$$
+-\log p(x) \;=\; \text{const} + \tfrac{1}{2} \int_0^{\infty} \mathrm{mmse}(x, \gamma)\, d\gamma ,
+$$
+
+where $\mathrm{mmse}(x, \gamma)$ is the error of the best denoiser at signal-to-noise ratio $\gamma$ [@kong2023information]. It follows from the I-MMSE relation $\frac{d}{d\gamma} I(x; z_\gamma) = \tfrac12 \mathrm{mmse}(\gamma)$ [@guo2005mutual].
+
+</ExpandableSection>
+
+## Bits, and how a sample pays for them
+
+### Stacks and colors
+
+Any sample from a discrete distribution can be described by a number of bits: the answers to a series of yes-or-no questions that, taken together, pin the sample down. Generating a sample means settling all of these bits [@shannon1948; @cover2006elements].
+
+Draw each position of the sequence as a stack of small boxes. Each box stands for a bit of information that the position needs. Stacks have different heights, because some tokens are harder to predict than others. Each box also has a color. Boxes of the same color carry the same information: once one of them is known, the others follow.
+
+This gives two ways to count. Counting every box gives the bits needed if each position is described on its own. Counting each color once gives the bits needed for the whole sequence. The difference between the two counts is the information the positions share. As a small example, take two tokens that must match. Each stack holds one box of the same color. There are two boxes but one color, so the sequence needs one bit, and one bit is shared.
+
+We start with two colors. In the first two figures a stack can hold several boxes of one color, and the only point is that boxes of a color are tied together. From the third figure on, no stack holds a color twice, so one color is exactly one bit, and the counts are exact. The rule matters because a second box of the same color in one stack would add no information for that position: once the token knows the bit, a second copy tells it nothing new, and the stack would look taller than the position's real bit count. Across stacks, repeating a color is fine. Each position really does need that bit, so it counts toward every stack that holds it, but only once toward the colors.
+
+<BoxSetup client:visible />
+
+<ExpandableSection title="The math: boxes, colors and total correlation" client:load>
+
+The average number of bits needed to describe a sample $X = (X_1, \dots, X_n)$ is its entropy $H(X)$. A single sample $x$ needs about $\log_2 1/p(x)$ bits, its *information content*, and for long sequences almost every sample needs close to $H(X)$. More precisely, for $N$ independent symbols, $\tfrac{1}{N}\log_2 \tfrac{1}{p(x)}$ is within any small margin of the per-symbol entropy with probability approaching one. This is the *asymptotic equipartition property*, and the samples that satisfy it form the *typical set* [@mackay2003information] (§2.4, §4.4). So for long sequences, nearly every sample needs about the same number of bits, not only on average.
+
+Counting boxes is the sum of the per-position entropies, $\sum_i H(X_i)$. Counting colors is the joint entropy $H(X)$. Their difference is the *total correlation* [@watanabe1960information]:
+
+$$
+\mathrm{TC}(X) \;=\; \sum_i H(X_i) \;-\; H(X) \;\ge\; 0 .
+$$
+
+It is zero exactly when the positions are independent. In the two-token example, $\sum_i H(X_i) = 2$, $H(X) = 1$ and $\mathrm{TC}(X) = 1$ bit. In the seven-color figure below, the boxes number 14 and the colors 7, so the total correlation is 7 bits: 7 boxes repeat a bit held elsewhere.
+
+For two positions, total correlation is the mutual information, $\mathrm{TC}(X_1, X_2) = I(X_1; X_2)$. For more positions it counts shared information with multiplicity: a bit held by $k$ positions adds $k - 1$ to it. That is why it, and not a sum of pairwise mutual informations, matches the box count. A blend is the case where the pairwise view fails completely, as the blends section shows.
+
+</ExpandableSection>
+
+### The discount
+
+A box is in one of three states. A solid colored box is unknown. A gray box is known. A striped box is in between: it is fixed by a matching box somewhere else, but the model has not worked it out yet.
+
+When a colored box is opened, every box of the same color in the other stacks is fixed as well. Those boxes turn striped, and they turn gray on the model's next pass at no extra cost. We call this the discount: the sequence pays for a shared bit once, no matter how many positions hold it. Whatever order you choose, if you open boxes one at a time, the boxes you pay for add up to the number of colors. This is the chain rule of entropy.
+
+The picture also has a standard name in coding theory. A color is a bit, and its boxes are copies of that bit. Opening a box is a channel that either shows a bit exactly or hides it: the *binary erasure channel*. Turning matching boxes gray is one round of the *peeling decoder*, the erasure-channel form of *belief propagation* [@richardson2008modern] (§3.1, §3.5, §3.19).
+
+The peeling decoder works like a chain of deductions. Each written box is a clue: "this box equals bit red", or later, "this box equals red plus blue". Whenever a clue has exactly one unknown bit left, that bit is now known, so it is crossed off in every other clue that mentions it. Crossing it off can leave another clue with one unknown, and so on. One pass over all clues is a *round*. The decoder stops when no clue has a single unknown left. The same decoder recovers files from fountain codes, where each received packet is the exclusive-or of a few source packets [@mackay2003information] (§50.2). Because each step uses only one clue and a few bits, the decoder is fast, and its behavior on large random codes can be predicted exactly. The fold-out below works through an example.
+
+<BoxDiscount client:visible />
+
+<ExpandableSection title="The math: the chain rule, and how the peeling decoder works" client:load>
+
+**The chain rule.** For any order $\pi$ of the positions,
+
+$$
+H(X) \;=\; \sum_{k} H\big(X_{\pi(k)} \mid X_{\pi(1)}, \dots, X_{\pi(k-1)}\big),
+$$
+
+so each box costs only what the boxes opened before it have not already fixed, and the total does not depend on the order [@mackay2003information] (§8.1). A box whose color is already known costs $0$ bits.
+
+**The channel.** On the binary erasure channel with erasure probability $\varepsilon$, each bit arrives intact with probability $1 - \varepsilon$ or as "?", and the receiver knows which. It never lies. Its capacity is $1 - \varepsilon$ [@richardson2008modern] (§3.1).
+
+**The graph.** Draw one node per bit (a color) and one node per constraint. In a code, the constraints are parity checks. In our picture there are two kinds: a written plain box says "this value equals bit $b$", and a written blend says "this value equals $b_1 \oplus b_2$". This is a *Tanner graph*, a kind of factor graph [@richardson2008modern] (§2.2, §3.3).
+
+**The messages.** Belief propagation on the erasure channel needs only three message values: 0, 1 and "?" [@richardson2008modern] (§3.5).
+
+- A bit node sends "?" to a constraint only if its channel value and all its other incoming messages are "?". Otherwise it sends the known value.
+- A constraint sends "?" to a bit if any of its other bits is "?". Otherwise it sends the exclusive-or of the other bits and its own value.
+
+**The peeling decoder** does the same thing one step at a time: find a constraint with exactly one unknown bit, solve for that bit, remove the bit from every constraint it appears in, and repeat. It ends where belief propagation ends [@richardson2008modern] (§3.19, Thm. 3.106).
+
+**A worked example**, matching the chain figure further below. Three bits, red $r$, blue $b$ and green $g$. Two boxes are written: a red box, and the blend $r \oplus b$. Unwritten are a blue box and the blend $b \oplus g$.
+
+1. *Round 1.* The written red box is a constraint with one unknown, $r$. Solve: $r$ is known. Every unwritten red box turns gray.
+2. *Round 2.* The written blend $r \oplus b$ now has one unknown, $b$. Solve: $b = (r \oplus b) \oplus r$. The unwritten blue box turns gray.
+3. *Stop.* The unwritten blend $b \oplus g$ is not a clue, since its value has not been written, and $g$ appears in no written box. $g$ stays unknown, and so does the blend.
+
+A model that runs only one round per pass would see $r$ but not $b$. That is the idea behind the rounds-per-pass bound later on.
+
+**Large random codes.** For a long random code with degree distributions $\lambda$ and $\rho$, the probability $x_\ell$ that a bit-to-check message is still "?" after $\ell$ rounds follows *density evolution* [@richardson2008modern] (§3.9, Thm. 3.50):
+
+$$
+x_\ell \;=\; \varepsilon\, \lambda\big(1 - \rho(1 - x_{\ell-1})\big), \qquad x_{-1} = 1 .
+$$
+
+Decoding succeeds when $x_\ell \to 0$. The largest $\varepsilon$ for which it does is the *belief propagation threshold*. For the standard (3,6) code, the threshold is $0.4294$, while the best possible decoder reaches $0.4882$ and the Shannon limit for its rate is $0.5$ [@richardson2008modern] (§3.11, §3.20). The gap between the first two numbers is what message passing leaves on the table, even with unlimited rounds.
+
+**Where it stops.** Peeling always ends at the largest *stopping set* inside the erased bits: a set of bits in which every constraint touching the set touches it at least twice, so no constraint ever has a single unknown [@richardson2008modern] (§3.22.1, Lemma 3.140).
+
+</ExpandableSection>
+
+The next figure is the same picture with seven colors. No stack holds a color twice, so each color is exactly one bit. A color that appears once is a bit that only one position holds: opening it frees nothing. A color in several stacks is a shared bit: opening it once frees the rest.
+
+<BoxDiscount client:visible many />
+
+## Opening the boxes: autoregressive and masked
+
+Masked diffusion opens whole stacks: a token is either still masked, and none of its boxes are known, or revealed, and all of them are. Autoregressive generation is the special case with a fixed order. The two differ in which stacks they open at each step.
+
+**Autoregressive.** Each step opens every box in the next stack, from left to right. Each stack is opened after the model has seen all the earlier ones, so every discount is collected and the sequence is paid for exactly once. The cost is speed: one step per position, in a fixed order. This is our reference case.
+
+**Masked.** Each step opens every box in a few chosen stacks, in any order. With one stack per step, this is autoregression in a different order [@ou2024absorbing]. With several stacks per step it is faster, but stacks opened in the same step cannot discount each other. If two of them share a color, both boxes are drawn as if the other were unknown. The bit is paid for twice, and the two draws can even disagree.
+
+The figure keeps two counts. The *Shannon count* charges a box only when the boxes written before it do not fix it. It always ends at the number of colors, whatever the rule. The *model's count* charges every box the model had not worked out when it was written. A box the model has not worked out is drawn as a fresh fair bit and costs one bit. The model's count can never fall below the Shannon count. The shape switch shows other layouts: opening many stacks at once costs little when little is shared, and the most when one bit runs through everything.
+
+<BoxThreeWays client:visible />
+
+<ExpandableSection title="The math: why the model never pays less than Shannon" client:load>
+
+Suppose the true distribution of a box is $p$, and the model codes it with a distribution $q$. The model's expected cost is the cross-entropy, and *Gibbs' inequality* says it is never below the entropy [@mackay2003information] (§2.6, §5.4):
+
+$$
+\mathbb{E}_{p}\!\left[\log_2 \tfrac{1}{q(X)}\right] \;=\; H(p) + \mathrm{KL}(p \,\|\, q) \;\ge\; H(p).
+$$
+
+In the figure, a box fixed by the state has $H(p) = 0$. If the model has not worked it out, it draws the box as a fair coin, $q = (\tfrac12, \tfrac12)$, and pays $\mathrm{KL}(p \,\|\, q) = 1$ bit.
+
+When a set $S$ of boxes is written in the same step, each is drawn on its own from its marginal given the state $z$. Their combined cost is $\sum_{i \in S} H(X_i \mid z)$, while the Shannon cost is the joint entropy $H(X_S \mid z)$. With unlimited compute, the extra cost of a step is therefore
+
+$$
+\sum_{i \in S} H(X_i \mid z) - H(X_S \mid z) \;=\; \mathrm{TC}(X_S \mid z),
+$$
+
+the total correlation of the boxes written together, given the state. For the exact bits of the figure this is a short calculation; we do not take it from the literature. The same quantity measures how far a product of marginals is from the true joint: $\mathrm{TC}(X_S \mid z) = \mathrm{KL}\big(p(x_S \mid z) \,\|\, \prod_{i \in S} p(x_i \mid z)\big)$, which is the standard definition of total correlation [@watanabe1960information].
+
+Since a joint entropy is at least its largest marginal, $\mathrm{TC}(X_S \mid z) \le \sum_{i \in S} H(X_i \mid z) - \max_{i \in S} H(X_i \mid z)$. So writing many positions at once is cheap when all but one of them are nearly certain. Entropy-bounded unmasking in masked diffusion uses exactly this bound, with the model's predicted entropies in place of the true ones: it keeps adding positions while the sum of their entropies minus the largest stays below a threshold [@benhamu2025accelerated]. Its authors call the error it controls the joint dependence error.
+
+</ExpandableSection>
+
+<BoxThreeWays client:visible shapes />
+
+## The model, the sampler and the state
+
+So far, opening went straight into the boxes. We now split the picture into two rows. The top row is what the model knows: its view of every box, given the state. Striped and gray boxes in that row are ones the model could open right now. The bottom row is the state: the boxes written so far.
+
+Between the two rows sits the sampler. It is the only way into the state, and it lets through only part of what the model knows. The opening rules above are samplers. Whatever the model knows beyond what the sampler lets through stays in the top row, and without some way to carry it, it is lost at the next step.
+
+<BoxLoop client:visible />
+
+In a real model, the top row is a forward pass and the bottom row is the noisy state $z_t$. The quantity we track is how surprised the model is, at each step, by the sample $x_0$ that the trajectory finally produces:
 
 $$
 h_{t,i} = -\log p_{\theta,i}(x_{0,i} \mid z_t), \qquad h_t = \sum_i h_{t,i}.
 $$
 
-The sum over positions is exact, because a single forward pass predicts each position separately given the state. Since $x_0$ is the sample the trajectory actually produces, $h_t$ is defined during generation and needs no reference data. In training, where $x_0$ is a real sequence, the same quantity is the familiar per-position denoising cross-entropy used by masked and continuous models alike [@sahooSimpleEffectiveMasked2024; @shiSimplifiedGeneralizedMasked2024; @dieleman2022continuous; @gulrajani2023likelihood]. [@finzi2026epiplexity] formalize a related quantity, time-bounded entropy, which is defined for the best model within a compute budget. We borrow only the intuition. $h_t$ is the surprise of the model we actually trained, and we make no claim that it matches their quantity.
+Gray boxes in the top row are bits the model has, so they no longer count toward $h_t$. The information path of a recipe, from [Part 1](/blog/diffusion-lm-design-choices/#the-design-space), is how $h_t$ falls to zero, over time and across positions.
 
-It is useful to separate the unresolved bits into two kinds. **Open bits** have not been decided at all: the randomness that will pick them has not been drawn yet. **Hidden bits** are already fixed by the state and the weights, but working them out takes more than one forward pass. An observer with unlimited compute would only see the open bits. A one-pass model sees both, mixed together. Most of this post is about the hidden bits.
-
-<TwoObservers client:visible />
-
-<div className="takeaway">
-<span className="takeaway-label">Takeaway</span>
-
-The quantity we track is $h_t$: how surprised the model is by its own final sample, given the current state. Some of these bits are open, meaning they have not been decided yet. Others are hidden -- already fixed by the state and the weights, but too costly to work out in one forward pass. This post is mostly about the hidden bits.
-
-</div>
-
-## The information path
-
-In [Part 1](/blog/diffusion-lm-design-choices/#the-design-space), we described the information path of a recipe: how information is represented, and how it is destroyed along the generative path. With the quantity above, we can restate it from the model's side. The information path is how $h_t$ falls to zero, over time and across positions. The bits recovered in a step from $t$ to $s$ are the drop between the two states,
-
-$$
-\Delta_{t \to s} = h_t - h_s, \qquad \Delta_{t \to s,\, i} = h_{t,i} - h_{s,i}.
-$$
-
-This drop is positive on average but not at every step: fresh noise or remasking can raise $h$ again [@wang2025remasking]. Viewing a noise schedule as a way of spreading information over time is not new. CDCD learns a time warping so that the loss, and with it the information recovered, grows linearly in time [@dieleman2022continuous], and several recent works design schedules around the same idea [@stancevic2025entropic; @raya2026infonoise]. What we add is the split across positions, and the restriction to what a single pass can extract.
-
-Not every way of driving $h_t$ to zero makes a usable recipe. The trajectories have to meet two conditions. They must start from a distribution we can sample, and their intermediate states should be cheap to compute. Diffusion and flow matching accomplish this through simulation-free training, where we can jump directly to the marginal at time $t$ instead of simulating some process to get there [@sohl2015deep; @song2020score; @kingma2021variational]. This second condition will matter a great deal below.
-
-During generation, each state is built from three sources. The **original noise** is what makes this a sampler and not a fixed-point iteration: it decides which sample we get, and it holds choices that have not been decoded yet. **Fresh noise** makes new choices along the way and can overwrite earlier mistakes. The **model's predictions** supply the structure the model has worked out. One step can be written as
+Each new state is built from three sources. The **original noise** decides which sample we get, and holds choices that have not been decoded yet. **Fresh noise** makes new choices along the way and can overwrite earlier mistakes. The **model's predictions** supply the structure the model has worked out. One step is
 
 $$
 \hat{x}_t = f_\theta(z_t), \qquad z_s = u(z_t, \hat{x}_t, \epsilon),
 $$
 
-where $u$ is the sampler's update rule and $\epsilon$ is fresh noise. The original noise enters through $z_t$. Deterministic samplers such as DDIM or an ODE solver use no $\epsilon$ [@song2020denoising; @song2020score], while samplers that fully renoise at every step discard $z_t$ and keep only the prediction.
+where $u$ is the sampler's update rule and $\epsilon$ is fresh noise. For masked diffusion, the update unmasks a few positions, and the randomness that picks their tokens is the fresh noise; remasking samplers can also hide tokens again [@wang2025remasking]. For the continuous models introduced later, deterministic samplers such as DDIM or an ODE solver use no $\epsilon$ [@song2020denoising; @song2020score], while samplers that fully renoise at every step discard $z_t$ and keep only the prediction.
 
 <ThreeSources client:visible />
 
-## Which bits each corruption family recovers
+<ExpandableSection title="The math: what hₜ measures, and the information path" client:load>
 
-Bits are not interchangeable, at least in the setting we are concerned with. Two methods can recover the same number of bits in a step and still recover different ones, so corruption families differ in which bits they recover and in what order. We think this is the difference that matters most between them.
+A single forward pass predicts each position separately given the state, so $h_t$ is exactly the model's surprise at $x_0$ under that factorized prediction. Since $x_0$ is the sample the trajectory actually produces, $h_t$ is defined during generation and needs no reference data. In training, where $x_0$ is a real sequence, the same quantity is the per-position denoising cross-entropy used by masked and continuous models alike [@sahooSimpleEffectiveMasked2024; @shiSimplifiedGeneralizedMasked2024; @dieleman2022continuous; @gulrajani2023likelihood]. Because it sums over positions, $h_t$ counts boxes, not colors.
 
-This may sound at odds with standard information theory, where a bit is a bit. It is not. We are not counting the shortest description of the sample. We are counting per-position surprise, because the model predicts each position separately and not the sequence jointly. The total number of bits in a sample is a single number, but how those bits split across positions depends on what has been revealed so far. Per-position bits also overlap: settling one position lowers the surprise at others, through context. In this accounting, two states with the same total can differ in which positions are settled, and that changes what the next pass can work out.
+The bits recovered in a step from $t$ to $s$ are the drop
 
-Discrete methods recover the bits of a few positions at a time, and each of those positions is recovered fully. In masked diffusion, a position is either revealed or masked, and a masked position has had none of its own bits written into the state [@austin2021structured; @sahooSimpleEffectiveMasked2024; @shiSimplifiedGeneralizedMasked2024; @louDiscreteDiffusionModeling2023]. Continuous methods do the opposite. Gaussian, simplex and spherical corruptions apply roughly the same noise level to every position, so each step recovers some bits of every position, at a near-uniform rate across the sequence [@li2022diffusion; @dieleman2022continuous; @gulrajani2023likelihood; @deschenaux2026simplex; @chemseddine2026spherical; @deschenaux2026language]. Hybrid methods combine the two, with some positions committed and the rest partly noised [@pynadath2025candihybriddiscretecontinuousdiffusion; @zheng2025continuouslyaugmenteddiscretediffusion; @zhou2025coevolutionary].
+$$
+\Delta_{t \to s} = h_t - h_s, \qquad \Delta_{t \to s,\, i} = h_{t,i} - h_{s,i}.
+$$
 
-One clarification is important here. In masked diffusion the *state* changes only at the positions that are revealed, but the model's uncertainty also drops elsewhere, because every revealed token is context for the positions that are still masked. So the claim is about which bits are written into the state, not about where the model's uncertainty falls. In all of these families, the order in which bits are recovered is set by the forward process and its schedule, and not by the model.
+This drop is positive on average but not at every step: fresh noise or remasking can raise $h$ again [@wang2025remasking]. Viewing a noise schedule as a way of spreading information over time is not new. CDCD learns a time warping so that the loss grows linearly in time [@dieleman2022continuous], and several recent works design schedules around the same idea [@stancevic2025entropic; @raya2026infonoise]. What we add is the split across positions, and the restriction to what a single pass can extract.
 
-<BitRecovery client:visible />
+Not every way of driving $h_t$ to zero makes a usable recipe. The trajectory must start from a distribution we can sample, and its intermediate states should be cheap to produce in training. Diffusion and flow matching meet the second condition through simulation-free training: we can jump directly to the marginal at time $t$ instead of simulating a process to get there [@sohl2015deep; @song2020score; @kingma2021variational]. This condition matters a great deal below.
+
+</ExpandableSection>
+
+## Blends
+
+Not all shared information is a matching color. Sometimes a position is fixed by several other positions together and by none of them alone. The simplest case is three bits where the third is the exclusive-or of the first two. Knowing the first bit says nothing about the third. Knowing the first two fixes it.
+
+We draw this as a two-colored box, a blend of red and blue. Opening a color removes that color everywhere. Open red, and the blend turns into a plain blue box: once the first bit is known, the third bit is a copy of the second. Open blue, and the blend turns striped and then gray. A blend gives no discount until its last ingredient is removed. Colors and blends are the only two kinds of dependence the picture can draw. Real dependence between tokens is softer, and the picture is only a cartoon of it.
+
+<BoxBlends client:visible />
+
+<ExpandableSection title="The math: parity checks and stopping sets" client:load>
+
+A blend is a *parity check*: $x_3 = x_1 \oplus x_2$. Here $I(X_1; X_3) = 0$ and $I(X_2; X_3) = 0$, yet $I(X_1, X_2; X_3) = 1$ bit, the standard example of information that no single variable holds [@mackay2003information] (§8.4, p.144).
+
+The peeling decoder treats a check the same way as a copy: a check with one unknown left fixes it [@richardson2008modern] (§3.19). A group of checks whose bits are all unknown can never be undone this way, however long the decoder runs. That group is a *stopping set* [@richardson2008modern] (§3.22.1). An optimal decoder can sometimes still recover such bits by solving the checks jointly, as a system of linear equations over bits. This is the gap between belief propagation and maximum a posteriori (MAP) decoding [@richardson2008modern] (§3.20). The *Maxwell decoder* makes the gap concrete: when peeling stalls, it names an unknown bit with a symbol and keeps peeling with symbolic messages. Wherever two messages for the same bit disagree, they give an equation that pins down a symbol. The number of symbols left over at the end equals the remaining entropy $H(X \mid Y)$ [@richardson2008modern] (§3.21).
+
+In the box picture, the hidden bits of a model with unlimited rounds are exactly the bits MAP decoding finds and peeling does not. A model with limited rounds hides more.
+
+</ExpandableSection>
+
+## Partial amounts: three channels
+
+So far a box is either opened or not. That is the erasure channel, and it matches masked diffusion, where a token is either shown exactly or masked. The other corruption families correspond to other channels:
+
+- **Masked** corruption erases whole tokens: the *erasure channel*. You always know which bits you have.
+- **Uniform** corruption replaces a token with a random one: the *symmetric channel*. A shown bit may be wrong, and nothing marks which.
+- **Gaussian** corruption adds noise to every position: the *additive white Gaussian noise channel*. Every position is partly known, and a noisy value carries its own sense of how far to trust it.
+
+The three channels differ most in what they let the model trust. The three box states of the earlier figures, unknown, striped and known, are exact for the erasure channel only. There a bit is either shown or not, so trust is all or nothing, and the model always knows which bits it has. Under Gaussian noise, a bit is never simply known or unknown. Each bit carries a belief with a strength, and the model can read the strength. The standard measure is the bit's *log-likelihood ratio*: large means "trust this", near zero means "no idea" [@richardson2008modern] (§4.1.1). It captures everything the noisy value says about that bit; it is a *sufficient statistic* (§4.1.2). The strength varies from bit to bit and position to position, by the luck of the noise, and that is the point: a Gaussian state tells the model how far to trust each part of it. Under uniform noise, every shown token gets the same trust at a given step. The model knows how often tokens are wrong, but not which ones, so per-position trust can come only from context.
+
+This survives the coupling that an embedding introduces. With a learned embedding, the noisy vector gives a belief over tokens, and each bit's confidence is read off that belief by adding up the tokens that carry a 1 against those that carry a 0. Every bit still has a confidence. What coupling adds is that the confidences do not tell the whole story: the belief over tokens also says how a position's bits move together, as the coded-modulation section below explains. The striped state also carries over. Under erasure, a striped box is fixed by other knowledge but not yet worked out. Under Gaussian noise the same idea becomes a gap in strength: how sure the model could be given everything the state implies, against how sure one pass actually makes it.
+
+Under Gaussian corruption, every position is partly known at every intermediate step, and on average each step makes every position clearer. The total over the whole path is the same number of bits as before; what changes is how the payment is spread. In the picture, boxes turn gray gradually. Whether the boxes *within* a position clear evenly is a separate question, which depends on how tokens are turned into vectors. We come back to it below.
+
+With partial amounts, the methods differ in how much they gain from each kind of sharing. Compare evidence that is all-or-nothing, as in masking, with evidence that is evenly unreliable, as in uniform corruption, when both carry the same amount of information. For several clues about the same bit, our matching colors, all-or-nothing evidence recovers the most and evenly unreliable evidence the least. For a bit fixed jointly by several others, our blends, the order reverses. Gaussian evidence falls between the two in both cases. In the picture, matching colors favor opening whole stacks, and blends favor gradual evidence: a blend with one unopened ingredient gives nothing, while a blend whose ingredients are all partly known is itself partly known.
+
+This result is for binary symbols, exact rules and clues combined perfectly. Language has large vocabularies and soft dependencies, and we do not know how much carries over. We use it as a guide to what to measure, not as a claim about language.
+
+<CombineChart client:visible />
+
+<ExpandableSection title="The math: channels, I-MMSE and information combining" client:load>
+
+For one bit, the three channels are the *binary erasure channel* (BEC), the *binary symmetric channel* (BSC) and the *binary-input additive white Gaussian noise channel* [@mackay2003information] (§9.3, §11.1). For tokens from a vocabulary of size $q$, masking is a $q$-ary erasure channel and uniform corruption a $q$-ary symmetric channel. Masking erases all of a token's bits together. The single-bit channels treat 0 and 1 alike and act on each use independently: they are *binary memoryless symmetric channels* [@richardson2008modern] (§4.1.3).
+
+For the Gaussian channel the accounting along the path is exact. With $Y = \sqrt{\mathrm{snr}}\,X + N$, the mutual information grows with the signal-to-noise ratio at a rate set by the remaining mean squared error, the I-MMSE relation [@guo2005mutual]:
+
+$$
+\frac{d}{d\,\mathrm{snr}}\, I\big(X; \sqrt{\mathrm{snr}}\,X + N\big) \;=\; \tfrac{1}{2}\,\mathrm{mmse}(\mathrm{snr}) \qquad \text{(in nats)}.
+$$
+
+The comparison in the chart is the extremes of *information combining* [@land2006information]; [@richardson2008modern] (Thm. 4.141). Among binary memoryless symmetric channels with the same capacity, the BEC and the BSC are the two extremes. Combining clues about one bit, the BEC gives the most information and the BSC the least. Combining clues through a parity check, the order flips. Every other channel, the Gaussian one included, lies between.
+
+On the erasure channel these curves have closed forms. The *EXIT function* of a bit is the entropy left about it given every other received bit, $h_i(\varepsilon) = H(X_i \mid Y_{\sim i})$. For a repetition code of length $n$ it is $\varepsilon^{\,n-1}$: the bit stays unknown only if every other copy is erased. For a single parity check of length $n$ it is $1 - (1 - \varepsilon)^{n-1}$: the bit is known only if every other bit arrived [@richardson2008modern] (§3.14.2). With $I = 1 - \varepsilon$ as the information per clue and $n$ clues, these are the solid curves in the chart: $1 - (1 - I)^{n}$ for matching colors and $I^{n}$ for blends. On the erasure channel the area under an EXIT curve equals the code's rate, the *area theorem* [@richardson2008modern] (§3.14.3). Off the erasure channel it holds only approximately (§4.10).
+
+</ExpandableSection>
+
+### From embeddings to bits: coded modulation
+
+Gaussian diffusion does not add noise to bits. It adds noise to a token's *embedding*, a vector. So what kind of channel is that, and what happens to the bits?
+
+Communications engineers face the same question, and they have a name for the answer: *coded modulation* [@richardson2008modern] (§5.4). The embedding table plays the role of a *constellation*: each token is a point in space, and the channel adds Gaussian noise to the point. This is still an additive white Gaussian noise channel, but its input is one of a finite set of points [@mackay2003information] (§11.1-§11.3). How much the noisy vector says about the token depends on how far apart the points are, not only on the noise level.
+
+To talk about bits, give each token a bit label. The chain rule then splits the token's information exactly into one piece per bit, each piece conditioned on the bits before it. This is *multilevel coding*. The pieces are not equal. Bits that separate far-apart groups of points are easy, and bits that separate close neighbors are hard. They are also not independent: how well one bit can be read depends on the others. If a decoder reads every bit on its own and ignores the others, it loses information. This is *bit-interleaved coded modulation*. With a labeling in which neighboring points differ in only one bit, *Gray mapping*, the loss is small. Without it, the loss can be large [@richardson2008modern] (§5.4).
+
+The figure below makes this concrete with four tokens. Switch between Gray and plain labels, and between points on a line and points on a square, and watch how the token's information splits across its two bits. Each noisy draw also shows the belief over tokens and the confidence in each bit.
+
+<Constellation client:visible />
+
+For a learned embedding, then, a position's bits clear in an order set by the embedding's geometry. Suppose vowels and consonants sit far apart in embedding space, but the vowels sit close to each other. At a middle noise level the "vowel or consonant?" bit is nearly known, while "which vowel?" is barely known. Some of the position's boxes are nearly gray and others nearly solid.
+
+There is one case where every bit does get its own channel. Embed each token as its own bit label, written as $\pm 1$ in separate dimensions, so the constellation is the corners of a cube. Then Gaussian noise acts on each dimension separately, and each bit gets its own independent binary-input Gaussian channel, all at the same noise level. This is *Analog Bits*, the paper that also introduced self conditioning [@chen2022analog]. For analog bits, the evenly filling boxes of the figures are exact. For learned embeddings they are a simplification.
+
+One more gap remains even then. Analog bits are a token's index written in binary. The colors in our picture are the information-level bits of the data, after everything predictable is removed. Index bits can be redundant, so they are not the same as the boxes. That last point is our own observation, not a result from the sources.
+
+<ExpandableSection title="The math: constellations, bit channels and the chain-rule split" client:load>
+
+**The channel.** Let $e(x) \in \mathbb{R}^d$ be the embedding of token $x$. Gaussian corruption at signal-to-noise ratio $\mathrm{snr}$ gives
+
+$$
+Y = \sqrt{\mathrm{snr}}\; e(X) + N, \qquad N \sim \mathcal{N}(0, I_d).
+$$
+
+This is an additive white Gaussian noise channel with a discrete input alphabet $\{e(x)\}$. The mutual information $I(X;Y)$ rises continuously from $0$ at $\mathrm{snr} = 0$ to $H(X)$ as $\mathrm{snr} \to \infty$, at the rate the I-MMSE relation gives [@guo2005mutual]. A noisier channel is a *degraded* version of a cleaner one, the cleaner output followed by extra noise, so $I(X;Y)$ can only grow as noise falls [@richardson2008modern] (§4.1.14). These two facts are what "every position is partly known, and gets clearer" means precisely.
+
+**The chain-rule split.** Label each token with bits $B_1, \dots, B_k$. Since the label determines the token,
+
+$$
+I(X;Y) \;=\; \sum_{j=1}^{k} I\big(B_j ; Y \mid B_1, \dots, B_{j-1}\big) \;\ge\; \sum_{j=1}^{k} I(B_j ; Y),
+$$
+
+where the equality is the chain rule (*multilevel coding*, decoded bit by bit with earlier bits known) and the inequality is what *bit-interleaved coded modulation* gets by reading each bit on its own [@richardson2008modern] (§5.4, eq. 5.23). The labeling changes how the total splits across bits, and how much the independent reading loses, but not the total. In the book's example of 4-level amplitude modulation at 1.5 bits per symbol, reading the bits independently keeps 1.4995 bits with a Gray labeling and 1.3511 bits with a non-Gray one (Ex. 5.30).
+
+**The cube case.** If $e(x) = (s_1, \dots, s_k)$ with $s_j = \pm 1$ the $j$-th bit of $x$, the noise on dimension $j$ touches only bit $j$. Each bit sees its own *binary-input additive white Gaussian noise channel*. Its log-likelihood ratio, given that the bit is $+1$, is Gaussian with mean $2/\sigma^2$ and variance $4/\sigma^2$, where $\sigma^2 = 1/\mathrm{snr}$ [@richardson2008modern] (§4.1.5). The ratio is finite with probability one, so no bit is ever certain at a finite noise level: every box is partly known, exactly as drawn. If the bits are also independent and uniform, the chain-rule split has $k$ equal terms.
+
+**Why the general case is coupled.** For a generic constellation, the posterior over tokens given $Y$ does not factor over bits, so the bit channels share the same noise and depend on each other. The optimal receiver for two points is a linear projection onto the direction between them [@mackay2003information] (§11.2). With many points, which bits are easy depends on which directions separate which groups.
+
+</ExpandableSection>
+
+### Which bits each family recovers
+
+Every exact method pays the same total. What depends on the method is the split: which positions are settled at each moment, and so how much shared information the next pass can use.
+
+Discrete methods recover the bits of a few positions at a time, and each of those positions is recovered fully. In masked diffusion, a masked position has had none of its own bits written into the state [@austin2021structured; @sahooSimpleEffectiveMasked2024; @shiSimplifiedGeneralizedMasked2024; @louDiscreteDiffusionModeling2023]. Continuous methods do the opposite. Gaussian, simplex and spherical corruptions apply roughly the same noise level to every position, so each step recovers some bits of every position, at a near-uniform rate across the sequence [@li2022diffusion; @dieleman2022continuous; @gulrajani2023likelihood; @deschenaux2026simplex; @chemseddine2026spherical; @deschenaux2026language]. Hybrid methods combine the two, with some positions committed and the rest partly noised. In channel terms, a token passes through an erasure channel and a Gaussian channel together [@pynadath2025candihybriddiscretecontinuousdiffusion; @zheng2025continuouslyaugmenteddiscretediffusion; @zhou2025coevolutionary].
+
+In masked diffusion the *state* changes only at revealed positions, but the model's uncertainty also drops elsewhere, because every revealed token is context for the positions still masked. So the claim is about which bits are written into the state, not about where the model's uncertainty falls. In all of these families, the order in which bits are written is set by the forward process and its schedule, and not by the model.
+
+
+Uniform diffusion is a third case. Like continuous diffusion, it makes progress in every stack at each step, but some of the tokens it shows are wrong, and nothing marks which. A partly known box under Gaussian corruption comes with a sense of how far to trust it; under uniform corruption it does not, and the model has to use the rest of the sequence to tell.
+
+The figure below puts the three states side by side, with every fill computed from theory instead of drawn by hand. Its default view, *one noisy draw*, shows what a single generation looks like: each Gaussian box is as gray as an ideal model's confidence in that bit, given the noisy views it actually got, so the boxes fill unevenly and now and then one leans the wrong way. Each step adds one independent look per position, the incremental channel described in the gap section below. The *average* view shows the expected information instead, and averaging the draws over many generations gives exactly the average view. It assumes analog bits, so each position gives each of its bits its own view, and it treats every color as an independent fair bit. At each step, all positions share one noise level, set so that one view of a bit carries the same amount of information under Gaussian and uniform noise. A color held by several stacks combines several views. Under Gaussian noise the views combine by adding log-likelihood ratios, so $m$ views at one noise level act like one view with $m$ times the signal-to-noise ratio [@richardson2008modern] (§2.5.2). Under uniform noise they combine by the binary symmetric rule from the chart above. A hybrid's committed positions reveal their bits exactly.
+
+Three things follow. Shared colors clear sooner than private ones under both kinds of noise. They clear a little sooner under Gaussian noise than under uniform noise, which is the Land and Huber ordering for matching colors [@land2006information]. The gap is small when each view is either very weak or very strong. A hybrid pulls ahead fastest, because one committed position settles a shared color in every stack at once.
+
+<BoxHybridUniform client:visible />
+
+<div className="takeaway">
+<span className="takeaway-label">Takeaway</span>
+
+Every exact method pays the same number of bits for a sample; the methods differ in which bits are settled when. Masked diffusion opens whole positions, like an erasure channel. Gaussian diffusion pays a little everywhere. Which is better depends on how the bits are shared.
+
+</div>
+
+## Hidden bits: a model with limited compute
+
+Until now, every striped box turned gray on the next step. That assumes the model works out everything the state fixes in a single pass. A real model has a fixed amount of compute per pass, so it may not. The striped boxes that stay striped are *hidden bits*: fixed by the state, but out of reach of one forward pass.
+
+Information theory has a version of itself for observers with limited compute. *Time-bounded entropy* is the part of the data that stays unpredictable to the best model that runs within a time bound. *Epiplexity* is the structure that model has learned and stores in its weights [@finzi2026epiplexity]. *Predictive V-information* is the same idea for mutual information, defined for a set of models the observer is allowed to use [@xu2020theory]. We treat the model as already trained, so what it learned is in its weights, and we track only what stays unpredictable to it.
+
+To draw a compute limit in the box picture, we need a bound that fits it. The peeling decoder works in rounds, and after a fixed number of rounds each decision can depend only on boxes within that many links [@richardson2008modern] (§3.7). Copies of a known color are one link away. Bits linked through a chain of blends need one round per link. We let one forward pass run a fixed number of rounds. *Using rounds per pass as the model's compute bound is our own framing*; the papers above bound running time in general, not peeling rounds.
+
+With hidden bits, $h_t$ splits into three parts. **Undecided bits** have not been decided at all: the randomness that will pick them has not been drawn yet. These are the solid boxes. **Shared bits** are counted once for each position that holds them: the extra boxes beyond the colors, which the discount saves. **Hidden bits** are the striped boxes that stay striped. An observer with unlimited compute and a perfect model would see only the first two. A one-pass model sees all three, mixed together. The figure below shows one state through both observers' eyes. Only the striped boxes differ: compute changes what the model can read off the state, not what the state holds. Most of this post is about the hidden bits.
+
+<BoxTwoObservers client:visible />
+
+<ExpandableSection title="The math: splitting hₜ, and bounded information" client:load>
+
+Write $p$ for the distribution of $x_0$ given $z_t$ under the sampler, and $p_i$ for its marginal at position $i$. Taking the expectation of $h_t$ over $x_0 \sim p$,
+
+$$
+\begin{aligned}
+\mathbb{E}[h_t] \;=\; &\underbrace{H(X_0 \mid z_t)}_{\text{undecided}} \;+\; \underbrace{\mathrm{TC}(X_0 \mid z_t)}_{\text{shared}} \\
+&+\; \underbrace{\textstyle\sum_i \mathrm{KL}\big(p_i \,\|\, p_{\theta,i}\big)}_{\text{hidden}} .
+\end{aligned}
+$$
+
+The identity is standard: per position, expected surprise is entropy plus KL divergence, and the per-position entropies sum to the joint entropy plus the total correlation [@mackay2003information; @watanabe1960information]. The names are ours. The KL term also includes plain modeling error from finite training, so treating all of it as a compute limit is our interpretation.
+
+*Time-bounded entropy and epiplexity.* Take the best program that can both sample and give probabilities within time $T$, and that minimizes its own length plus the expected code length of the data. Its length is the epiplexity $S_T$, and the expected code length is the time-bounded entropy $H_T$ [@finzi2026epiplexity] (Def. 8). Since $H_T$ is the code length under a valid distribution, $H_T \ge H$ by Gibbs' inequality.
+
+*V-information.* For a set $\mathcal{V}$ of allowed predictors, the V-entropy $H_{\mathcal{V}}(Y \mid X)$ is the lowest expected log-loss achievable within $\mathcal{V}$, and $I_{\mathcal{V}}(X \to Y) = H_{\mathcal{V}}(Y \mid \varnothing) - H_{\mathcal{V}}(Y \mid X)$ [@xu2020theory]. With no restriction on $\mathcal{V}$ it equals Shannon's mutual information.
+
+*Order matters for a bounded observer.* For an unbounded observer, the chain rule makes the total independent of the order in which positions are revealed. For a bounded one, it need not be. If $Y = f(X)$ for a function that is cheap to compute but hard to invert, predicting $X$ then $Y$ costs less than predicting $Y$ then $X$ [@finzi2026epiplexity] (Thm. 13, assuming one-way functions exist). So for a real model, the order a sampler chooses can change the total it pays, not only how the payment is spread. This is one more reason the information path matters.
+
+*Undecided bits depend on the observer.* With a deterministic sampler, the initial noise fixes the final sample, so $H(X_0 \mid z_t) = 0$ after the first step. To a one-pass model, though, the sample is far from obvious from the noise: output that a fixed program computes can look fully random to a bounded observer [@finzi2026epiplexity] (Thm. 9, assuming pseudorandom generators exist). $h_t$ is the surprise of the model we actually trained, and we make no claim that it matches their $H_T$.
+
+</ExpandableSection>
 
 ## The gap
 
-The central observation of this post is that a forward pass works out more than the state update keeps. At step $t$ the model produces a full prediction $\hat{x}_t$, a distribution over tokens at every position. The update $u$ then writes only part of that prediction into the next state. Without self conditioning, the next pass sees $z_s$ alone, and we can write what was dropped as
+The central observation of this post is that a forward pass works out more than the state update keeps. At step $t$ the model produces a full prediction $\hat{x}_t$, a distribution over tokens at every position. The update $u$ then writes only part of that prediction into the next state. This is the top row of the sampler figure that never reaches the bottom row.
+
+Why must the update drop anything? Ideally, the update would keep everything the pass worked out. The obstacle is that a state holding all of the model's beliefs would be out of distribution. In training, every state is produced from clean data and the forward corruption, so strictly simulation-free training excludes inputs produced by the model. A model that has never seen its own predictions as input may not know how to handle them. Related failures have been documented for continuous models, where sampling can drift into regions that training did not cover [@shabalinWhyGaussianDiffusion2026; @davis2026design]. The update therefore has to produce states that look like training states, and this is what forces it to drop part of the prediction.
+
+We view this as the price of simulation-free training. Training a model on its own outputs would mean running it on itself many times to produce each training input. Noise avoids this: it gives us training states for free, and a sampler that follows the same corruption in reverse visits the same kind of states. The gap is what we pay for that convenience.
+
+### Different ways of choosing what to keep
+
+Each corruption family keeps a different part of the prediction, so samplers can be read as different ways of choosing what to keep. What exactly crosses from the prediction into the state? Every exact reverse step has the same shape, whatever the corruption. Conceptually, the sampler first draws a candidate clean sample from the model's prediction. It then passes that candidate through the *increment* of the forward channel, from noise level $t$ to the less noisy level $s$, and writes the result into the state. The model's beliefs never enter the state directly. Only a candidate does, and only through a narrow channel. In bits: a belief such as "90% sure this bit is 1" is replaced by a drawn value for the bit, seen through the increment. That is the wall, and it holds in every family. What differs is the shape of the increment.
+
+- **Masked: a full look at a few positions.** Every bit of the newly revealed positions is written exactly, and nothing is written anywhere else. At the positions that stay masked, the whole predicted distribution is thrown away. This is the "sampling wall" described by [@joLoopholingDiscreteDiffusion2026], and the same loss was the original motivation for self conditioning [@chen2022analog; @dieleman2022continuous].
+- **Uniform: a switch at some positions.** Some positions jump to the candidate token, and the rest keep tokens that may be wrong. Here too the state holds tokens, never beliefs.
+- **Gaussian: a weak look at every bit at once.** Gaussian looks add, so moving from signal-to-noise ratio $\mathrm{snr}_t$ to $\mathrm{snr}_s$ is the same as one extra, independent look at the candidate with ratio $\mathrm{snr}_s - \mathrm{snr}_t$. A bit the model is sure about gets a weak hint that usually points the right way. A bit the model is unsure about gets a weak hint toward a coin flip: the sampler has committed to it a little. Over many steps the hints add up until every bit is fully committed.
+
+So masked sampling commits a few bits fully per step, and Gaussian sampling commits every bit a little per step. In both, the belief behind the commitment is dropped, and the next pass sees only the state. Deterministic samplers, such as DDIM or an ODE solver, draw no fresh candidate: the choices were all made at the start, in the initial noise, and each step reveals a little more of them [@song2020denoising; @song2020score]. Fresh noise in a stochastic sampler also blurs part of what was written before.
+
+<ExpandableSection title="The math: the reverse step as a draw followed by an incremental channel" client:load>
+
+**The reverse step.** Many diffusion models predict the clean sample and build the reverse step from it. The exact reverse step mixes the forward process's own posterior over the model's prediction:
+
+$$
+\begin{aligned}
+p_\theta(z_s \mid z_t) \;=\; \sum_{x_0} \; &q(z_s \mid z_t, x_0) \\
+\times\; &p_\theta(x_0 \mid z_t),
+\end{aligned}
+$$
+
+the $x_0$-parameterization of D3PM [@austin2021structured]; masked diffusion models are built the same way [@sahooSimpleEffectiveMasked2024; @shiSimplifiedGeneralizedMasked2024]. Read from right to left: draw $x_0$ from the model, then apply $q(z_s \mid z_t, x_0)$, the forward process's step from $t$ to $s$ given that clean sample. With a factorized prediction, the draw is made position by position. Gaussian samplers in practice often plug in the posterior mean of $x_0$ instead of a draw, which matches the exact step only in the limit of small steps.
+
+**The increment of each channel.** Given the candidate $x_0$, the forward step from $t$ to $s$ is:
+
+- *Masking:* each masked position is revealed with probability $(\alpha_s - \alpha_t)/(1 - \alpha_t)$, where $\alpha$ is the fraction of tokens unmasked. A revealed position shows its candidate token exactly.
+- *Uniform:* each position moves to its candidate token with some probability set by the schedule, and otherwise keeps its current token.
+- *Gaussian:* with $Y_t = \sqrt{\mathrm{snr}_t}\, X + N_t$, a less noisy observation at $\mathrm{snr}_s > \mathrm{snr}_t$ is equivalent to keeping $Y_t$ and adding one independent look $Y_\Delta = \sqrt{\mathrm{snr}_s - \mathrm{snr}_t}\, X + N'$. This is because Gaussian observations of the same input combine by adding their signal-to-noise ratios.
+
+The last point is the *incremental channel* behind the I-MMSE relation. Guo, Shamai and Verdú prove I-MMSE by looking at how mutual information changes when the signal-to-noise ratio grows by a tiny amount, which is the same as removing a tiny independent extra noise [@guo2005mutual].
+
+**What the state holds about one bit.** For an analog bit, the state after many steps is equivalent to the sum of all the weak looks so far, a single Gaussian look whose signal-to-noise ratio is the sum of the increments. Its log-likelihood ratio grows with each step, which is why every bit drifts toward full commitment. With a learned embedding the weak look is at the whole token, through the constellation, as in the coded-modulation section.
+
+**When the wall loses information.** With a stochastic sampler, a draw that disagrees with what the model believed is written into the state, and later steps must build on it. With a deterministic, invertible update, the state still determines the earlier state, so nothing is lost in Shannon's sense, and the wall is a compute wall: the next pass has to work out again what the last pass knew.
+
+</ExpandableSection>
+
+<UpdateKeeps client:visible />
+
+<ExpandableSection title="The math: what the gap is, and when it holds information" client:load>
+
+Without self conditioning, the next pass sees $z_s$ alone. What was dropped can be written as
 
 $$
 -\log p_\theta(x_0 \mid z_s) \;-\; \big(-\log p_\theta(x_0 \mid z_s, \hat{x}_t)\big),
 $$
 
-that is, how much less surprised the model would be by its final output if it still had its last prediction. We do not measure this quantity in this post. The support for it comes from how each update rule works, which we describe next, and from the iteration results of [@yooSelfconditionedFlowMap2026a] discussed below.
+how much less surprised the model would be by its final output if it still had its last prediction. We do not measure this quantity here. The support comes from how each update rule works and from the iteration results of [@yooSelfconditionedFlowMap2026a], discussed below.
 
-How the prediction is dropped depends on the sampler. In masked diffusion, the update commits a few sampled tokens and throws away the predicted distribution at every position that stays masked. This is the "sampling wall" described by [@joLoopholingDiscreteDiffusion2026], and the same loss was the original motivation for self conditioning [@chen2022analog; @dieleman2022continuous]. In continuous diffusion with a stochastic sampler, the prediction is partly written into the state and then blurred by fresh noise. With a deterministic sampler, no fresh noise overwrites anything, but the update still writes only a fraction of the prediction into the state: the state moves a small step toward it, and the rest is dropped. The next pass cannot get that part back within its budget. So every sampler drops part of the prediction. They differ in how much, and in whether fresh noise also overwrites what was written.
+The two kinds of sampler differ in kind. Under a deterministic, invertible update, as in an ODE step, $z_t$ can be recovered from $z_s$, so $\hat{x}_t = f_\theta(z_t)$ is a function of $z_s$. By the *data-processing inequality*, it then holds no Shannon information about $x_0$ beyond $z_s$ [@mackay2003information] (§8.3). The gap is a compute gap: hidden bits. With fresh noise or remasking, $z_t$ cannot be recovered from $z_s$, and $\hat{x}_t$ can hold information the new state has lost.
 
-<UpdateKeeps client:visible />
-
-Ideally, the update would keep everything the pass worked out. The obstacle is that a state holding all of the model's beliefs would be out of distribution. In training, every state is produced from clean data and the forward corruption. If we want strictly simulation-free training, this necessarily excludes inputs produced by the model. Since the model has never seen its own predictions as input, it may not know how to handle it. Related failures have been documented for continuous models, where sampling can drift into regions that training did not cover [@shabalinWhyGaussianDiffusion2026; @davis2026design]. The update therefore has to produce states that look like training states, and this is what forces it to drop part of the prediction.
-
-We view this as the price of simulation-free training. Training a model on its own outputs would mean running it on itself many times to produce each training input. Noise avoids this: it gives us training states for free, and a sampler that follows the same corruption in reverse visits the same kind of states. The gap is what we pay for that convenience.
+</ExpandableSection>
 
 <div className="takeaway">
 <span className="takeaway-label">Takeaway</span>
 
-A forward pass works out more than the next state keeps. We cannot simply keep everything, as a state carrying all of the model's beliefs would be out of distribution. We view this as the price of simulation-free training.
+A forward pass works out more than the next state keeps. We cannot simply keep everything, as a state carrying all of the model's beliefs would be out of distribution. Under a deterministic sampler the dropped part is hidden bits, not missing information. We view the gap as the price of simulation-free training.
 
 </div>
 
 ## Self conditioning as a second channel
 
-Self conditioning relaxes the simulation-free requirement by allowing a small part of the roll out. Instead of doing the entire roll out, or doing no roll out at all, it does a single-step roll out. The same general idea appears in recursive methods, which also avoid rolling out or training on the entire trajectory [@Savinov_Chung_Binkowski_Elsen_Oord_2022; @bai2019deep; @wang2025hierarchical; @jolicoeur2025less; @rozonoyer2026relay].
+Self conditioning feeds the model's previous prediction back as an extra input [@chen2022analog]. In our terms, it adds a second channel between sampling steps. The state carries decisions: the choices that have been committed. Self conditioning carries beliefs: what the model has worked out but not committed to. It passes forward what the state update drops.
 
-Concretely, self conditioning feeds the model's previous prediction back as an extra input [@chen2022analog]. In our terms, it adds a second channel between sampling steps. The state carries decisions: the choices that have been committed. Self conditioning carries beliefs: what the model has worked out but not committed to. It passes forward what the state update drops. With it, a sampling step becomes
+It relaxes the simulation-free requirement by allowing a small part of the roll out. Instead of the entire roll out, or none, it does a single-step roll out. The same general idea appears in recursive methods, which also avoid rolling out or training on the entire trajectory [@Savinov_Chung_Binkowski_Elsen_Oord_2022; @bai2019deep; @wang2025hierarchical; @jolicoeur2025less; @rozonoyer2026relay].
+
+
+The point is efficiency. The model keeps the work it has already done, so the next pass does not have to redo it. At sampling time this costs nothing, since the previous step's prediction is simply reused. In Shannon's terms, under a deterministic sampler, self conditioning adds no information: the prediction it carries was computed from states the model can still see. For a model with limited compute, it adds usable information: work done on the last pass, which the model could not redo in this one. Bounded information theory allows exactly this [@xu2020theory; @finzi2026epiplexity]. Self conditioning lowers the hidden bits without changing the Shannon count.
+
+The figure below shows this in the box picture, with the same chain layout and the same rounds-per-pass bound as the hidden-bits figure. Without self conditioning, each pass starts again from the state. With it, the model starts from what it worked out last time, so the rounds add up across passes.
+
+<BoxCapacity client:visible />
+
+<ExpandableSection title="The math: self-conditioned sampling and training, rounds and usable information" client:load>
+
+With self conditioning, a sampling step becomes
 
 $$
 \hat{x}_s = f_\theta(z_s, \hat{x}_t), \qquad h^{\mathrm{sc}}_{s,i} = -\log p_{\theta,i}(x_{0,i} \mid z_s, \hat{x}_t).
 $$
 
-The point is efficiency. The model keeps the work it has already done, so the next pass does not have to redo it. At sampling time this costs nothing, since the previous step's prediction is simply reused.
-
-<TwoWires client:visible />
-
-The cost is paid in training. We could feed the previous prediction to any model, but a model that was not trained with it would not know what to do with it: the extra input would itself be out of distribution. Self-conditioned training teaches the model how to read its own prediction. On part of each batch, the model first makes a prediction without gradients, and that prediction is fed back in:
+In training, on part of each batch the model first makes a prediction without gradients, and that prediction is fed back in:
 
 $$
 \hat{x} = f_\theta\big(z_t, \mathrm{sg}[f_\theta(z_t, \varnothing)]\big),
 $$
 
-where $\mathrm{sg}$ stops the gradient and both passes use the same $z_t$ [@chen2022analog; @strudel2022self]. This is the single-step roll out: one extra pass, and nothing more. The technique has since been used with Gaussian diffusion on embeddings [@strudel2022self; @dieleman2022continuous; @gulrajani2023likelihood; @yang2026continuousdiffusionscalescompetitively], simplex diffusion [@mahabadi2024tess; @deschenaux2026simplex], spherical flows [@chemseddine2026spherical], and recent flow language models [@hu2026elf; @chen2026langflow], with variations in what is fed back and how it enters the network [@luo2026langdit; @deschenaux2026simplex].
+where $\mathrm{sg}$ stops the gradient and both passes use the same $z_t$ [@chen2022analog; @strudel2022self]. This is the single-step roll out: one extra pass, and nothing more.
+
+*Rounds.* After $\ell$ rounds of belief propagation, a node's decision depends only on its depth-$\ell$ computation graph, the nodes within $\ell$ links of it [@richardson2008modern] (§3.7). Copies of a known color are one link away; bits linked through a chain of blends need one round per link. The two papers on bounded information bound running time in general, not peeling rounds.
+
+*Usable information.* Unlike Shannon's mutual information, predictive V-information can be created by computation, in violation of the data-processing inequality [@xu2020theory]. Time-bounded entropy can likewise rise under a deterministic function [@finzi2026epiplexity] (Thm. 12, assuming pseudorandom generators exist). Two guardrails keep the figure consistent with Shannon's theory: the Shannon count never changes, and the model never pays less than it. With no limit on rounds, self conditioning changes nothing.
+
+A related comparison appears in [@finzi2026epiplexity] (§5.3.2): a model that unrolls a computation in a loop can beat one that must jump straight to the answer. Self conditioning, and the deterministic path of [@joLoopholingDiscreteDiffusion2026], look like the looped case. This link is our reading, not a claim of either paper.
+
+</ExpandableSection>
+
+### Self conditioning and turbo decoding
+
+Coding theory has a close relative of self conditioning: *turbo decoding* [@berrou1993near]. It is worth seeing the original first.
+
+**The code.** A turbo code sends each block of data three ways: the data bits themselves, check bits from a first encoder, and check bits from a second encoder that reads the same data in a shuffled order. The shuffle is the *interleaver*, written $\pi$. Each encoder is a *convolutional code*, a sliding filter over the bits, and on its own each is only a modest code [@richardson2008modern] (§6.1, §6.2); [@mackay2003information] (§48.4).
+
+**The decoder.** Two decoders, one per encoder, take turns. Each is *soft-in, soft-out*: it takes beliefs about the data bits and returns sharper ones, using the forward-backward (BCJR) algorithm on its own code. A decoder's output for a bit splits into three parts: what the channel said, the prior handed over by the other decoder, and the *extrinsic* part, what this decoder learned from its own check bits [@hagenauer2004exit]. Only the extrinsic part crosses over, through the interleaver, to become the other decoder's prior. Then the roles swap. After a number of turns the pair settles on far better answers than either decoder could reach once.
+
+**Why only the extrinsic part.** If a decoder passed on its full output, the other decoder would receive evidence it had itself contributed, treat it as new, and grow overconfident. Removing it was the key to making iterative decoding work [@berrou1993near]; Hagenauer describes it as avoiding the propagation of information that is already known [@hagenauer2004exit]. Belief propagation follows the same rule: a message along an edge leaves out what came in along that edge [@richardson2008modern] (§2.4).
+
+**When it converges.** The *EXIT chart* tracks one number per decoder: how much the prior going in knows about the bits, against how much the extrinsic output knows [@tenbrink2001convergence]. Drawing both decoders' curves turns decoding into a staircase between them. If the curves leave an open tunnel, the staircase climbs to full knowledge. If they meet, decoding stalls. This is why turbo codes have a sharp threshold in noise level. The idea, now called the *turbo principle*, has since been applied to equalization, multi-antenna detection and LDPC decoding [@hagenauer2004exit].
+
+<TurboDecoding client:visible />
+
+**The mapping to sampling.** Unroll sampling over steps. The denoiser at successive steps plays both decoders. The state $z_t$ is the received signal, and the previous prediction $\hat{x}_t$ is the prior. Without self conditioning, each pass is a decoder with no prior: it decodes from the channel alone, and everything it worked out is dropped except what the sampler writes. With self conditioning, sampling becomes a turbo loop, and the rounds per pass in the figure above play the role of decoding iterations. *This mapping is our reading; we know of no paper that states it.*
+
+<TurboSampling client:visible />
+
+Three differences matter.
+
+**Extrinsic information.** Self conditioning passes the full prediction, which already contains what the state said. Read at face value, the next pass would count that evidence twice and grow overconfident. The model is trained to read its own prediction, so it can learn to discount it, but training only shows it predictions from one pass on the same state. We think this is one reason self-conditioned samplers can become overconfident and repetitive, a failure several methods target directly, as discussed below. A turbo-style variant would feed back only the new part: the self-conditioned prediction minus a prediction from the state alone, in log terms. That is our suggestion, not an existing method we know of.
+
+**A changing channel.** In turbo decoding the received signal is fixed, and the decoders iterate toward a fixed point. In sampling, the sampler writes new decisions at every step, so the "received signal" itself changes as generation goes on. The closest analog of turbo iterations at a fixed signal is running several self-conditioned passes on one state, which is what the fixed-point experiments of [@yooSelfconditionedFlowMap2026a] do.
+
+**One learned decoder.** Turbo decoders are exact algorithms for known codes. A denoiser is one learned network playing both roles, trained to read its own prediction after a single pass, never after a long chain of them.
+
+<ExpandableSection title="The math: soft values, extrinsic information and EXIT charts" client:load>
+
+Turbo decoders work with *log-likelihood ratios* (LLRs), $L(x) = \ln \frac{P(x = +1)}{P(x = -1)}$, because independent evidence adds in this form [@richardson2008modern] (§2.5.2). The output of a soft-in, soft-out decoder for a bit splits into three parts [@hagenauer2004exit]:
+
+$$
+L_{\text{out}}(x) \;=\; \underbrace{L_c\, y}_{\text{channel}} \;+\; \underbrace{L_A(x)}_{\text{prior}} \;+\; \underbrace{L_E(x)}_{\text{extrinsic}} .
+$$
+
+Only $L_E$ is passed to the other decoder, where it becomes the prior. On a graph without cycles, passing extrinsic messages is exactly what belief propagation does: the message along an edge leaves out what came in along that edge [@richardson2008modern] (§2.4, §4.1.9).
+
+The *EXIT chart* tracks one number per decoder: the mutual information between the bit and the prior going in, $I_A$, against the mutual information between the bit and the extrinsic output, $I_E = T(I_A)$ [@tenbrink2001convergence; @hagenauer2004exit]. Plotting both decoders' curves, one with axes swapped, turns decoding into a staircase between them. If the curves leave an open tunnel, the staircase reaches full information and decoding succeeds. If they cross, it stalls. On the erasure channel this picture is exact and is density evolution itself [@richardson2008modern] (§3.14.1). For other channels it is an approximation that treats messages as Gaussian (§4.10.1, §6.7).
+
+A suggested measurement, our own: estimate the information between the clean sequence and a denoiser's prediction before and after one self-conditioned pass, at a fixed state. That gives a transfer curve for the denoiser, and the fixed point of [@yooSelfconditionedFlowMap2026a] would be where it meets the diagonal.
+
+</ExpandableSection>
+
+<div style={{ border: "2px dashed #8b8d98", borderRadius: 10, padding: "10px 14px", margin: "12px 0 18px", opacity: 0.85 }}>
+<strong>Section placeholder: simulating the picture.</strong> Planned: simulate the full picture (partial amounts, blends, rounds per pass and self conditioning) under each opening rule. Pooling and blend rules taken from [@land2006information]. The rounds-per-pass bound is the one new assumption and stays a knob. No results yet.
+</div>
 
 Self conditioning also changes the order in which bits are recovered. Every forward pass already resolves the easy bits first: the model is confident wherever its input makes the answer easy. Without self conditioning, the state update ignores this order, and the forward process decides what survives. With self conditioning, the model's own order survives between steps. The effective information path is then set partly by the model, and not only by the schedule.
 
-The second channel is not perfect. In training, the fed-back prediction comes from one pass on the same state. In sampling, it comes from the previous step, which was itself fed by the step before it, a chain many passes deep. This mismatch is known to hurt few-step sampling and to encourage overconfident, repetitive samples, and several recent methods target it directly [@nguyencong2026fastdiss; @li2026untied; @liu2024trec; @zhang2026ace; @shabalin2025tencdm].
+The technique has been used with Gaussian diffusion on embeddings [@strudel2022self; @dieleman2022continuous; @gulrajani2023likelihood; @yang2026continuousdiffusionscalescompetitively], simplex diffusion [@mahabadi2024tess; @deschenaux2026simplex], spherical flows [@chemseddine2026spherical], and recent flow language models [@hu2026elf; @chen2026langflow], with variations in what is fed back and how it enters the network [@luo2026langdit; @deschenaux2026simplex].
+
+The second channel is not perfect. In training, the fed-back prediction comes from one pass on the same state. In sampling, it comes from the previous step, which was itself fed by the step before it, a chain many passes deep. This mismatch is known to hurt few-step sampling and to encourage overconfident, repetitive samples, and several recent methods target it directly [@nguyencong2026fastdiss; @li2026untied; @liu2024trec; @zhang2026ace; @shabalin2025tencdm]. The turbo comparison above suggests a second, related cause: the fed-back prediction is a full posterior, not extrinsic information, so evidence the state already gave can be counted again.
 
 <div className="takeaway">
 <span className="takeaway-label">Takeaway</span>
 
-Self conditioning gives the model a second channel between steps: the state carries decisions, and self conditioning carries beliefs. The cost is a single-step roll out during training, which is what teaches the model to read its own prediction.
+Self conditioning gives the model a second channel between steps: the state carries decisions, and self conditioning carries beliefs. It lowers the hidden bits without adding Shannon information. The cost is a single-step roll out during training, which is what teaches the model to read its own prediction.
 
 </div>
 
@@ -184,7 +612,7 @@ The closest account to ours is the fixed-point view of [@yooSelfconditionedFlowM
 
 <FixedPointIterations client:visible />
 
-The two views agree on the mechanism. Their fixed point is a precise version of what we call the bits the model could resolve from the state with more compute. Their warm start is what we call the second channel: it carries finished work forward so that the next pass does not redo it. Their iteration results are direct evidence for the gap, since one pass per step leaves a lot unresolved. For deterministic samplers the two accounts say the same thing. The memory is a cache of compute, and their cold-start experiment gives a sense of how much compute it saves.
+The two views agree on the mechanism. Their fixed point is a precise version of what we call the bits the model could resolve from the state with more compute. Their warm start is what we call the second channel: it carries finished work forward so that the next pass does not redo it. Their iteration results are direct evidence for the gap, since one pass per step leaves a lot unresolved. In the box picture, iterations per step play the role of rounds per pass, and the warm start is self conditioning carrying rounds across steps. In coding terms, their iteration is a turbo loop run at a fixed received signal, and the warm start is starting the loop from the previous step's messages instead of from scratch. For deterministic samplers the two accounts say the same thing. The memory is a cache of compute, and their cold-start experiment gives a sense of how much compute it saves.
 
 Their work gives us a formal object for the gap, with conditions under which it is well defined, and a clean experiment that separates information that is missing from information that is costly to recover. On top of this, we propose three ideas, none of which we prove. The fixed-point analysis is stated for continuous flows, and we suggest that the same account carries over to masked and hybrid methods. We propose a description of where and when recovery happens: self conditioning makes it more gradual across positions and steps. Finally, we suggest a reason for why the gap exists at all, which is that the state has to stay in distribution for a model trained without simulation.
 
@@ -200,13 +628,12 @@ Several other recent results fit this picture. Loopholing adds a deterministic l
 
 ## A counterbalance for discrete and continuous
 
-Putting these pieces together, the order in which the model itself resolves bits is neither uniform across positions nor strictly one position at a time. Some bits within a position are easy; others are hard. Some positions have a lot of easy bits, others a lot of hard bits. Self conditioning lets this order survive between steps. As a result, it pulls each family away from its own extreme.
+Putting these pieces together, the order in which the model itself resolves bits is neither uniform across positions nor strictly one position at a time. Some bits within a position are easy; others are hard. Some positions have many easy bits, others many hard bits. Self conditioning lets this order survive between steps. As a result, it pulls each family away from its own extreme.
 
-For discrete methods, masked positions get a place to hold partial beliefs. A position no longer has to be either unknown or committed, and all-or-nothing recovery becomes gradual. For continuous methods, confident positions stay settled between steps instead of being blurred along with everything else. Uniform progress becomes uneven, which is what anchoring provides in hybrid methods [@pynadath2025candihybriddiscretecontinuousdiffusion; @zheng2025continuouslyaugmenteddiscretediffusion]. In both cases the result moves toward the middle, and the two families begin to look alike.
+For discrete methods, masked positions get a place to hold partial beliefs. A position no longer has to be either unknown or committed, and all-or-nothing recovery becomes gradual. For continuous methods, confident positions stay settled between steps instead of being blurred along with everything else. Uniform progress becomes uneven, which is what anchoring provides in hybrid methods [@pynadath2025candihybriddiscretecontinuousdiffusion; @zheng2025continuouslyaugmenteddiscretediffusion]. In both cases the result moves toward the middle, and the two families begin to look alike. In channel terms, the second channel gives an erasure-type state some soft evidence, and gives a Gaussian-type state some evidence that is close to certain.
 
 None of this says that self conditioning improves the final sample. It changes how recovery unfolds, and a more gradual path can help on one task and hurt on another. Nor is self conditioning the sole reason information spreads across positions. Committing a single token already tells the model something about its neighbors, through context, and this holds for a purely discrete model too. Self conditioning adds to this: it gives that partial progress somewhere to live between steps, so more of it reaches the positions that are still masked.
 
-<BitRecovery client:visible sc />
 
 <div className="takeaway">
 <span className="takeaway-label">Takeaway</span>
@@ -214,6 +641,56 @@ None of this says that self conditioning improves the final sample. It changes h
 Self conditioning pulls each family away from its own extreme. Discrete methods can hold partial beliefs at masked positions, and continuous methods can keep confident positions settled. This is a claim about how recovery unfolds, not about whether the final score improves.
 
 </div>
+
+## When is each way of recovering bits best?
+
+So far we have compared the corruption families by how they spend bits. The natural next question is which one spends them best. Answering it takes assumptions, because without any limits there is no winner: with an exact model, unlimited compute and many small steps, every exact method pays exactly the Shannon count. That is the chain rule. Differences appear only when something is limited. This post is about one limit in particular, the compute of a single pass, so that is the limit we build in.
+
+**What we measure.** We fix the number of sampling steps $N$ and count the *wasted bits*: the KL divergence between the true sampling path and the path the sampler actually takes. By the chain rule for KL divergence it adds up step by step, and by the data-processing inequality it bounds how far the final samples drift from the data. In the box figures, it is the gap between the model's count and the Shannon count. Two things create waste: bits written in the same step without seeing each other, and hidden bits that the model did not work out in time.
+
+**What we assume.**
+
+1. *The model is a decoder with a fixed amount of compute.* Each pass runs a fixed number of rounds of *belief propagation* on the data's graph of colors and blends, starting from the current state's evidence, and the sampler draws each position from the resulting beliefs. On the erasure channel this decoder is exactly the peeling decoder of the earlier figures; on the other channels it is the same algorithm with soft messages [@richardson2008modern] (§2.4, §3.5, §4.2). *Treating rounds as the model's compute is our framing.*
+2. *Self conditioning carries the decoder's work forward.* With it, the decoder starts each pass from the messages it ended the last pass with, instead of from scratch, so rounds add up across steps. This is the turbo loop of the previous section, made concrete; it is our model of self conditioning, not a claim about what a trained network does internally.
+3. *A fair comparison.* Every channel gets the same information per box at every step, split evenly over the $N$ steps, as in Land and Huber's equal-information comparison.
+4. *The exact reverse step and the box data.* The sampler uses the "draw, then corrupt" step. Colors are independent fair bits, shared exactly or through parity, and Gaussian corruption acts on analog bits.
+
+**What is already known.** For masked diffusion with exact predictions, recent theory bounds the waste by a measure of how strongly tokens depend on each other, divided by the number of steps: a sum of each token's mutual information with the rest [@li2025convergence], or, with randomized unmasking sizes, roughly the total or dual total correlation [@zhao2026adaptation]. Chen, Cong and Li design schedules from the same quantities [@chen2025optimal], and entropy-bounded unmasking is a practical rule in the same spirit [@benhamu2025accelerated]. We know of no comparison across corruption families, and none with a compute limit.
+
+**What we computed.** For each layout of the box picture we computed the wasted bits for 1 to 16 steps, under the three channels, with exact beliefs and with decoders limited to one or two rounds per pass, with and without self conditioning. The figure shows the results.
+
+<WasteChart client:visible />
+
+Four things stand out.
+
+- **With exact beliefs, waste falls roughly like the total correlation divided by $N$** for all three channels, with masked a little ahead. For masked diffusion this matches the theory above. That Gaussian and uniform corruption follow the same law is our finding.
+- **With a round limit and no self conditioning, waste levels off.** On the chain of blends with one round per pass, going from 2 to 16 steps only takes waste from about 2.9 to 1.8 bits, while exact beliefs reach 0.3. Extra steps cannot recover what each pass fails to work out: the hidden bits cost about the same at every step count.
+- **Self conditioning makes extra steps useful again.** Carrying the decoder's messages lets rounds add up across steps, and the same case drops to about 0.6 bits at 16 steps for masked and 0.5 for Gaussian. This is the post's thesis in its simplest form: under a compute limit, the gain from more steps depends on carrying work forward.
+- **Which channel suffers most depends on how bits are coupled.** Without blends, one round is already exact for masked and Gaussian (analog bits), because each bit's evidence simply adds up, so the round limit costs them nothing. Uniform corruption still loses: a swap replaces a whole token, which couples a position's bits, and undoing that coupling takes more rounds. With blends, every channel needs more rounds; with self conditioning, Gaussian does best on the chain and masked does best on the parity layout. We see no single winner.
+
+Two smaller points connect back to coding theory. Even with many rounds, belief propagation does not reach the exact result on layouts with cycles: with ten rounds on the chain, masked waste stays above the exact value. That is the gap between belief propagation and optimal decoding from the blends section. And the coupling that hurts uniform corruption is the same kind of coupling a learned embedding introduces under Gaussian noise, so we expect Gaussian corruption on real embeddings to sit closer to uniform than these analog-bit results suggest.
+
+<ExpandableSection title="The math: wasted bits as a path KL divergence, and the decoder" client:load>
+
+Let $p$ be the true reverse process and $q$ the sampler. Over steps $t_0 > t_1 > \dots > t_N$, the chain rule for KL divergence gives
+
+$$
+\mathrm{KL}\big(p(z_{t_0:t_N}) \,\|\, q(z_{t_0:t_N})\big) \;=\; \sum_{k=1}^{N} \mathbb{E}_{p}\Big[\mathrm{KL}\big(p(z_{t_k} \mid z_{t_{k-1}}) \,\|\, q(z_{t_k} \mid z_{t_0:t_{k-1}})\big)\Big],
+$$
+
+which still holds when the sampler depends on its history, as it does with self conditioning. The data-processing inequality bounds the error in the final sample by this total. The true step draws the clean sample from the exact joint prediction; the sampler draws each position from its decoder's belief $b_i$, independently:
+
+$$
+q(z_s \mid z_t) \;=\; \sum_{x} \Big(\prod_i b_i(x_i)\Big)\, q(z_s \mid z_t, x).
+$$
+
+*The decoder.* The factor graph has one binary variable per color and one factor per position. A position's factor is that position's channel evidence, written as a function of the colors it contains. Messages start uniform, or, with self conditioning, at the previous step's final messages. One round updates every variable-to-factor message (the product of the other incoming messages) and then every factor-to-variable message (summing the factor over the other colors). After the last round, each position's belief is its factor times its incoming messages. On a graph without cycles, enough rounds give the exact marginals [@richardson2008modern] (§2.4).
+
+*Computation.* Monte Carlo along true trajectories, with the exact posterior over color assignments (at most $2^7$) for the true step. The information per box at step $k$ is $k/N$ for every channel. Up to 2,500 trajectories per setting; the code is saved with the post's iterations. With exact beliefs these numbers agree with a separate computation of the same quantity step by step.
+
+</ExpandableSection>
+
+**Limits.** The layouts are small and the bits are idealized. Rounds of belief propagation are a stand-in for compute, and carried messages are a stand-in for self conditioning; a trained network does neither literally. The schedule spreads information evenly, and other schedules could change the gaps. Gaussian corruption is applied to analog bits, not learned embeddings.
 
 ## Evidence
 
@@ -251,15 +728,89 @@ On text8 we use a different committing sampler. Entropy-bounded samplers do poor
 
 A hybrid widens what the state can carry: it holds both full commitments and partial progress [@pynadath2025candihybriddiscretecontinuousdiffusion; @zheng2025continuouslyaugmenteddiscretediffusion; @zhou2025coevolutionary]. In our account this closes part of the gap from the state's side. But the schedule still sets the order in which positions are committed, and the update still drops the model's beliefs at uncommitted positions. So self conditioning should still change how recovery unfolds in a hybrid, with less left for it to change.
 
-The size of the effect follows this ordering. On Sudoku, self conditioning changes pure continuous models the most, hybrids with a uniform view less, and hybrids with a masked view hardly at all. On text8 the changes are smaller across the board: largest for pure continuous models, smaller for masked-view hybrids, and slightly negative for uniform-view hybrids. The direction of the change is not what our interpretation predicts. Its size is: the more the state already carries, the less self conditioning changes.
+The size of the effect follows this ordering. On Sudoku, self conditioning changes pure continuous models the most, hybrids with a uniform view less, and hybrids with a masked view hardly at all. On text8 the changes are smaller across the board: largest for pure continuous models, smaller for masked-view hybrids, and slightly negative for uniform-view hybrids.
 
 <ScInteraction client:visible figure="Figure G" path="hybrid" />
 
 ## Limitations
 
-The main limitation is scale. The models have 8 layers, each is trained once, and the tasks are Sudoku, text8 and TinyStories. Several of the patterns above are clear on Sudoku and mixed on text8.
+**Scale.** The models have 8 layers, each is trained once, and the tasks are Sudoku, text8 and TinyStories. Several of the patterns above are clear on Sudoku and mixed on text8. We therefore make no general claims about performance, and absolute rankings may change in other settings.
 
-This is why we avoid making general claims about performance. It is entirely possible that absolute rankings could change, given a different setting and task. Thus we restrict our attention to explaining the mechanism. Determining which of these methods will survive scaling is something that can only be learned by actually testing them at scale. As Erwin Smith says, we will only know once we get there.
+**The role of compute.** Our account rests on the assumption that what a state is worth depends on the model's compute. If that is right, it also limits how far results from small models extrapolate: a larger model extracts more from the same state, and the hidden bits shrink. What we expect to survive scaling is the mechanism, not its size. Any sampler that writes only part of the prediction into the state leaves a sampling wall [@joLoopholingDiscreteDiffusion2026], and self conditioning is one way past it. Which methods perform best at practical scales can only be learned by testing them at scale.
+
+**The picture.** The box picture is exact for one kind of data: bits that positions share exactly, plus parity. Soft dependencies between tokens fit neither case. The information-combining results hold for binary symbols. The erasure picture is exact for masked diffusion at the level of tokens, not for uniform or Gaussian corruption, which we draw with partial amounts and wrong boxes instead. Rounds per pass as a compute bound is our framing, and the numbers in the figures depend on hand-made layouts. They illustrate the bookkeeping and are not measurements.
+
+**The decomposition.** We name the KL term in $h_t$ "hidden bits" and attribute it to limited compute. It also contains plain modeling error, and we do not separate the two.
+
+## Conclusion
+
+Every exact method pays the same number of bits for a sample. What differs is the order: masked diffusion settles whole positions, like an erasure channel, while continuous diffusion pays a little at every position. In both, a forward pass works out more than the next state keeps, because the state has to look like a training state for a model trained without simulation. The dropped part is mostly hidden bits: fixed by the state, but out of reach of a single pass. Self conditioning carries the model's last prediction past the sampler. Under a deterministic sampler it adds no Shannon information, but it adds usable information for a model with bounded compute, and it lets the model's own order of recovery survive between steps. That pulls discrete and continuous methods toward each other, which is what the entropy profiles, the sampler results and the commitment results in Part 2 show, at the small scale we could test.
+
+## Study map: where each idea comes from
+
+This part leans on four books and papers. The table lists each idea in the order it appears, with where to read about it. MacKay is *Information Theory, Inference, and Learning Algorithms* [@mackay2003information]. Richardson and Urbanke is *Modern Coding Theory* [@richardson2008modern]. Section numbers are given for the books.
+
+| Idea on this page | Official term | Where to read |
+|---|---|---|
+| Bits a sample needs | entropy, information content | MacKay §2.4; §4.4 (typical set) |
+| Boxes vs colors | sum of marginal entropies vs joint entropy; total correlation | MacKay §8.1; Watanabe (1960) |
+| The discount; order does not change the total (for an unbounded observer) | chain rule of entropy | MacKay §8.1 |
+| Opening a box | binary erasure channel | Richardson and Urbanke §3.1; MacKay §9.3 |
+| Striped boxes turning gray | peeling decoder; belief propagation | Richardson and Urbanke §3.5, §3.19; MacKay Ch. 16, Ch. 26, §50.2 |
+| How much of the code peeling solves | density evolution; threshold | Richardson and Urbanke §3.9-§3.12 |
+| Model never pays less than Shannon | Gibbs' inequality; KL divergence | MacKay §2.6, §5.4 |
+| Cost of writing several boxes at once | conditional total correlation | Watanabe (1960); Ben-Hamu et al. (2025) |
+| One forward pass predicts each position separately | product of marginals (the form mean-field methods use) | MacKay §33.3 |
+| Blends | parity check; stopping set; MAP vs BP | Richardson and Urbanke §3.19-§3.22; MacKay §8.4 |
+| Masked, uniform, Gaussian corruption | erasure, symmetric and Gaussian channels; binary memoryless symmetric channels | MacKay §9.3, Ch. 11; Richardson and Urbanke §4.1 |
+| Gaussian payment along the path | I-MMSE relation; degradation | Guo, Shamai and Verdú (2005); Richardson and Urbanke §4.1.14 |
+| Which evidence helps more | extremes of information combining; EXIT functions; area theorem | Land and Huber (2006); Richardson and Urbanke Thm. 4.141, §3.14 |
+| Embeddings and bits | coded modulation; multilevel coding; BICM; Gray mapping | Richardson and Urbanke §5.4; MacKay Ch. 11 |
+| Hidden bits | time-bounded entropy; epiplexity; V-information | Finzi et al. (2026) Def. 8; Xu et al. (2020) |
+| Order matters for a real model | factorization order and time-bounded entropy | Finzi et al. (2026) Thm. 13 |
+| Generation as decoding | channel, bit-wise MAP decoding | Richardson and Urbanke §1.5, §2.5 |
+| Inserting a sender; the loss as a transmission bill | progressive coding; reverse channel coding; sampling by decoding random bits | Ho et al. (2020) §4.3; Theis et al. (2022); Hoogeboom et al. (2022); MacKay §6.3 |
+| Masked diffusion loss = area under EXIT curves | area theorem; any-order autoregression | Richardson and Urbanke §3.14; Ou et al. (2024) |
+| Gaussian diffusion loss = integral of denoising error | I-MMSE relation | Guo, Shamai and Verdú (2005); Kong et al. (2023) |
+| Self conditioning adds no Shannon information | data-processing inequality | MacKay §8.3 |
+| ...but can add usable information | computation creates V-information / time-bounded entropy | Xu et al. (2020); Finzi et al. (2026) Thm. 12 |
+| Rounds per pass | computation graph; iterations | Richardson and Urbanke §3.7, §3.22.3 |
+| Wasted bits for a fixed number of steps, under a compute limit | KL divergence of the sampling path; total correlation; belief propagation with a fixed number of iterations | Li and Cai (2025); Zhao and Cai (2026); Chen, Cong and Li (2025); Richardson and Urbanke §2.4, §4.2 |
+| Self conditioning and turbo decoding | turbo principle; extrinsic information; EXIT chart | Berrou et al. (1993); Richardson and Urbanke §6.3, §6.7; MacKay §48.4, Ch. 25; ten Brink (2001); Hagenauer (2004) |
+
+Rows marked in the text as our own reading (rounds as a compute bound, the turbo mapping, the names on the three parts of $h_t$) have no source to read; the table points to the ideas they build on.
+
+<ExpandableSection title="Glossary of terms used on this page" client:load>
+
+- **Entropy $H(X)$**: average number of bits needed to describe $X$ (MacKay §2.4).
+- **Information content**: $\log_2 1/p(x)$, the bits needed for one outcome $x$ (MacKay §2.4).
+- **Joint and conditional entropy**: $H(X,Y)$, and $H(Y \mid X) = H(X,Y) - H(X)$ (MacKay §8.1).
+- **Mutual information $I(X;Y)$**: how much knowing one variable lowers uncertainty about the other (MacKay §8.1).
+- **Total correlation**: $\sum_i H(X_i) - H(X)$, information shared among many variables, counted with multiplicity (Watanabe 1960).
+- **KL divergence**: extra bits paid for coding with the wrong distribution (MacKay §2.6).
+- **Channel**: a rule $p(y \mid x)$ that turns an input into a noisy output (MacKay §9.2).
+- **Capacity**: the most information per use a channel can carry (MacKay §9.5).
+- **Binary erasure channel (BEC)**: each bit arrives intact or as "?" (Richardson and Urbanke §3.1).
+- **Binary symmetric channel (BSC)**: each bit is flipped with some probability, unmarked (MacKay §9.3).
+- **Additive white Gaussian noise (AWGN) channel**: output is input plus Gaussian noise (MacKay Ch. 11).
+- **Degradation**: one channel equals another followed by extra noise (Richardson and Urbanke §4.1.14).
+- **Log-likelihood ratio (LLR)**: $\ln \frac{P(x=+1)}{P(x=-1)}$; independent evidence adds (Richardson and Urbanke §2.5.2).
+- **Factor graph / Tanner graph**: a graph of variables and the constraints linking them (Richardson and Urbanke §2.2).
+- **Belief propagation**: message passing that computes marginals exactly on a graph without cycles (Richardson and Urbanke §2.4).
+- **Peeling decoder**: on the erasure channel, repeatedly solve a constraint with one unknown (Richardson and Urbanke §3.19).
+- **Density evolution**: tracks the fraction of unknown messages per round on large random codes (Richardson and Urbanke §3.9).
+- **Stopping set**: erased bits that no constraint can resolve one at a time (Richardson and Urbanke §3.22.1).
+- **MAP decoding**: decoding with the full posterior, the best possible decoder (Richardson and Urbanke §1.5).
+- **EXIT function / chart**: entropy left about a bit given all other received bits; a chart of how this improves across iterations (Richardson and Urbanke §3.14; ten Brink 2001).
+- **Extrinsic information**: what a decoder learned beyond the prior it was given (Hagenauer 2004).
+- **Turbo decoding**: two soft decoders that take turns passing extrinsic information (Berrou et al. 1993).
+- **Coded modulation**: sending coded bits through a constellation of points in a Gaussian channel (Richardson and Urbanke §5.4).
+- **Multilevel coding / BICM**: reading a constellation's bits in turn with earlier bits known, or each on its own (Richardson and Urbanke §5.4).
+- **Data-processing inequality**: processing cannot add Shannon information (MacKay §8.3).
+- **Time-bounded entropy, epiplexity**: unpredictable and learnable information for an observer with a compute budget (Finzi et al. 2026).
+- **V-information**: mutual information for an observer limited to a family of predictors (Xu et al. 2020).
+
+</ExpandableSection>
 
 {/* OLD DRAFT, moved from the Part 3 intro:
 Based on these empirical observations, we interpret self conditioning as defining another trajectory of information recovery that is in between discrete and continuous trajectories: unlike discrete trajectories, self conditioning allows for positions to recover information without fully committing, allowing for more uniform progress; and unlike typical continuous trajectories, it allows for more uneven recovery by allowing the model to see which positions are confident and which positions are uncertain, rather than all being at the same level of uncertainty due to a uniform noise level across the sequence. We go into more detail as to why our observations seem to suport these conclusions.

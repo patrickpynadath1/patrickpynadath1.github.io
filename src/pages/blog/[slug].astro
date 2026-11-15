@@ -12,6 +12,8 @@ export async function getStaticPaths() {
 
 const { post } = Astro.props;
 const { title, description, pubDate, tags, wip, comments } = post.data;
+// Draft posts keep their source but publish only a placeholder at their URL, so links to them still resolve.
+const draft = !!post.data.draft;
 const { Content, headings } = await post.render();
 ---
 <BlogLayout
@@ -21,7 +23,7 @@ const { Content, headings } = await post.render();
   tags={tags}
   wip={wip}
   comments={comments}
-  headings={headings}
+  headings={draft ? [] : headings}
 >
-  <Content />
+  {draft ? <p>This post is not published yet. Check back soon.</p> : <Content />}
 </BlogLayout>

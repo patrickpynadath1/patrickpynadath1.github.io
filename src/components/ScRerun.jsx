@@ -61,7 +61,7 @@ function fmtD(task, d, split = "test") {
   return sgn(d, Math.abs(d).toFixed(split === "test" ? 3 : 1));
 }
 const metricName = (task, split = "test") =>
-  task === "sudoku" ? "accuracy" : task === "text8" ? "valid words / sample" : split === "test" ? "SOL" : "ref_w1";
+  task === "sudoku" ? "accuracy" : task === "text8" ? "valid words / sample" : TK.tinystories.test_metric ?? (split === "test" ? "SOL" : "ref_w1");
 const dirWord = (task) => (isMin(task) ? "lower is better" : "higher is better");
 // Positive = better, whatever the metric's direction.
 const gain = (task, a, b) => (isMin(task) ? a - b : b - a);
@@ -322,7 +322,7 @@ function ScVsDepthInner() {
         ]} />
       </>}
       note={mode === "test"
-        ? `Test score of each model's validation-selected sampler at 128 network calls (Sudoku: 976 puzzles; text8 and TinyStories: 2,048 prompts; two sampling seeds). Labels on the right: change over the 8-layer model, green or red when it is larger than the noise level for one training seed (${TK.sudoku.noise * 100} pts, ${TK.text8.noise} words, ${TK.tinystories.noise} SOL). Gaussian models use 512-dimensional embeddings.`
+        ? `Test score of each model's validation-selected sampler at 128 network calls (Sudoku: 976 puzzles; text8 and TinyStories: 2,048 prompts; two sampling seeds). Labels on the right: change over the 8-layer model, green or red when it is larger than the noise level for one training seed (${TK.sudoku.noise * 100} pts, ${TK.text8.noise} words, ${TK.tinystories.noise} MAUVE). Gaussian models use 512-dimensional embeddings.`
         : "Stage-2 validation score (256 prompts) of each model's best native-sampler setting. Hover a mark for its 95% bootstrap interval. TinyStories is in ref_w1 here, the metric samplers are tuned on (lower is better, so its axis is flipped). Labels: change over the 8-layer model, colored when the two models' intervals do not overlap."}
     >
       {pending(task) ? <Pending task={task} /> : <div ref={tip.box} style={{ position: "relative" }}>
@@ -613,7 +613,7 @@ function ContinuousInner() {
       title="Does SC help every continuous method?"
       subtitle="Grey ring: no SC. Green dot: with SC. Same 8-layer backbone and learned clock; each model uses its own validation-selected sampler. Dashed lines: the 8-layer masked and uniform models, for scale."
       controls={<Pills value={task} onChange={setTask} options={TASK_OPTS} />}
-      note={`Test scores at 128 network calls (Sudoku 976 puzzles, text and stories 2,048 prompts, two sampling seeds). Labels: change from SC, green or red when it is larger than the noise level for one training seed (${TK.sudoku.noise * 100} pts, ${TK.text8.noise} words, ${TK.tinystories.noise} SOL), then the sampler each model selected.`}
+      note={`Test scores at 128 network calls (Sudoku 976 puzzles, text and stories 2,048 prompts, two sampling seeds). Labels: change from SC, green or red when it is larger than the noise level for one training seed (${TK.sudoku.noise * 100} pts, ${TK.text8.noise} words, ${TK.tinystories.noise} MAUVE), then the sampler each model selected.`}
     >
       {pending(task) ? <Pending task={task} /> : <div ref={tip.box} style={{ position: "relative" }}>
         <Legend items={[
@@ -669,7 +669,7 @@ function HybridInner() {
         <Pills value={view} onChange={setView} options={[{ id: "masked", label: "Masked view" }, { id: "uniform", label: "Uniform view" }, { id: "none", label: "Pure continuous" }, { id: "all", label: "All" }]} />
         <Pills value={arm} onChange={setArm} options={ARM_OPTS.map((o) => (o.id === "all" ? { ...o, label: "SC and no SC" } : o))} />
       </>}
-      note={`Test scores at 128 network calls, each model with its validation-selected sampler. Labels: change from SC, green or red when it is larger than the noise level for one training seed (${TK.sudoku.noise * 100} pts, ${TK.text8.noise} words, ${TK.tinystories.noise} SOL). On text8, the dashed line is held-out real text (${TK.text8.heldout.toFixed(1)} words); scores past it reward diversity past fluency. Gaussian hybrids use 512-dimensional embeddings.`}
+      note={`Test scores at 128 network calls, each model with its validation-selected sampler. Labels: change from SC, green or red when it is larger than the noise level for one training seed (${TK.sudoku.noise * 100} pts, ${TK.text8.noise} words, ${TK.tinystories.noise} MAUVE). On text8, the dashed line is held-out real text (${TK.text8.heldout.toFixed(1)} words); scores past it reward diversity past fluency. Gaussian hybrids use 512-dimensional embeddings.`}
     >
       {pending(task) ? <Pending task={task} /> : <div ref={tip.box} style={{ position: "relative" }}>
         <Legend items={[...(arm !== "sc" ? [{ shape: "ring", color: P.dim2, label: "no SC" }] : []), ...(arm !== "none" ? [{ shape: "dot", color: P.candi, label: "SC" }] : []), ]} />
@@ -929,7 +929,7 @@ function Top3Inner({ figure = "Figure R′" }) {
       const u = c.base.test;
       vals.push(u);
       const marks = [{ shape: "square", color: P.highlight, lane: 0, v: u, size: 4.5,
-        tip: [`${caseLabel(c)} · untuned native (T = 1)`, `${metricName(t)}: ${fmt(t, u)}`, `two seeds: ${seeds(c.base.test_seeds)}`] }];
+        tip: [`${caseLabel(c)} · untuned native (T = 1)`, `${metricName(t)}: ${fmt(t, u)}`, c.base.test_seeds ? `two seeds: ${seeds(c.base.test_seeds)}` : "pooled over both test seeds"] }];
       c.fams.forEach((f, i) => {
         seen.add(f.family);
         vals.push(f.test);
@@ -954,7 +954,7 @@ function Top3Inner({ figure = "Figure R′" }) {
         <Pills value={fam} onChange={setFam} options={FAM_OPTS.filter((o) => o.id !== "all")} />
         <Pills value={arm} onChange={setArm} options={ARM_OPTS} />
       </>}
-      note={`Test ${metricName(t)} (${dirWord(t)}) at 128 network calls, mean of two sampling seeds; all samplers on the same prompts and seeds. Labels: best of the three on test minus untuned (green or red beyond the noise level, ${t === "sudoku" ? `${noise * 100} pts` : `${noise} words`}), then the three families in validation order. Best of the three beats untuned beyond noise ${tally.better}, within noise ${tally.within}, untuned better beyond noise ${tally.worse}. Picking the best on test is optimistic; it is shown only to see how close the families are. TinyStories is being re-tuned with MAUVE and is not shown.`}
+      note={`Test ${metricName(t)} (${dirWord(t)}) at 128 network calls, ${t === "tinystories" ? "pooled over two sampling seeds" : "mean of two sampling seeds"}; all samplers on the same prompts and seeds. Labels: best of the three on test minus untuned (green or red beyond the noise level, ${t === "sudoku" ? `${noise * 100} pts` : t === "text8" ? `${noise} words` : `${noise} MAUVE`}), then the three families in validation order. Best of the three beats untuned beyond noise ${tally.better}, within noise ${tally.within}, untuned better beyond noise ${tally.worse}. Picking the best on test is optimistic; it is shown only to see how close the families are.`}
     >
       <div ref={tip.box} style={{ position: "relative" }}>
         <Legend items={[{ shape: "square", color: P.highlight, label: "untuned native" },
@@ -1144,12 +1144,12 @@ function AnchorPowerInner() {
       kicker="Figure E″ · tuned anchoring power"
       title="How late should random anchoring commit?"
       subtitle="The p tuning chose for each continuous model (Figure E′ shows what p does to the schedule)."
-      note="Each bar: the stage-2 winner's p for that sampler (validation, 256 prompts, NFE 128; search range 0.33 to 3, 16 trials). Outlined: no SC; filled: SC. Hover a bar for the temperature and token rule it was paired with. Only 8 distinct p values occur, because the search proposes many of the same points across models; read p as coarse. TinyStories is being re-tuned and is not shown."
+      note="Each bar: the stage-2 winner's p for that sampler (validation, 256 prompts, NFE 128; search range 0.33 to 3; TinyStories tuned on MAUVE). Outlined: no SC; filled: SC. Hover a bar for the temperature and token rule it was paired with. Only 13 distinct p values occur across the 48 bars, because the search proposes many of the same points across models; read p as coarse."
     >
       <div ref={tip.box} style={{ position: "relative" }}>
         <Legend items={[{ shape: "square", color: FAMILY_COLOR.continuous(), label: "pure continuous model (outlined: no SC · filled: SC)" }, { line: true, wide: true, dash: "3 3", color: P.muted, label: "p = 1 (constant rate)" }]} />
         <Grid min={260}>
-          {["sudoku", "text8"].flatMap((t) => META.anchor_policies.map((p) => <PowerPanel key={t + p} task={t} policy={p} tip={tip} />))}
+          {["sudoku", "text8", "tinystories"].flatMap((t) => META.anchor_policies.map((p) => <PowerPanel key={t + p} task={t} policy={p} tip={tip} />))}
         </Grid>
         {tip.el}
       </div>

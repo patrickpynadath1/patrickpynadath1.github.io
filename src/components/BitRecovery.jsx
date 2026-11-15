@@ -38,7 +38,9 @@ function build() {
 
   // Continuous: every word gains bits at about the same rate.
   const continuous = WORDS.map(() => {
-    const slots = [0.125, 0.375, 0.625, 0.875].sort(() => r() - 0.5);
+    const slots = [0.125, 0.375, 0.625, 0.875];
+    // Fisher-Yates with the seeded generator: the same order in every JavaScript engine.
+    for (let i = slots.length - 1; i > 0; i--) { const j = Math.floor(r() * (i + 1)); [slots[i], slots[j]] = [slots[j], slots[i]]; }
     return slots.map((s) => clamp(s + (r() - 0.5) * 0.16));
   });
 

@@ -27,15 +27,6 @@ import ExpandableSection from "../../components/ExpandableSection.jsx"
 
 # Some DLM Design Choices: Self Conditioning Across Recipes
 
-{/* In-progress reminders: the only place pending work is mentioned. Delete this block before release. */}
-<div style={{ border: "2px solid #e5484d", background: "rgba(229, 72, 77, 0.10)", borderRadius: 10, padding: "12px 16px", margin: "8px 0 18px" }}>
-<strong style={{ color: "#e5484d" }}>In progress (remove before release)</strong>
-
-- **TinyStories untuned baseline** is MAUVE-scored on test only, so the anchoring figure (which compares validation scores) still has no untuned tick for TinyStories. Results prose on tuning has not yet been checked against the TinyStories numbers (e.g. masked-simplex + SC: renoising wins on validation but scores 0.794 on test vs 0.929 untuned).
-- **Rank-linear hybrids on TinyStories** were tuned on the old metric (ref_w1) and need a MAUVE re-tune. The linear-schedule statements in the hybrid section rest on Sudoku and text8 only.
-
-</div>
-
 <a href="https://github.com/patrickpynadath1/sddc" target="_blank" rel="noopener" aria-label="SDDC code on GitHub" style={{ display: "inline-flex", alignItems: "center", gap: 8, padding: "7px 16px", margin: "4px 0 18px", borderRadius: 999, background: "var(--fg)", color: "var(--bg)", fontWeight: 600, fontSize: 15, textDecoration: "none" }}><svg width="18" height="18" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/></svg>Code on GitHub</a>
 
 Patrick Pynadath<sup>1</sup>, Ruqi Zhang<sup>1</sup>
@@ -154,7 +145,7 @@ The choice of using the same training settings for all methods is not based on p
 - **Samplers.** Eight for every model: native, native greedy, renoise, renoise greedy, EB greedy, EB churn, and Ψ on two clocks (Ψ·c: the corruption level; Ψ·t: the controller time). Ψ·t was tuned in a separate run on the same checkpoints, prompts and seeds. Two more for the 24 pure continuous models: anchor native and anchor renoise (separate run, same checkpoints, prompts and seeds).
 - **Tuning and selection.** Optuna on validation only (GP for native, renoise and EB; multivariate TPE for Ψ and anchoring; both values for the two-option samplers), 2 to 24 trials per sampler. Stage 1: 64 prompts, two seeds. Stage 2: each sampler's top 3 on 256 fresh prompts, fresh seed, bootstrap interval. The stage-2 winner is tested once at NFE 128 with two seeds. NFE counts every network call.
 - **NFE 512 check.** Each sampler's winning settings at 512 calls on a fixed 128 test prompts, one seed. Reported only; no selection reads it.
-- **Noise for one seed.** The two test seeds differ by up to 1.7 points (Sudoku) and 0.13 words (text8); stage-2 intervals are ±2 to ±6 points (Sudoku), ±0.3 to ±0.5 words (text8). Working thresholds: about 3 points (Sudoku), 0.5 words (text8). TinyStories: about 0.018 MAUVE (twice the median k-means SD).
+- **Noise for one seed.** The two test seeds differ by up to 1.7 points (Sudoku) and 0.13 words (text8); stage-2 intervals are ±2 to ±6 points (Sudoku), ±0.3 to ±0.5 words (text8). Working thresholds: about 3 points (Sudoku), 0.5 words (text8). TinyStories: about 0.045 MAUVE, the half-width of a paired bootstrap 95% interval over test prompts for a tuned-minus-untuned gap; MAUVE's k-means noise alone is only 0.018.
 - **Exact settings.** sddc `configs/sweep/{rerun_protocol,rerun_common}.yaml`, `configs/inference/inference_policies/{hybrid_renoising,eb_churn,psi,anchoring}.yaml`, `experiments/rerun/evaluation/*.json`.
 
 </div>
@@ -223,7 +214,7 @@ We further investigate whether self conditioning changes the learned schedule wi
 
 #### Discrete Anchoring with Pure Continuous Methods
 
-We also investigate whether pure continuous methods are able to leverage discrete commitment within their sampling algorithms, using the random anchoring samplers described in the [sampler pipeline](#sampler-pipeline). In general, discrete commitment does not improve performance, and the best anchoring sampler stays below the untuned native sampler. This is to be expected, as the model never sees committed tokens during training. What is interesting is how the performance of these samplers shifts with self conditioning: in the figure below, every continuous method anchors better when trained with self conditioning, by 1.8 to 4.5 words on text8. With self conditioning, spherical anchoring reaches the untuned baseline, and simplex and vMF come within about 1.5 words of it. This suggests that self conditioning makes discrete commitment look more in-distribution, resulting in less performance degradation. 
+We also investigate whether pure continuous methods are able to leverage discrete commitment within their sampling algorithms, using the random anchoring samplers described in the [sampler pipeline](#sampler-pipeline). In general, discrete commitment does not improve performance, and the best anchoring sampler stays below the untuned native sampler. This is to be expected, as the model never sees committed tokens during training. What is interesting is how the performance of these samplers shifts with self conditioning: in the figure below, every continuous method anchors better when trained with self conditioning, by 1.8 to 4.5 words on text8. With self conditioning, spherical anchoring reaches the untuned baseline, and simplex and vMF come within about 1.5 words of it. On TinyStories, self conditioning raises anchoring by 0.11 to 0.16 MAUVE; Gaussian, spherical and vMF stay well below their untuned samplers (0.86–0.89 vs 0.96–0.97), while simplex, whose untuned sampler is weak, anchors above it (0.91 vs 0.78). This suggests that self conditioning makes discrete commitment look more in-distribution, resulting in less performance degradation. 
 
 <AnchoringContinuous client:visible />
 
@@ -240,7 +231,7 @@ In this section, we show results pertaining to discrete corruption methods and s
 
 #### Difference in Behavior of Masked vs. Uniform
 
-With each model's best tuned sampler, self conditioning lowers masked diffusion's Sudoku accuracy by 3.7 points, raises its text8 score by 1.3 words, and leaves TinyStories unchanged. Uniform diffusion improves on all three tasks, by 16.8 points on Sudoku, 0.28 words on text8 (within the one-seed noise level) and 0.045 MAUVE on TinyStories. Switching the figure to the native sampler shows a different side of masked diffusion: with self conditioning, its native sampler gains 45 points on Sudoku. Self conditioning helps the samplers that were weak without it, but not the entropy-bounded samplers that were already near the top. 
+With each model's best tuned sampler, self conditioning lowers masked diffusion's Sudoku accuracy by 3.7 points, raises its text8 score by 1.3 words, and leaves TinyStories unchanged. Uniform diffusion improves on all three tasks, by 16.8 points on Sudoku, 0.28 words on text8 (within the one-seed noise level) and 0.045 MAUVE on TinyStories (at the noise level). Switching the figure to the untuned native sampler shows a different side of masked diffusion: with self conditioning, its untuned native sampler gains 50 points on Sudoku (32% to 82%). Self conditioning helps the samplers that were weak without it, but not the entropy-bounded samplers that were already near the top. 
 
 <DiscreteGain client:visible />
 
@@ -259,7 +250,7 @@ For discrete methods, the effect of self conditioning depends on the method: uni
 
 ### Self Conditioning, Hybrid Corruption, and Learned Noise Schedule
 
-Here we discuss how hybrid methods interact with self conditioning and the learned noise schedule. We observe that the learned noise schedule is saturated towards the noisy end, which is due to the extra information the model receives from revealed tokens ([figure](#hybrid-learned-noise-schedules)). We also train every hybrid with a fixed linear schedule to study whether fixing the noise schedule improves results, but it does not help overall: simplex roughly ties or improves, Gaussian and spherical get slightly worse, and vMF gets much worse. To understand how hybrid noise schedules should be designed, we analyze the commitment rates selected by tuning when hybrid samplers are applied to pure continuous methods; this gives a hint as to which reveal rates work for continuous methods ([figure](#commitment-rates-chosen-by-tuning-on-pure-continuous-methods)). Despite the collapsed noise schedules, hybrid methods without self conditioning often outperform both pure discrete and pure continuous models (half of the hybrids on each task). With self conditioning, this advantage disappears: the pure models catch up, and hybrids mostly tie or fall behind ([figure](#hybrid-performance-vs-pure-discrete-vs-pure-continuous)). 
+Here we discuss how hybrid methods interact with self conditioning and the learned noise schedule. We observe that the learned noise schedule is saturated towards the noisy end, which is due to the extra information the model receives from revealed tokens ([figure](#hybrid-learned-noise-schedules)). We also train every hybrid with a fixed linear schedule to study whether fixing the noise schedule improves results, but it does not help overall: vMF gets much worse on every task, simplex roughly ties or improves on Sudoku and text8 but is worse on TinyStories, spherical is mixed, and Gaussian gets slightly worse except for the uniform-view Gaussian hybrids on TinyStories, which improve. To understand how hybrid noise schedules should be designed, we analyze the commitment rates selected by tuning when hybrid samplers are applied to pure continuous methods; this gives a hint as to which reveal rates work for continuous methods ([figure](#commitment-rates-chosen-by-tuning-on-pure-continuous-methods)). Despite the collapsed noise schedules, hybrid methods without self conditioning often outperform both pure discrete and pure continuous models (half of the hybrids on Sudoku and text8; none by more than the noise level on TinyStories). With self conditioning, this advantage disappears: the pure models catch up, and hybrids mostly tie or fall behind ([figure](#hybrid-performance-vs-pure-discrete-vs-pure-continuous)). 
 
 #### Hybrid Learned Noise Schedules 
 
@@ -275,13 +266,13 @@ The answer depends on the discrete view and the task. Uniform hybrids gain 7 to 
 
 #### Hybrid Performance vs. Pure Discrete vs. Pure Continuous
 
-Each row of the figure below places a hybrid next to the two pure models it is built from. Without self conditioning, half of the hybrids on each task beat both of their parts by more than the noise level. With self conditioning, the pure models improve more than the hybrids do: on Sudoku every hybrid ties its better part, and on text8 none is better while four are worse. 
+Each row of the figure below places a hybrid next to the two pure models it is built from. Without self conditioning, half of the hybrids on Sudoku and text8 beat both of their parts by more than the noise level; on TinyStories none does. With self conditioning, the pure models improve more than the hybrids do: on Sudoku every hybrid ties its better part, and on text8 none is better while four are worse. 
 
 <HybridVsPure client:visible />
 
 #### Commitment Rates Chosen by Tuning on Pure Continuous Methods
 
-When random anchoring is tuned on a pure continuous model, the chosen commitment power p is above 1.2 for 30 of 32 models (median 2.23). A power of 2 to 3 commits only an eighth to a quarter of the positions by the halfway point, and 44% to 58% of them in the last quarter of sampling. Continuous models prefer to keep most positions free until late. A hybrid's schedule could take the same hint: reveal tokens later than the linear rate a masked process uses. 
+When random anchoring is tuned on a pure continuous model, the chosen commitment power p is above 1.2 for 45 of 48 models across the three tasks (median 2.26). A power of 2 to 3 commits only an eighth to a quarter of the positions by the halfway point, and 44% to 58% of them in the last quarter of sampling. Continuous models prefer to keep most positions free until late. A hybrid's schedule could take the same hint: reveal tokens later than the linear rate a masked process uses. 
 
 <AnchorPower client:visible />
 
@@ -304,7 +295,7 @@ Without self conditioning on Sudoku, the untuned native sampler ranks masked dif
 
 #### Self Conditioning Changes Sensitivity to Tuning
 
-The figure below shows, for every model, the untuned native sampler next to the three sampler families that ranked best on validation. Without self conditioning, the families spread widely and tuning buys a lot. With self conditioning, they bunch together and sit closer to the untuned sampler: on Sudoku, the gap between the best tuned sampler and the untuned one shrinks from 68 to 14 points for masked diffusion, and to under 2 points for every other method; on text8, it shrinks for every method, for example from 4.8 to 1.7 words for simplex. 
+The figure below shows, for every model, the untuned native sampler next to the three sampler families that ranked best on validation. Without self conditioning, the families spread widely and tuning buys a lot. With self conditioning, they bunch together and sit closer to the untuned sampler: on Sudoku, the gap between the best tuned sampler and the untuned one shrinks from 68 to 14 points for masked diffusion, and to under 2 points for every other method; on text8, it shrinks for every method, for example from 4.8 to 1.7 words for simplex; on TinyStories, the median gain over the untuned sampler falls from 0.079 to 0.002 MAUVE, with one exception: simplex + SC, whose untuned sampler is poor, still gains 0.20. 
 
 <UntunedVsTop3 client:visible />
 

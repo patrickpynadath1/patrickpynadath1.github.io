@@ -118,7 +118,7 @@ function Rows({ task, rows, tip, axisLabel, domain }) {
 
 // Delta label, coloured only when it clears the one-seed noise threshold for the task.
 const deltaNote = (t, d) => ({ note: d == null ? "" : fmtD(t, d), noteColor: d == null || Math.abs(d) < noise(t) ? P.muted : d > 0 ? P.good : P.bad });
-const noiseText = (t) => `Labels: SC minus no SC, coloured when larger than about ${t === "sudoku" ? `${noise(t) * 100} points` : `${noise(t)} ${UNIT[t]}`}, the one-seed noise level for ${TK[t].label}.`;
+const noiseText = (t) => `Labels: SC minus no SC, coloured when larger than about ${t === "sudoku" ? `${noise(t) * 100} points` : `${noise(t)} ${UNIT[t]}`}, ${t === "tinystories" ? "the half-width of a paired bootstrap 95% interval over test prompts" : "the one-seed noise level"} for ${TK[t].label}.`;
 
 function useTask(init = "text8") {
   const [t, setT] = useState(init);
@@ -129,10 +129,10 @@ function useTask(init = "text8") {
 function gainRows(t, keys, opts = {}) {
   return keys.map(({ label, q, group }) => {
     const a = get({ task: t, arm: "none", ...q }), b = get({ task: t, arm: "sc", ...q });
-    const pick = (c) => (opts.native ? c?.pol.native?.v : c?.test);
+    const pick = (c) => (opts.native ? c?.base?.test : c?.test);
     const va = pick(a), vb = pick(b);
-    const tipFor = (c, v, arm) => [`${label}${arm}`, `${opts.native ? "tuned native, validation" : "test"} ${METRIC[t]}: ${fmt(t, v)}`,
-      opts.native ? "stage 2, 256 prompts" : `sampler: ${SNAME[c?.selected] ?? "–"}`];
+    const tipFor = (c, v, arm) => [`${label}${arm}`, `${opts.native ? "untuned native (T = 1), test" : "test"} ${METRIC[t]}: ${fmt(t, v)}`,
+      opts.native ? "no tuning" : `sampler: ${SNAME[c?.selected] ?? "–"}`];
     return {
       label, group,
       marks: [{ v: va, shape: "ring", color: P.dim2, tip: tipFor(a, va, "") }, { v: vb, shape: "dot", color: P.good, tip: tipFor(b, vb, " + SC") }],
@@ -148,8 +148,8 @@ function GainFigure({ kicker, title, subtitle, keys, withNative }) {
   const native = withNative && mode === "native";
   return (
     <Frame kicker={kicker} title={title} subtitle={subtitle}
-      controls={<>{taskPills}{withNative && <Pills value={mode} onChange={setMode} options={[{ id: "best", label: "Best tuned sampler" }, { id: "native", label: "Native sampler" }]} />}</>}
-      note={`${native ? "Validation (stage 2, 256 prompts) of the tuned native sampler." : `Test ${METRIC[t]} of each model's selected sampler (${TK[t].test_n.toLocaleString()} test ${t === "sudoku" ? "puzzles" : "prompts"}, two seeds, 128 NFE).`} Higher is better. ${noiseText(t)} One training seed per model.`}>
+      controls={<>{taskPills}{withNative && <Pills value={mode} onChange={setMode} options={[{ id: "best", label: "Best tuned sampler" }, { id: "native", label: "Untuned native sampler" }]} />}</>}
+      note={`Test ${METRIC[t]} of ${native ? "the untuned native sampler (temperature 1, no search)" : "each model's selected sampler"} (${TK[t].test_n.toLocaleString()} test ${t === "sudoku" ? "puzzles" : "prompts"}, two seeds, 128 NFE). Higher is better. ${noiseText(t)} One training seed per model.`}>
       <div ref={tip.box} style={{ position: "relative" }}>
         <Legend items={[{ shape: "ring", color: P.dim2, label: "no SC" }, { shape: "dot", color: P.good, label: "SC" }]} />
         <Rows task={t} rows={gainRows(t, keys, { native })} tip={tip} axisLabel={`${METRIC[t]} →`} />
@@ -169,7 +169,7 @@ function ContinuousGainInner() {
 }
 function DiscreteGainInner() {
   return <GainFigure kicker="Figure · SC on discrete methods" title="Masked and uniform respond differently to SC" withNative
-    subtitle="Masked and uniform diffusion, trained without and with SC. Switch to the native sampler to compare at a fixed sampler family." keys={DISC_KEYS} />;
+    subtitle="Masked and uniform diffusion, trained without and with SC. Switch to the untuned native sampler to compare without any sampler tuning." keys={DISC_KEYS} />;
 }
 function HybridGainInner() {
   return <GainFigure kicker="Figure · SC on hybrids" title="Do hybrid methods benefit from self conditioning?"
@@ -200,7 +200,7 @@ function AnchoringInner() {
     <Frame kicker="Figure · anchoring continuous models" title="SC makes random anchoring work better"
       subtitle="Random anchoring commits random positions to tokens on a schedule, like a masked process. Each row: the best anchoring sampler without and with SC. The yellow tick is the same SC model with the untuned native sampler, for reference."
       controls={taskPills}
-      note={`Stage-2 validation ${METRIC[t]} (256 prompts, 128 NFE), higher is better. ${noiseText(t)}`}>
+      note={`Stage-2 validation ${METRIC[t]} (256 prompts, 128 NFE), higher is better. ${noiseText(t)}${t === "tinystories" ? " On 256 stories, MAUVE itself varies by about 0.03 to 0.05, so read small gaps to the tick with care." : ""}`}>
       <div ref={tip.box} style={{ position: "relative" }}>
         <Legend items={[{ shape: "ring", color: P.dim2, label: "anchoring, no SC" }, { shape: "dot", color: P.good, label: "anchoring, SC" }, { line: true, wide: true, color: P.highlight, label: "untuned native, SC" }]} />
         <Rows task={t} rows={rows} tip={tip} axisLabel={`${METRIC[t]} →`} />
