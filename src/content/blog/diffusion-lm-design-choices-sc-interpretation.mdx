@@ -11,7 +11,7 @@ comments: true
 
 import { LSpread } from "../../components/LSpread.jsx"
 import ExpandableSection from "../../components/ExpandableSection.jsx"
-import { MaskedUniformSC, SCResponse, RecipeSpread } from "../../components/Part3Evidence.jsx"
+import { MaskedUniformSC, SCResponse, RecipeSpread, SimplexDiversity } from "../../components/Part3Evidence.jsx"
 import { BoxSetup, BoxDiscount, BoxThreeWays } from "../../components/BitBoxes.jsx"
 import { Constellation } from "../../components/CodingFigures.jsx"
 import { ReliabilityMap } from "../../components/ReliabilityMap.jsx"
@@ -275,14 +275,11 @@ The pattern fits this reading. On Sudoku, renoising improves with self condition
 
 Some results do not fit the picture. Small-concentration simplex diffusion should behave like uniform diffusion, yet on TinyStories self conditioning hurts simplex (0.889 to 0.858 with the best tuned sampler) while it helps uniform.
 
-The generated stories point to a cause. To separate the base model's behavior from the effect of tuning, we compare samples from each model's untuned native sampler, 4,096 stories per model. Self conditioning lowers diversity for every recipe, but for most it lands near the diversity of real stories. Simplex loses far more and ends well below it:
+The generated stories point to a cause. To separate the base model's behavior from the effect of tuning, we compare samples from each model's untuned native sampler, 4,096 stories per model. Self conditioning lowers diversity for every recipe, but for most it lands near the diversity of real stories. Simplex loses far more and ends well below it ([Figure 6](#figure-6)): distinct bigrams across its stories fall from 0.248 to 0.130, against 0.253 for real stories, and the share of stories that open with the same ten words rises from 3.3% to 11.0%.
 
-| Simplex on TinyStories | Without SC | With SC | Real stories |
-|---|---|---|---|
-| Distinct bigrams across all stories | 0.248 | 0.130 | 0.253 |
-| Word vocabulary | 4,852 | 3,196 | 5,635 |
-| Repeated 4-grams within a story | 0.55% | 2.25% | 0.84% |
-| Stories sharing their first 10 words with another | 3.3% | 11.0% | 1.9% |
+<div id="figure-6"></div>
+
+<SimplexDiversity client:visible />
 
 The other recipes behave differently. The discrete and hybrid models are slightly more diverse than real stories without self conditioning, and self conditioning brings them close to it. The pure continuous methods drop somewhat below it (distinct bigrams around 0.21), yet their MAUVE rises, so a loss of diversity alone does not explain the drop. Simplex differs in degree: it starts as the least diverse recipe and loses about twice as much. In our reading, this fits an over-sharpened sampler. A small-concentration simplex state already looks like a committed token, the fed-back prediction adds confidence on top, and the sampler settles positions early, which MAUVE penalizes. It happens only on TinyStories because of its vocabulary: with 10,000 tokens, a near-corner simplex point looks far more like a committed token than it does with the 27 characters of text8 or the digits of Sudoku. Raising the Dirichlet concentration should move simplex toward the Gaussian end of the map (Proposition 4.1 of [@deschenaux2026simplex]) and very likely fix this, though we have not tested it. Simplex's stories without self conditioning are also unusually short (101 words, against about 130 for the other recipes and 132 for real stories), so something specific to this recipe may be at work as well.
 

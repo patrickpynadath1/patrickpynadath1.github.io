@@ -204,3 +204,70 @@ function SpreadInner() {
 export const MaskedUniformSC = withVizTheme(MaskedUniformInner);
 export const SCResponse = withVizTheme(SCResponseInner);
 export const RecipeSpread = withVizTheme(SpreadInner);
+
+// ─── Figure 6: sample diversity on TinyStories, without and with SC ──────────
+// Untuned native sampler, 4,096 test stories per model (2,048 prompts x 2 seeds);
+// corpus metrics scored per seed and averaged. From Claude outputs/simplex-diversity.
+const DIV = {
+  masked: { d2: [0.2849, 0.2555], vocab: [6205, 5587], rep4: [0.0023, 0.0052], open: [0.0081, 0.0312] },
+  uniform: { d2: [0.2651, 0.2462], vocab: [5594, 5349], rep4: [0.0026, 0.0056], open: [0.0076, 0.0349] },
+  gaussian: { d2: [0.2952, 0.2243], vocab: [6226, 4795], rep4: [0.0019, 0.0077], open: [0.0093, 0.0354] },
+  spherical: { d2: [0.2912, 0.2079], vocab: [6170, 4508], rep4: [0.0017, 0.0086], open: [0.0081, 0.0564] },
+  vmf: { d2: [0.2950, 0.2104], vocab: [6152, 4589], rep4: [0.0014, 0.0082], open: [0.0051, 0.0498] },
+  simplex: { d2: [0.2477, 0.1299], vocab: [4852, 3196], rep4: [0.0055, 0.0225], open: [0.0325, 0.1104] },
+};
+const DIV_REF = { d2: 0.2532, vocab: 5635, rep4: 0.0084, open: 0.0186 };
+const DIV_METRICS = [
+  { id: "d2", label: "Bigrams", long: "distinct bigrams across all stories (higher = more diverse)", f: (v) => v.toFixed(3) },
+  { id: "vocab", label: "Vocabulary", long: "distinct words used across all stories (higher = more diverse)", f: (v) => Math.round(v).toLocaleString("en-US") },
+  { id: "rep4", label: "Repeats", long: "share of 4-grams repeated within a story (lower = more diverse)", f: (v) => `${(v * 100).toFixed(2)}%` },
+  { id: "open", label: "Openings", long: "stories whose first 10 words match another story (lower = more diverse)", f: (v) => `${(v * 100).toFixed(1)}%` },
+];
+const DIV_ROWS = [
+  { id: "masked", label: "Masked", color: () => P.mdlm },
+  { id: "uniform", label: "Uniform", color: () => P.duo },
+  { id: "gaussian", label: "Gaussian", color: () => P.accent },
+  { id: "spherical", label: "Spherical", color: () => P.orange },
+  { id: "vmf", label: "vMF", color: () => P.lime },
+  { id: "simplex", label: "Simplex", color: () => P.pinkText, hi: true },
+];
+
+function DiversityInner() {
+  const [m, setM] = useState("d2");
+  const met = DIV_METRICS.find((x) => x.id === m);
+  const W = 600, x0 = 92, x1 = W - 128, rowH = 30, top = 18;
+  const vals = [...DIV_ROWS.flatMap((r) => DIV[r.id][m]), DIV_REF[m]];
+  const pad = (Math.max(...vals) - Math.min(...vals)) * 0.08;
+  const lo = Math.max(0, Math.min(...vals) - pad), hi = Math.max(...vals) + pad;
+  const X = (v) => x0 + ((v - lo) / (hi - lo)) * (x1 - x0);
+  const H = top + DIV_ROWS.length * rowH + 24;
+  return (
+    <Frame
+      kicker="Figure 6"
+      title="With self conditioning, simplex loses far more diversity than any other recipe"
+      subtitle={`TinyStories samples from each model's untuned sampler. Each line runs from the value without self conditioning (open dot) to the value with it (filled dot). The dashed line marks real stories. Shown: ${met.long}.`}
+      controls={<Pills value={m} onChange={setM} options={DIV_METRICS.map((x) => ({ id: x.id, label: x.label }))} />}
+      note={<>4,096 stories per model (2,048 test prompts, two sampling seeds), one training seed per model. The other recipes lose some diversity too but end near real stories; simplex starts lowest and ends far below.</>}
+    >
+      <svg viewBox={`0 0 ${W} ${H}`} width="100%" style={{ display: "block", fontFamily: SANS, maxWidth: 680 }}>
+        <line x1={X(DIV_REF[m])} y1={6} x2={X(DIV_REF[m])} y2={H - 20} stroke={P.muted} strokeDasharray="4 4" />
+        <text x={X(DIV_REF[m])} y={H - 6} fontSize={10.5} fill={P.muted} fontFamily={FONT} textAnchor="middle">real stories {met.f(DIV_REF[m])}</text>
+        {DIV_ROWS.map((r, i) => {
+          const [a, b] = DIV[r.id][m], y = top + i * rowH + 6, c = r.color();
+          return (
+            <g key={r.id}>
+              {r.hi && <rect x={0} y={y - 13} width={W} height={26} rx={6} fill={rgba(c, 0.10)} />}
+              <text x={6} y={y + 4} fontSize={12.5} fontWeight={r.hi ? 700 : 500} fill={r.hi ? P.text : P.muted}>{r.label}</text>
+              <line x1={X(a)} y1={y} x2={X(b)} y2={y} stroke={c} strokeWidth={r.hi ? 3 : 2} opacity={0.7} />
+              <circle cx={X(a)} cy={y} r={5.5} fill={P.inset} stroke={c} strokeWidth={2}><title>{`${r.label} without SC: ${met.f(a)}`}</title></circle>
+              <circle cx={X(b)} cy={y} r={5.5} fill={c}><title>{`${r.label} with SC: ${met.f(b)}`}</title></circle>
+              <text x={W - 4} y={y + 4} fontSize={11} fill={r.hi ? P.text : P.dim2} fontFamily={FONT} textAnchor="end">{met.f(a)} → {met.f(b)}</text>
+            </g>
+          );
+        })}
+      </svg>
+    </Frame>
+  );
+}
+
+export const SimplexDiversity = withVizTheme(DiversityInner);
