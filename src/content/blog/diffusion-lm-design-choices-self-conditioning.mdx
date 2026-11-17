@@ -27,7 +27,7 @@ import ExpandableSection from "../../components/ExpandableSection.jsx"
 {/* Callouts hidden on this page for now; delete this line to show them again. */}
 <style>{`.prose .callout { display: none; }`}</style>
 
-# SDDC, Part 2: Self Conditioning Across Recipes
+# SDDC, Part 2: Self Conditioning and Input Reliability
 
 <a href="https://github.com/patrickpynadath1/sddc" target="_blank" rel="noopener" aria-label="SDDC code on GitHub" style={{ display: "inline-flex", alignItems: "center", gap: 8, padding: "7px 16px", margin: "4px 0 18px", borderRadius: 999, background: "var(--fg)", color: "var(--bg)", fontWeight: 600, fontSize: 15, textDecoration: "none" }}><svg width="18" height="18" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/></svg>Code on GitHub</a>
 
@@ -669,6 +669,20 @@ To separate the base model from the effect of tuning, we compare samples from ea
 </div>
 
 The task labels rest on an argument from each task's structure, not on a measurement, and the readings above fit the results after the fact, on one training seed and three small tasks. A direct test would fix the structure in advance: synthetic tasks built from pure copies, or from parity checks of a chosen size, trained with masked, uniform and Gaussian corruption, with and without self conditioning. Redundant tasks should favor masked diffusion and synergistic ones uniform diffusion, with the gap growing as the parity checks span more positions. A second test would move one recipe along the reliability axis with everything else fixed: give uniform diffusion a flag that marks corrupted positions, or raise the concentration of simplex diffusion. Finally, recent theory traces the gap between masked diffusion and the other families in parallel sampling to a different mechanism: masked diffusion has a sharper critical window [@chen2026parallelism].
+
+## Related Work
+
+<div className="spark">
+
+- Critical windows: masked diffusion decides each position in a much narrower window than uniform or Gaussian diffusion, which costs it parallelism.
+- SCUD: masking works because it builds in when each token is corrupted.
+- Gourevitch et al.: uniform diffusion can be rewritten to sample like masked diffusion, and then it matches masked diffusion.
+
+</div>
+
+**Critical windows.** Li and Chen [@li2024critical] show that diffusion models decide each feature of the output in a short window of the reverse process. Chen and Wang [@chen2026parallelism] apply this to language models: masked diffusion's window is far narrower than uniform or Gaussian diffusion's, so it can need many more forward passes. Like ours, their split puts masked diffusion on one side and uniform and Gaussian diffusion on the other.
+
+**Masked vs uniform diffusion.** Amin et al. [@amin2025scud] argue that masked diffusion works because it builds in when each token is corrupted and only learns what it becomes; giving other discrete processes the same knowledge (SCUD) recovers its benefits. Gourevitch et al. [@gourevitch2026uniform] rewrite uniform diffusion as an absorbing process with the same joint law, which turns its sampling into masked-diffusion-like steps: unmasking, with tokens carried over, plus a natural form of remasking. In that form it matches or beats masked diffusion, which suggests the gap between the two comes from sampling and parameterization more than from the noise itself. In our terms, both papers move uniform diffusion toward the erasure channel.
 
 ## Limitations, and the Future 
 
