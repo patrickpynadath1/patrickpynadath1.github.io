@@ -10,7 +10,6 @@ comments: true
 sparknotes: true
 ---
 
-
 import { Pipeline } from "../../components/PipelineFigure.jsx"
 import SeriesNav from "../../components/SeriesNav.astro"
 import { MethodFactory } from "../../components/MethodFactory.jsx"
@@ -21,7 +20,6 @@ import { AnchorPower, AnchorSchedule, UntunedVsTop3 } from "../../components/ScR
 import { AnchoringContinuous, DiscreteSamplers, HybridVsPure, TuningRanking, ResultsExplorer } from "../../components/ScFindings.jsx"
 import { MaskedUniformSC, SCResponse, SimplexDiversity } from "../../components/Part3Evidence.jsx"
 import { ScOrdering } from "../../components/ScOrdering.jsx"
-import { CdcdCorruption } from "../../components/CdcdSchedules.jsx"
 import { ReliabilityMap } from "../../components/ReliabilityMap.jsx"
 import { HybridClocks } from "../../components/HybridClocks.jsx"
 import ExpandableSection from "../../components/ExpandableSection.jsx"
@@ -63,7 +61,7 @@ In [Part 1](/blog/diffusion-lm-design-choices/) of the blog series, we introduce
 2. Self conditioning makes pure continuous diffusion models amenable to discrete commitment, with performance in some cases close to the default untuned sampler for each recipe. 
 3. Hybrid methods capture some of the benefits of self conditioning: without it, they often beat both pure discrete and pure continuous models, but some variants still gain from self conditioning, and with it the pure models catch up. 
 
-The [results](#experimental-results) start with an explorer of every run. We then [read the results](#input-reliability-task-structure-and-self-conditioning) through coding theory. Masked diffusion is an erasure channel, uniform diffusion a symmetric channel, and Gaussian diffusion sits in between. Which channel is best depends on whether the task's structure is redundant, like Sudoku, or synergistic, like text8, and self conditioning adds graded reliability that helps most where a recipe is a bad match for the task. Nine findings follow, each with its own evidence.
+The [results](#experimental-results) start with an explorer of every run. We then [read the results](#input-reliability-task-structure-and-self-conditioning) through coding theory. Masked diffusion is an erasure channel, uniform diffusion a symmetric channel, and Gaussian diffusion sits in between. Which channel is best depends on whether the task's structure is redundant, like Sudoku, or synergistic, like text8, and self conditioning adds graded reliability that helps most where a recipe is a bad match for the task. Eight findings follow, each with its own evidence.
 
 Finally, we discuss the limitations of this experimental framework due to scale, and describe what a true "method factory" would enable. 
 
@@ -115,8 +113,7 @@ For discrete diffusion, we focus on masked diffusion [@sahooSimpleEffectiveMaske
 
 For hybrid methods, we investigate the product space produced by the discrete methods and continuous methods. While our codebase does allow for combining different continuous views, we focus on discrete and continuous combinations as part of our goal is to understand how self conditioning affects performance if discrete anchoring is already provided to a continuous method. 
 
-For all the continuous methods, we use the CDCD adaptive noise schedule [@dieleman2022continuous]. For discrete, we choose to use uniform time sampling, as this is fairly standard. For hybrids, we also choose the adaptive CDCD loss, because it is informative towards how anchoring affects the continuous noise levels selected. 
-
+Continuous and hybrid models use the CDCD adaptive noise schedule [@dieleman2022continuous]; discrete models use uniform time sampling.
 
 <StudyMap client:visible />
 
@@ -132,9 +129,15 @@ For all the continuous methods, we use the CDCD adaptive noise schedule [@dielem
 </div>
 We pick Sudoku, text8, and TinyStories as the tasks we apply each DLM recipe towards. Even at a small scale, these are not necessarily ideal -- the more informative battery of experiments would be to use pretraining on OpenWebText to understand convergence and generative quality; and TinyGSM as used in [@liu2023tinygsmachieving80gsm8k] [@deschenaux2026language]. However, given the sheer breadth of the design space we want to investigate for this study, it is simply not practical to use these tasks. 
 
+<ExpandableSection title="More detail: why these tasks" client:load>
+
 While not ideal, we believe these tasks do span a useful range of behaviors that may be indicative of how these methods would behave on OWT and TinyGSM, which also may be indicative of how they behave at scale. 
 
+</ExpandableSection>
+
 <TaskFrontier client:visible />
+
+<ExpandableSection title="More detail: each task and its metric" client:load>
 
 **Sudoku**
 
@@ -154,6 +157,8 @@ However, it is still quite distant from real language, as we work in the charact
 
 The most realistic task we look at is TinyStories, where we train a model to generate meaningful continuations of some story. This is the closest, as it uses a somewhat realistic vocabulary size (10k BPE) and is actual language generation. However, this also makes it the hardest to evaluate. It would not be appropriate to use generative perplexity and entropy, as these measure KL to the distribution encoded by the AR model. Furthermore, we would ideally like to take advantage of the ground truth continuations we have. We can choose SOL from [@sol2026], but this would pose significant difficulties for tuning, as our tuning stage of the pipeline is quite involved. BLEU would reward repeating generic phrases, which could result in overly generic stories. We choose to proceed with MAUVE from [@pillutla2021mauvemeasuringgapneural], using an AR model trained on TinyStories as the feature extractor. 
 
+</ExpandableSection>
+
 ### Training Protocol 
 
 <div className="spark">
@@ -163,7 +168,10 @@ The most realistic task we look at is TinyStories, where we train a model to gen
 - One training seed per model. Shared settings are a practical choice, not a principled one.
 
 </div>
-For training, we use the same core architecture, learning rate, and optimizer for all methods. We list them below. 
+
+Every recipe uses the same model and training: an 8-block diffusion transformer of width 512, trained for 20,000 steps, with one training seed per model.
+
+<ExpandableSection title="More detail: training settings" client:load>
 
 - **Architecture.** A diffusion transformer (DiT) with 8 blocks, hidden size 512, 8 attention heads and dropout 0.1. Methods that diffuse in an embedding space (Gaussian, spherical, vMF) use 512-dimensional token embeddings.
 - **Optimizer.** AdamW, learning rate 3e-4 with 2,500 linear warmup steps and no decay afterwards; betas (0.9, 0.999), no weight decay, gradient clipping at 1.0.
@@ -171,9 +179,11 @@ For training, we use the same core architecture, learning rate, and optimizer fo
 - **EMA.** We keep an exponential moving average of the weights with decay 0.9999 and evaluate the EMA weights.
 - **Sequence lengths.** Sudoku 180 tokens (puzzle prompt plus solution), text8 256 characters, TinyStories 512 BPE tokens (10k vocabulary).
 - **Self conditioning.** On 90% of each training batch, the model first runs a no-gradient forward pass, and the expected embedding under that prediction is fed back as an extra input. At sampling time the previous step's prediction is fed back, so self conditioning adds no network calls.
-- **Seeds.** One training seed per model. The noise this leaves in the results is discussed in the protocol callout below.
+- **Seeds.** One training seed per model. The noise this leaves is about 3 points on Sudoku, 0.5 words on text8 and 0.045 MAUVE on TinyStories.
 
 The choice of using the same training settings for all methods is not based on principle, but practicality -- the ideal case would be to take each recipe and search for the best architectural choices, learning rate schedule, and optimizer as there is no guarantee that different generative methods have identical optimal settings. However, we choose not to do this as 1) these experiments are at such a small scale that the settings would not transfer to any practical scale; and 2) even without training sweeps, the number of runs and compute needed is large, for an academic scale. 
+
+</ExpandableSection>
 
 {/* <div className="callout">
 <span className="callout-label">TinyStories tuning metric: MAUVE</span>
@@ -220,6 +230,8 @@ We assess recipes by the final samples produced, making our results heavily cont
 
 <TuningProcess client:visible />
 
+<ExpandableSection title="More detail: the tuning protocol, step by step" client:load>
+
 1. **Fixed budget.** Every sampler is run at 128 network calls (NFE), counting every call, including the final decoding call.
 2. **Samplers.** Each model is tuned with eight samplers: native, native greedy, renoise, renoise greedy, EB greedy, EB churn, and Ψ on two clocks. The pure continuous models also get two random-anchoring samplers (anchor native, anchor renoise). The breakout below explains what each one changes, and how one set of samplers runs on every recipe.
 3. **Search spaces.** Each sampler exposes a small set of knobs. All of them tune the prediction temperature (0.5 to 1.5). EB samplers also tune the entropy bound (0.02 to 0.5 nats). EB churn also tunes how often committed positions are re-noised and when that stops. Ψ tunes its schedule, step size and top-p. Anchoring tunes the commitment power (0.33 to 3) and whether committed tokens are sampled or taken greedily. The two "greedy" variants have only two settings, so both are simply evaluated.
@@ -228,10 +240,13 @@ We assess recipes by the final samples produced, making our results heavily cont
 6. **Stage 2 (confirmation).** Each sampler's top 3 settings are re-scored on 256 fresh validation prompts with a fresh seed, with a bootstrap interval. The best stage-2 result across all samplers is the model's tuned sampler. Re-scoring on fresh prompts guards against picking a setting that only got lucky on the stage-1 prompts.
 7. **Test.** Only the winner is scored on the test split, once, at 128 NFE with two seeds. Untuned results use each model's native sampler at temperature 1 with the same budget.
 
-Three terms from this list are used throughout the results. A sampler **commits** a position when it sets that position to one token and freezes it for the rest of sampling. **Entropy-bounded (EB)** samplers commit the positions the model is surest about [@benhamu2025accelerated]: at each step they take positions from most to least certain, for as long as the summed entropy of the chosen positions, not counting the largest one, stays under a tuned bound. **Random anchoring** ignores the model's confidence and commits positions at random on a schedule, which mimics the order a masked process imposes. Finally, **Ψ** mixes the native and renoise samplers [@deschenaux2026psi]: at each step, every position takes the native step with some probability and is re-noised from the model's prediction otherwise.
+<AnchorSchedule client:visible />
+
+</ExpandableSection>
+
+Three terms are used throughout the results. A sampler **commits** a position when it sets that position to one token and freezes it for the rest of sampling. **Entropy-bounded (EB)** samplers commit the positions the model is surest about [@benhamu2025accelerated]: at each step they take positions from most to least certain, for as long as the summed entropy of the chosen positions, not counting the largest one, stays under a tuned bound. **Random anchoring** ignores the model's confidence and commits positions at random on a schedule, which mimics the order a masked process imposes. Finally, **Ψ** mixes the native and renoise samplers [@deschenaux2026psi]: at each step, every position takes the native step with some probability and is re-noised from the model's prediction otherwise.
 
 The metric that drives selection is the task metric: exact-solve accuracy for Sudoku, distinct valid words of five or more letters for text8, and MAUVE for TinyStories. The full sampler-tuning protocol is summarized in [Figure T](#sampler-pipeline).
-
 
 <details className="breakout">
 <summary>
@@ -291,8 +306,6 @@ Code: `core/samplers/composed.py` (the shared loop), `core/samplers/policies.py`
 
 </details>
 
-<AnchorSchedule client:visible />
-
 Comparing tuned and untuned results is informative in itself: **tuning can flip a ranking**. Without self conditioning on Sudoku, the untuned native sampler ranks masked diffusion fifth of six methods; with each method's best tuned sampler, masked diffusion is first, at 97.4% accuracy. With self conditioning, the top three methods after tuning are within half a point of each other. Comparing recipes with one fixed, untuned sampler mostly measures how well that sampler suits each recipe, so every result below uses each model's best tuned sampler unless it says otherwise.
 
 <TuningRanking client:visible />
@@ -301,12 +314,12 @@ Comparing tuned and untuned results is informative in itself: **tuning can flip 
 
 <div className="spark">
 
-- First an overview of every result, then a way to read them, then nine findings in three groups, each with its own evidence.
+- First an overview of every result, then a way to read them, then eight findings in two groups, each with its own evidence.
 - Methods are compared only within a task. One training seed per model, so differences near the noise level are not effects.
 
 </div>
 
-We first show every result in one place. We then give a way to read them: corruption families differ in how much the noisy state tells the model about which positions to trust, and which family suits a task depends on whether its structure is redundant or synergistic. Finally, we go through nine findings in three groups, each with the evidence behind it.
+We first show every result in one place. We then give a way to read them: corruption families differ in how much the noisy state tells the model about which positions to trust, and which family suits a task depends on whether its structure is redundant or synergistic. Finally, we go through eight findings in two groups, each with the evidence behind it.
 
 Every model was trained with one seed, every sampler was tuned per model, and the three tasks use different metrics: exact-solve accuracy on Sudoku, distinct valid words on text8, and MAUVE on TinyStories. We therefore compare methods only within a task. Differences near the noise level (about 3 points on Sudoku, 0.5 words on text8 and 0.045 MAUVE on TinyStories) should not be read as effects.
 
@@ -374,7 +387,7 @@ For one position, let $L$ be the log-likelihood ratio between two candidate clea
 
 - Redundant (copy-like): several clues each pin the same answer. Synergistic (parity-like): the answer lies only in a combination.
 - At equal capacity, erasure is best and the symmetric channel worst for redundant structure; for synergistic structure, the order flips. Gaussian is always in between. 
-- Sudoku is redundant: given the prompt, each cell is pinned by its row, column and box at once.
+- Prompted Sudoku is redundant: the givens are never corrupted, the answer is fixed, and each revealed cell is a clue to the same solution that helps on its own.
 - text8 is synergistic: no single character is wrong by itself; a word is valid only as a whole, and many words are possible.
 
 </div>
@@ -385,9 +398,23 @@ Coding theory tells us which channel suits each. At equal capacity, the erasure 
 
 **Our two main tasks sit at opposite poles.**
 
-- **Sudoku is redundant.** The prompt determines the answer, and each answer cell is pinned by its row, its column and its box at once: three overlapping clues for one value.
+- **Sudoku, in its prompted form, is redundant.** The prompt determines the answer, and each answer cell is pinned by its row, its column and its box at once: three overlapping clues for one value.
 - **text8 is synergistic.** No single character is wrong by itself. A word is valid only if all its letters make sense together, and many different words are possible. The metric rewards exactly this: it counts valid words of five or more letters, an all-or-nothing check over a group. Text also has some redundant pieces ("q" is almost always followed by "u"), but the structure the task rewards is mainly synergistic.
 - **TinyStories** is a prompted task with many valid continuations, so it falls in between.
+
+<ExpandableSection title="More detail: why prompted Sudoku is redundant" client:load>
+
+Sudoku's rules look synergistic: in a row, no single digit says much about another, and only the nine together must be all different. What matters for the channel view, though, is the evidence that passes *through the channel*, and in our task the prompt shapes it.
+
+- **The givens are never corrupted.** Only the answer cells are noised. The rules tie the answer cells to the givens as much as to each other, and the givens always arrive clean, so the joint structure is already settled by the prompt.
+- **Given the prompt, the answer is fixed.** Every answer cell is a function of the same prompt, so every answer cell the channel reveals points to the same single solution. A revealed cell never argues for a second valid answer.
+- **Each revealed cell helps on its own.** Take one blank cell. The givens in its row, column and box have already ruled out most digits. Each other answer cell in those units that the channel reveals can rule out one more, whether or not its neighbors are revealed, and the cell can often be pinned by its row, its column or its box separately. The evidence adds up piece by piece, from several directions at once. In a pure parity check, by contrast, knowing all but one of the other positions tells you nothing; the answer appears only when the last one arrives.
+
+That is the copy-like signature: several partial clues about one fixed value, each useful alone. It also shows why the symmetric channel does badly here. An erased neighbor says nothing, which is harmless. A swapped neighbor shows a wrong digit, and if that digit happens to be the blank cell's true value, it rules out the right answer. The erasure channel never lies, so every clue it passes can be trusted as it arrives.
+
+**This depends on the prompt.** A model that generates complete grids from scratch faces the rules alone: no answer is fixed, and the all-different constraints tie the generated digits together synergistically. The channel view then predicts the opposite ordering, with uniform diffusion closing the gap to masked diffusion or overtaking it. We have not run that variant.
+
+</ExpandableSection>
 
 ### What Self Conditioning Adds
 
@@ -428,13 +455,9 @@ Self conditioning feeds the model's previous prediction back as an input. That p
 7. Self conditioning lets continuous models commit tokens.
 8. Renoising collapses on text8 when the two signals disagree.
 
-**Other results**
-
-9. Continuous methods learn similar schedules, and self conditioning does not move them.
-
 </div>
 
-The findings come in three groups. The first tests the two claims directly. The second follows what the added reliability does to sampling. The third collects a result that sits outside the story, followed by the one result that does not fit. Every finding uses each model's best tuned sampler unless it says otherwise.
+The findings come in two groups. The first tests the two claims directly. The second follows what the added reliability does to sampling. One result that does not fit closes the section. Every finding uses each model's best tuned sampler unless it says otherwise.
 
 ### Reliability and Task Structure
 
@@ -497,20 +520,24 @@ Two caveats apply. Uniform diffusion's gain on text8 (0.28 words) is within the 
 
 <div className="spark">
 
-- Inside a hybrid, the continuous view's learned schedule jumps to almost pure noise right away; self conditioning does not change this.
 - Without self conditioning, half the hybrids on Sudoku and text8 beat both of their parts; with it, the pure models catch up.
+- Inside a hybrid, the continuous view's learned schedule jumps to almost pure noise right away, for masked and uniform hybrids alike; the likely cause is a clock that cannot separate the two views' effects on the loss.
 
 </div>
 
 Hybrids capture part of what self conditioning provides, but not all of it. A hybrid's continuous view gives graded evidence, but it comes from the noise and the schedule sets how much there is. Self conditioning's message is the model's own belief, which sharpens as sampling goes on.
 
-First, the schedule. The figure below compares the learned clock of each continuous method on its own (grey) with the same method inside a masked or a uniform hybrid. Inside a hybrid, the continuous view's clock jumps to almost pure noise right at the start of the schedule, for every method and every task, so it carries little graded evidence for most of sampling. The revealed tokens already carry most of the information. Self conditioning (solid vs dashed) does not change this, and training every hybrid with a fixed linear schedule instead does not help overall.
+Each row of the figure below places a hybrid next to the two pure models it is built from. Without self conditioning, half of the hybrids on Sudoku and text8 beat both of their parts by more than the noise level; on TinyStories none does. With self conditioning, the pure models improve more than the hybrids do: on Sudoku every hybrid ties its better part, and on text8 none is better while four are worse. A hybrid's own response to self conditioning roughly follows its discrete view: uniform hybrids gain 7 to 14 points on Sudoku but get worse on text8, while masked hybrids gain a little on text8 and are mixed on Sudoku.
+
+<HybridVsPure client:visible />
+
+<ExpandableSection title="More detail: the hybrid's learned schedule" client:load>
+
+The figure below compares the learned clock of each continuous method on its own (grey) with the same method inside a masked or a uniform hybrid. Inside a hybrid, the continuous view's clock jumps to almost pure noise right at the start of the schedule, for every method and every task, so the continuous view carries little graded evidence for most of sampling. This happens for masked and uniform hybrids alike, so it does not come from the discrete view's reliability. A likely cause is the clock itself. It is fit to the hybrid's whole training loss, most of which is driven by the discrete view, and it cannot tell that change apart from the effect of its own noise level. Once most of sampling sits near pure noise, all the change in the loss shows up there, so the fit keeps the clock there. We have not tested this; fitting the clock to the continuous view's share of the loss alone would. Self conditioning (solid vs dashed) does not change the clock, and training every hybrid with a fixed linear schedule instead does not help overall.
 
 <HybridClocks client:visible />
 
-Second, the scores. Each row of the next figure places a hybrid next to the two pure models it is built from. Without self conditioning, half of the hybrids on Sudoku and text8 beat both of their parts by more than the noise level; on TinyStories none does. With self conditioning, the pure models improve more than the hybrids do: on Sudoku every hybrid ties its better part, and on text8 none is better while four are worse. A hybrid's own response to self conditioning roughly follows its discrete view: uniform hybrids gain 7 to 14 points on Sudoku but get worse on text8, while masked hybrids gain a little on text8 and are mixed on Sudoku.
-
-<HybridVsPure client:visible />
+</ExpandableSection>
 
 ### What This Means for Sampling
 
@@ -526,9 +553,11 @@ Second, the scores. Each row of the next figure places a hybrid next to the two 
 
 On the prompted tasks, self conditioning makes special samplers largely unnecessary. On unconditional text, the sampler still matters. Without self conditioning, the best sampler for each recipe makes up for reliability its state lacks. On Sudoku, masked diffusion's best sampler is entropy-bounded and reveals positions in order of confidence. Uniform diffusion's best sampler is renoising, which re-corrupts the predicted tokens and decodes them again, a way to find wrong tokens without reliability information. The continuous methods mostly prefer Ψ-samplers [@deschenaux2026psi]. Once self conditioning supplies graded reliability, these samplers have less to make up for.
 
-The figure shows, for every model, the untuned native sampler next to its three best sampler families on validation. Without self conditioning, the families spread widely; with it, they bunch together near the untuned sampler. The table gives the same gap on test, as the best tuned sampler minus the untuned native one.
+The figure shows, for every model, the untuned native sampler next to its three best sampler families on validation. Without self conditioning, the families spread widely; with it, they bunch together near the untuned sampler. The table below gives the same gap on test, as the best tuned sampler minus the untuned native one.
 
 <UntunedVsTop3 client:visible />
+
+<ExpandableSection title="The numbers: best tuned minus untuned, on test" client:load>
 
 | Gap, best tuned minus untuned (test) | Sudoku (points) | text8 (words) | TinyStories (MAUVE) |
 |---|---|---|---|
@@ -538,6 +567,8 @@ The figure shows, for every model, the untuned native sampler next to its three 
 | Spherical | 20.9 → 0.9 | 6.0 → 3.7 | 0.049 → −0.015 |
 | vMF | 24.9 → 0.7 | 3.9 → 3.5 | 0.069 → 0.003 |
 | Simplex | 8.3 → 0.1 | 5.0 → 1.7 | 0.109 → 0.149 |
+
+</ExpandableSection>
 
 On Sudoku the gap closes for every recipe except masked diffusion, whose untuned sampler still reveals positions in random order. On TinyStories the untuned sampler matches or beats the tuned one for every recipe except simplex, though the gaps there were small to begin with; a negative gap means the sampler selected on validation did slightly worse on the test set. On text8 the gaps shrink for most recipes but stay large, and Ψ-samplers remain the best choice for every recipe.
 
@@ -595,6 +626,8 @@ The figure breaks the masked and uniform text8 results down by sampler. Self con
 
 <DiscreteSamplers client:visible />
 
+<ExpandableSection title="The numbers: renoising without and with self conditioning" client:load>
+
 | Renoising sampler, without → with SC | Sudoku | text8 (words) | TinyStories (MAUVE) |
 |---|---|---|---|
 | Masked | 74% → 93% | 13.2 → 1.0 | 0.83 → 0.87 |
@@ -603,24 +636,9 @@ The figure breaks the masked and uniform text8 results down by sampler. Self con
 | Uniform + Gaussian | 83% → 92% | 15.1 → 8.5 | 0.92 → 0.83 |
 | Gaussian | 52% → 91% | 12.6 → 13.4 | 0.91 → 0.88 |
 
+</ExpandableSection>
+
 On Sudoku, renoising improves with self conditioning for every recipe. On text8, it collapses for every recipe whose state holds hard tokens, while pure Gaussian diffusion, whose state stays soft, improves slightly. TinyStories, a prompted task with many valid continuations, falls in between. This explanation fits the pattern but is not a controlled test, and the table's numbers are first-stage validation scores.
-
-### Other Results
-
-#### Continuous Methods Learn Similar Schedules, and Self Conditioning Does Not Move Them
-
-<div className="spark">
-
-- Gaussian, spherical and vMF learn similar noise schedules in token terms; simplex is the outlier.
-- Self conditioning does not change the learned schedules.
-
-</div>
-
-Measured in token terms, Gaussian, spherical and vMF diffusion learn similar noise schedules, simplex learns a very different one, and self conditioning changes none of them. The first part fits the channel view: Gaussian, spherical and vMF all give graded reliability, while small-concentration simplex sits near the uniform end. The second part is surprising. The previous prediction adds information at every step, which should change how hard each noise level is, and the CDCD adaptive schedule is fit to the training loss of the self-conditioned pass, so it would see such a change. Our current hypothesis is that self conditioning makes inputs at every noise level more informative at roughly the same rate, so the shape of the loss over noise levels, and with it the schedule, does not move.
-
-For each continuous method, the CDCD adaptive schedule learns a schedule that makes the loss linear in the process time, so each generation step contributes roughly the same amount of information. Each method has its own noise parameter, so the raw schedules cannot be compared directly. To put them on the same footing, we measure discrete corruption and rank degradation as in [@pynadath2025candihybriddiscretecontinuousdiffusion]: how often the nearest embedding is the wrong token, and where the true token ranks among all candidates. Gaussian, spherical and vMF have very similar profiles. Simplex diffusion keeps the clean token recoverable for much longer along its schedule on text8. Toggle "no SC" and "SC" in the figure to see that the schedules stay the same.
-
-<CdcdCorruption client:visible />
 
 ### What Does Not Fit: Simplex Diffusion on TinyStories
 
@@ -651,7 +669,6 @@ To separate the base model from the effect of tuning, we compare samples from ea
 </div>
 
 The task labels rest on an argument from each task's structure, not on a measurement, and the readings above fit the results after the fact, on one training seed and three small tasks. A direct test would fix the structure in advance: synthetic tasks built from pure copies, or from parity checks of a chosen size, trained with masked, uniform and Gaussian corruption, with and without self conditioning. Redundant tasks should favor masked diffusion and synergistic ones uniform diffusion, with the gap growing as the parity checks span more positions. A second test would move one recipe along the reliability axis with everything else fixed: give uniform diffusion a flag that marks corrupted positions, or raise the concentration of simplex diffusion. Finally, recent theory traces the gap between masked diffusion and the other families in parallel sampling to a different mechanism: masked diffusion has a sharper critical window [@chen2026parallelism].
-
 
 ## Limitations, and the Future 
 
@@ -699,8 +716,6 @@ A method factory would have to answer four open questions:
 - Comparing methods that may scale differently with data and parameters: single points vs scaling curves.
 - Choosing which pretraining checkpoint goes to SFT, and which SFT checkpoint goes to RL: likelihood, few-shot accuracy, or pass@k?
 - Protocols in this post that stand in for scale: per-task sampler tuning on validation (instead of one inference setting macro-averaged across benchmarks), task-specific metrics (instead of benchmarks), one training seed.
-
-
 
 ## Acknowledgements
 
