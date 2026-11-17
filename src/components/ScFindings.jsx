@@ -35,7 +35,7 @@ const get = (q) => CASES.find((c) => Object.entries(q).every(([k, v]) => (c[k] ?
 const pure = (task, id, arm) => get({ task, arm, family: DISC.some((d) => d.id === id) ? "discrete" : "continuous", [DISC.some((d) => d.id === id) ? "disc" : "cont"]: id });
 const best = (c, list) => list.filter((p) => c.pol[p]).reduce((a, p) => (!a || c.pol[p].v > c.pol[a].v ? p : a), null);
 
-function useWidth(init = 560) {
+function useWidth(init = 320) {
   const ref = useRef(null);
   const [w, setW] = useState(init);
   useEffect(() => {
@@ -64,7 +64,7 @@ function Rows({ task, rows, tip, axisLabel, domain }) {
   const L = narrow ? 8 : 150, R = narrow ? 64 : 92, rowH = narrow ? 40 : 30, top = 6, axisH = 34;
   const vals = rows.flatMap((r) => r.marks.map((m) => m.v)).filter((v) => v != null);
   let [lo, hi] = domain || [Math.min(...vals), Math.max(...vals)];
-  const pad = (hi - lo) * 0.08 || 0.01;
+  const pad = domain ? 0 : (hi - lo) * 0.08 || 0.01;
   const nonneg = lo >= 0;
   lo -= pad; hi += pad;
   if (nonneg) lo = Math.max(0, lo);
@@ -211,8 +211,8 @@ function AnchoringInner() {
 }
 
 // ─── Every sampler, no SC vs SC, for one discrete method (slot 6) ───────────────────────────────
-function SamplersInner() {
-  const [t, taskPills] = useTask("text8");
+function SamplersInner({ initTask = "text8" }) {
+  const [t, taskPills] = useTask(initTask);
   const [d, setD] = useState("masked");
   const tip = useTip();
   const a = get({ task: t, family: "discrete", disc: d, arm: "none" }), b = get({ task: t, family: "discrete", disc: d, arm: "sc" });
@@ -394,7 +394,97 @@ function SensitivityInner() {
   );
 }
 
+
+// ─── Results explorer: every recipe, every task, one place ────────────────────────────────────
+// One row per recipe (no SC and SC paired), filtered by group and scored by the chosen sampler.
+const EX_GROUPS = [
+  { id: "discrete", label: "Discrete", keys: DISC_KEYS.map((k) => ({ ...k, fam: "Discrete" })) },
+  { id: "continuous", label: "Continuous", keys: CONT_KEYS.map((k) => ({ ...k, fam: "Continuous" })) },
+  { id: "hm", label: "Masked hybrids", keys: CONT.map((m) => ({ label: `Masked + ${m.label}`, fam: "Masked hybrid", q: { family: "hybrid", disc: "masked", cont: m.id } })) },
+  { id: "hu", label: "Uniform hybrids", keys: CONT.map((m) => ({ label: `Uniform + ${m.label}`, fam: "Uniform hybrid", q: { family: "hybrid", disc: "uniform", cont: m.id } })) },
+];
+const EX_SAMPLERS = [...SAMPLERS, ...ANCH];
+// Fixed axis per task, so switching filters, samplers or sorting never rescales the chart.
+const EX_DOMAIN = { sudoku: [0, 1], text8: [0, 18], tinystories: [0, 1] };
+
+function Toggles({ options, on, onChange }) {
+  return (
+    <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
+      {options.map((o) => {
+        const active = on.includes(o.id);
+        return (
+          <button key={o.id} type="button" aria-pressed={active}
+            onClick={() => onChange(active ? (on.length > 1 ? on.filter((x) => x !== o.id) : on) : [...on, o.id])}
+            style={{ border: `1px solid ${active ? rgba(P.accent, 0.6) : P.line2}`, cursor: "pointer", borderRadius: 999, padding: "4px 11px",
+              fontFamily: FONT, fontSize: 11, background: active ? rgba(P.accent, 0.18) : P.inset, color: active ? P.accentSoft : P.dim2 }}>{o.label}</button>
+        );
+      })}
+    </div>
+  );
+}
+
+function ExplorerInner() {
+  const [t, taskPills] = useTask("sudoku");
+  const [score, setScore] = useState("best");
+  const [samp, setSamp] = useState("native");
+  const [groups, setGroups] = useState(EX_GROUPS.map((g) => g.id));
+  const [sort, setSort] = useState("family");
+  const tip = useTip();
+  const val = (c) => {
+    if (!c) return null;
+    if (score === "best") return c.test;
+    if (score === "native") return c.base?.test ?? null;
+    return c.pol?.[samp]?.v ?? null;
+  };
+  const how = (c) => (score === "best" ? `sampler: ${SNAME[c?.selected] ?? "–"}` : score === "native" ? "untuned native (T = 1)" : `${SNAME[samp]}, validation`);
+  let rows = EX_GROUPS.filter((g) => groups.includes(g.id)).flatMap((g) => g.keys.map((k, i) => {
+    const a = get({ task: t, arm: "none", ...k.q }), b = get({ task: t, arm: "sc", ...k.q });
+    const va = val(a), vb = val(b);
+    return {
+      label: k.label, fam: k.fam, groupLabel: i === 0 ? g.label : null, va, vb,
+      marks: [
+        { v: va, shape: "ring", color: P.dim2, tip: [k.label, `no SC: ${fmt(t, va)}`, how(a)] },
+        { v: vb, shape: "dot", color: P.good, tip: [`${k.label} + SC`, `SC: ${fmt(t, vb)}`, how(b)] },
+      ],
+      link: [0, 1], ...deltaNote(t, va != null && vb != null ? vb - va : null),
+    };
+  }));
+  if (sort === "family") rows = rows.map((r) => ({ ...r, group: r.groupLabel }));
+  else {
+    const key = sort === "sc" ? (r) => r.vb ?? -Infinity : (r) => (r.va != null && r.vb != null ? r.vb - r.va : -Infinity);
+    rows = [...rows].sort((x, y) => key(y) - key(x)).map((r) => ({ ...r, sub: r.fam.endsWith("hybrid") ? null : r.fam.toLowerCase(), group: null }));
+  }
+  const both = rows.filter((r) => r.va != null && r.vb != null);
+  const up = both.filter((r) => r.vb - r.va >= noise(t)).length, down = both.filter((r) => r.va - r.vb >= noise(t)).length;
+  const scoreNote = score === "best" ? `test ${METRIC[t]} of each model's selected sampler` : score === "native" ? `test ${METRIC[t]} of the untuned native sampler (temperature 1, no search)` : `stage-2 validation ${METRIC[t]} of ${SNAME[samp]} at its tuned setting (256 prompts)`;
+  return (
+    <Frame kicker="Results explorer · all recipes" title="Every recipe, without and with self conditioning"
+      subtitle="Pick a task and a way to score each model. Filter the recipe groups, or sort to see which recipes gain most. The axis stays fixed for each task. Hover a dot for the numbers."
+      controls={<div style={{ display: "grid", gap: 8, width: "100%" }}>
+        <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>{taskPills}
+          <Pills value={score} onChange={setScore} options={[{ id: "best", label: "Best tuned sampler" }, { id: "native", label: "Untuned native" }, { id: "one", label: "One sampler" }]} />
+        </div>
+        {score === "one" && <Toggles options={EX_SAMPLERS.map((x) => ({ id: x, label: SNAME[x] }))} on={[samp]} onChange={(v) => setSamp(v.filter((x) => x !== samp)[0] || samp)} />}
+        <div style={{ display: "flex", flexWrap: "wrap", gap: 8, alignItems: "center" }}>
+          <Toggles options={EX_GROUPS} on={groups} onChange={setGroups} />
+          <Pills value={sort} onChange={setSort} options={[{ id: "family", label: "By family" }, { id: "sc", label: "By SC score" }, { id: "gain", label: "By SC gain" }]} />
+        </div>
+      </div>}
+      note={`Scores: ${scoreNote}, 128 NFE, higher is better. ${noiseText(t)} One training seed per model.${score === "one" && ANCH.includes(samp) ? " Random anchoring was run only on the pure continuous models." : ""}`}>
+      <div ref={tip.box} style={{ position: "relative" }}>
+        <Legend items={[{ shape: "ring", color: P.dim2, label: "no SC" }, { shape: "dot", color: P.good, label: "SC" }]} />
+        <Rows task={t} rows={rows} tip={tip} axisLabel={`${METRIC[t]} →`} domain={EX_DOMAIN[t]} />
+        <div style={{ fontFamily: FONT, fontSize: 11.5, color: P.muted, marginTop: 6 }}>
+          {both.length ? `SC is better beyond the noise level for ${up} of ${both.length} recipes shown, and worse for ${down}.` : "No scores for this choice."}
+        </div>
+        {tip.el}
+      </div>
+    </Frame>
+  );
+}
+
 export const ContinuousGain = withVizTheme(ContinuousGainInner);
+export const ResultsExplorer = withVizTheme(ExplorerInner);
 export const DiscreteGain = withVizTheme(DiscreteGainInner);
 export const HybridGain = withVizTheme(HybridGainInner);
 export const AnchoringContinuous = withVizTheme(AnchoringInner);

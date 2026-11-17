@@ -117,7 +117,7 @@ function LSpreadInner() {
   const d = useMemo(() => channels(C), [C]);
   return (
     <Frame
-      kicker="Figure 2"
+      kicker="Figure 3"
       title="Same capacity, different spread of trust"
       subtitle="Three channels tuned so each one carries the same information per position. The top row shows how trust |L| is spread across positions. The bottom row shows what two observations are worth, for two copies of one bit and for the parity of two bits."
       controls={

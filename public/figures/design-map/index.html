@@ -710,8 +710,7 @@
       ctrl: { type: 'range', key: 'tOut', label: 'Input noise level', left: 'clean', right: 'all noise' } },
     { id: 'loss', part: 'task', num: '6', title: 'Loss', what: 'Plain cross-entropy, or the ELBO. What the ELBO looks like depends on the corruption.', choices: [{ key: 'loss', name: 'Objective', opts: LOSS }] },
     { id: 'tsamp', part: 'task', num: '7', title: 'Training time sampler', what: 'Which times t each training batch uses.', choices: [{ key: 'tsamp', name: 'Time sampler', opts: TSAMP }] },
-    { id: 'samp', part: 'infer', num: '8', title: 'Sampler', what: 'How predictions become text. Four settings: where to start, which steps to take, how each step changes the state, and how the end state becomes tokens.', choices: [{ key: 'samp', name: 'Update rule', opts: SAMP }],
-      ctrl: { type: 'range', key: 'gen', label: 'Generation', left: 'start', right: 'done', max: 100, play: true, duration: 7000, fmt: function (v) { return sampStepLabel(v); } } },
+    { id: 'samp', part: 'infer', num: '8', title: 'Sampler', stub: true },
     { id: 'mods', part: 'mods', num: '9', title: 'Sequence modifiers', what: 'Each one changes several parts at once. Block diffusion changes the input layout, the attention mask and the order of generation. E2D2 keeps that layout but gives the clean and noisy copies separate weights. Insertion changes which positions exist, adds a length loss and lets the sampler insert tokens.', choices: [
       { key: 'block', name: 'Block diffusion', opts: BLOCK }, { key: 'split', name: 'Weights', opts: SPLIT }, { key: 'varlen', name: 'Variable length', opts: VARLEN }],
       ctrl: { type: 'range', key: 'step', label: 'Generation step', left: 'start', right: 'done', max: 5, play: true, fmt: function (v) { return 'step ' + Math.round(v); } } }
@@ -725,7 +724,7 @@
 
   var pipe = document.getElementById('pipe');
   var vizEls = {}, capEls = {}, btnEls = {}, whyEls = {}, ctrlEls = {}, variesEls = {}, layerRows = {};
-  var players = [], lastPart = null, inferEl = null;
+  var players = [], lastPart = null;
   var OPTS = {}, CHOICE_NAME = {}, KEYLAYER = {}, choiceEls = {}, lastPick = null, eqEl = null;
   LAYERS.forEach(function (L) {
     if (L.part !== lastPart && CHAPTERS[L.part]) {
@@ -736,6 +735,24 @@
       pipe.appendChild(ch);
     }
     lastPart = L.part;
+    if (L.stub) {
+      // The sampler has its own figure (the sampling loop) right below the map in the post.
+      // Its option table stays registered so conflict fixes can still change it.
+      OPTS.samp = SAMP; CHOICE_NAME.samp = 'Sampler'; KEYLAYER.samp = 'samp';
+      var srow = document.createElement('section');
+      srow.className = 'layer stub';
+      srow.id = 'layer-' + L.id;
+      srow.dataset.part = L.part;
+      srow.innerHTML = '<div class="layer-side"><h3>' + L.title + '</h3><div class="what"><p>How predictions become text. ' +
+        'Every sampler is one shared loop with a few slots filled in differently: where to start, which steps to take, ' +
+        'how each step changes the state, and how the end state becomes tokens. Pick a sampler, a corruption and ' +
+        'self conditioning to see which slots change.</p></div></div>' +
+        '<iframe class="loop-frame" src="/figures/sampler-loop/" title="The sampling loop shared by every sampler" ' +
+        'scrolling="no" loading="lazy" style="display:block;width:100%;height:1400px;border:0;background:transparent"></iframe>';
+      pipe.appendChild(srow);
+      layerRows[L.id] = srow;
+      return;
+    }
     var row = document.createElement('section');
     row.className = 'layer';
     row.id = 'layer-' + L.id;
@@ -767,11 +784,6 @@
       box.appendChild(opts);
       side.appendChild(box);
     });
-    if (L.id === 'samp') {
-      inferEl = document.createElement('dl');
-      inferEl.className = 'infer';
-      side.appendChild(inferEl);
-    }
     var why = document.createElement('div');
     why.className = 'why';
     side.appendChild(why);
@@ -955,6 +967,7 @@
       b.addEventListener('click', function () { var r = document.getElementById('layer-' + b.dataset.layer); if (r) r.scrollIntoView({ behavior: 'smooth', block: 'start' }); });
     });
     lastPick.changes.forEach(function (c) {
+      if (!choiceEls[c.key]) return;
       choiceEls[c.key].classList.add('auto-changed');
       var tag = choiceEls[c.key].querySelector('.auto-tag');
       tag.hidden = false; tag.textContent = '\u21bb changed for ' + src;
@@ -1735,146 +1748,6 @@
     setSvg('loss', kind === 'both' ? 270 : 262, b, 'Loss: ' + LOSS[S.loss].label);
   }
 
-  // ---------- 7 Sampler ----------
-  // ---------- Sampler: tokens emerging from the state ----------
-  // The model's belief at each position sharpens as generation runs; positions differ in how
-  // early they become clear, and each has one plausible wrong word. Samplers differ in what they
-  // do with that belief: when a position is fixed, and what the state holds until then.
-  var CLEAR = [0.22, 0.5, 0.72, 0.3, 0.6], RIVAL = [3, 5, 4, 0, 1], EB_BOUND = 0.42;
-  var SAMP_N = { ancestral: 6, eb: 6, analytic: 4, ctmc: 6, ar: 5, renoise: 6, ode: 12, ddpm: 8, flow: 8, hybrid: 6 };
-  function sampN() { return SAMP_N[S.samp] || 6; }
-  function sampStepLabel(v) { var n = sampN(); return 'step ' + Math.min(n, Math.floor(v * n + 1e-6)) + ' of ' + n; }
-  function sstep(x) { x = clamp(x, 0, 1); return x * x * (3 - 2 * x); }
-  function belief(i, s) {
-    var c = 1 / (1 + Math.exp(-11 * (s - CLEAR[i]))), pc = 1 / 6 + (0.97 - 1 / 6) * c, pr = (1 - pc) * (0.55 - 0.3 * c), rest = (1 - pc - pr) / 4;
-    return VOCAB.map(function (_, j) { return j === SEQ[i] ? pc : j === RIVAL[i] ? pr : rest; });
-  }
-  function argmaxOf(p) { var m = 0; p.forEach(function (v, j) { if (v > p[m]) m = j; }); return m; }
-  function entropyOf(p) { return -p.reduce(function (a, v) { return a + (v > 0 ? v * Math.log(v) : 0); }, 0) / Math.log(p.length); }
-  function sampFlags() {
-    var disc = DISCRETE.indexOf(S.corr) !== -1 && S.combine === 'none';
-    return { disc: disc, uni: S.corr === 'uniform' && S.combine === 'none', cont: !disc && S.combine === 'none' };
-  }
-  // The step at which position i is fixed for good (the last step for samplers that fix nothing early).
-  function fixStep(i) {
-    var n = sampN(), f = sampFlags();
-    if (S.samp === 'ar') return i + 1;
-    if (S.samp === 'hybrid' || (S.samp === 'ancestral' && !f.uni)) return [2, 4, 6, 1, 3][i];
-    if (S.samp === 'analytic') return [1, 2, 4, 1, 3][i];
-    if (S.samp === 'eb') { for (var j = 1; j <= n; j++) if (entropyOf(belief(i, j / n)) < EB_BOUND) return j; return n; }
-    if (S.samp === 'ctmc' && !f.uni) { for (var m = 1; m <= n; m++) if (rnd(i * 13 + m, 72) < 0.25 + 0.6 * (m / n)) return m; return n; }
-    return n;
-  }
-  // What a not-yet-fixed position holds at step k, for samplers whose state is a token.
-  function tokenState(i, k) {
-    var n = sampN(), f = sampFlags(), p = belief(i, k / n);
-    if (k === 0) return f.uni ? { w: randomWord(i) } : { mask: true };
-    if (S.samp === 'renoise') {
-      var shown = rnd(i * 17 + k, 74) < k / n, top = argmaxOf(p);
-      if (shown) return { w: top };
-      return f.uni ? { w: randomWord(i * 5 + k) } : { mask: true, again: rnd(i * 17 + k - 1, 74) < (k - 1) / n && k > 1 };
-    }
-    if (f.uni) { var r = rnd(i * 13 + k, 73), pc = Math.min(1, p[SEQ[i]] + 0.1); return { w: r < pc ? SEQ[i] : r < pc + (1 - pc) / 2 ? RIVAL[i] : randomWord(i * 3 + k) }; }
-    return { mask: true };
-  }
-  function drawSamp() {
-    var n = sampN(), g = clamp(S.gen, 0, 1), gn = g * n, k = Math.min(n, Math.floor(gn + 1e-6)), fr = gn - k, f = sampFlags();
-    var eb = S.samp === 'eb', CY = 80, b = '';
-    b += '<defs><radialGradient id="sfog"><stop offset="0" style="stop-color:var(--muted);stop-opacity:.42"/><stop offset="1" style="stop-color:var(--muted);stop-opacity:0"/></radialGradient></defs>';
-    function X(i) { return 76 + i * 152; }
-    function txt(x, y, w, size, col, op, extra) {
-      return '<text x="' + x.toFixed(1) + '" y="' + y.toFixed(1) + '" text-anchor="middle" style="font:' + (extra || '') + '400 ' + size.toFixed(1) + 'px var(--font-body);fill:' + col + '" opacity="' + clamp(op, 0, 1).toFixed(3) + '">' + w + '</text>';
-    }
-    function box(x, y, w, wrong, op, loose, hi) {
-      if (op < 0.01) return '';
-      return '<g opacity="' + op.toFixed(3) + '"><rect x="' + (x - 44) + '" y="' + (y - 19) + '" width="88" height="34" rx="9" fill="' + (loose ? 'transparent' : 'var(--surface)') + '" stroke="' + (hi ? 'var(--accent)' : loose ? 'var(--faint)' : 'var(--border)') + '" stroke-width="' + (hi ? 1.6 : 1) + '"' + (loose ? ' stroke-dasharray="4 3"' : '') + '/>' +
-        txt(x, y + 4, esc(VOCAB[w]), 16, wrong ? 'var(--rose)' : 'var(--fg)', 1, loose ? 'italic ' : '') + '</g>';
-    }
-    function mask(x, y, op, again) {
-      if (op < 0.01) return '';
-      return '<g opacity="' + op.toFixed(3) + '"><rect x="' + (x - 44) + '" y="' + (y - 19) + '" width="88" height="34" rx="9" fill="transparent" stroke="' + (again ? 'var(--accent-2)' : 'var(--faint)') + '" stroke-dasharray="4 3"/>' + txt(x, y + 4, '[M]', 14, again ? 'var(--accent-2)' : 'var(--muted)', 1) + '</g>';
-    }
-    // a continuous state: the likely words stacked, pulled together and faded as noise falls
-    function stack(i, x, y, wts, spread, op, small) {
-      var order = wts.map(function (v, j) { return [v, j]; }).sort(function (u, v) { return v[0] - u[0]; }).slice(0, 3), top = order[0][1], o = '';
-      var gap = (small ? 13 : 24) * spread, offs = [0, -gap, gap], settle = sstep((g - 0.78) / 0.17);
-      [2, 1, 0].forEach(function (r) {
-        var v = order[r][0], j = order[r][1], col = j === SEQ[i] ? 'var(--fg)' : r === 0 ? 'var(--rose)' : 'var(--muted)';
-        var size = (small ? 10 : 13) + (small ? 5 : 9) * Math.min(1, v * 1.2);
-        if (r === 0 && !small) size += (16 - size) * settle;   // ends at the final box's size
-        o += txt(x, y + offs[r] + 4, VOCAB[j], size, col, op * (0.12 + 0.88 * Math.min(1, v * 1.3)));
-      });
-      return o;
-    }
-    function continuousWeights(i, gg) {
-      var p = belief(i, gg), one = argmaxOf(belief(i, 1)), e = sstep((gg - 0.72) / 0.28);
-      if (S.samp === 'ddpm') {
-        var jit = (gauss(i * 7 + k, 31) * (1 - sstep(fr)) + gauss(i * 7 + k + 1, 31) * sstep(fr)) * 0.13 * (1 - gg);
-        p = belief(i, clamp(gg + jit, 0, 1));
-      }
-      if (S.samp === 'flow' && S.corr === 'simplex') { var a2 = Math.pow(gg, 1.2); p = p.map(function (v) { return (1 - a2) / 6 + a2 * v; }); }
-      return p.map(function (v, j) { return v * (1 - e) + (j === one ? 1 : 0) * e; });
-    }
-    SEQ.forEach(function (_, i) {
-      var x = X(i), at = fixStep(i), fixA = sstep(gn - (at - 1)), word = argmaxOf(belief(i, at / n));
-      var wrongFix = word !== SEQ[i], pre = 1 - fixA, spread = Math.pow(1 - g, 0.85);
-      b += '<rect x="' + (x - 68) + '" y="' + (CY - 50) + '" width="136" height="' + (eb ? 112 : 100) + '" rx="14" fill="var(--surface-2)" opacity=".55"/>';
-      if (S.samp === 'ar') { b += box(x, CY, word, wrongFix, fixA, false, fixA > 0 && fixA < 1); return; }
-      if (S.samp === 'hybrid') {
-        b += mask(x, CY - 12, pre) + box(x, CY - 12, word, wrongFix, fixA, false, fixA > 0 && fixA < 1);
-        b += stack(i, x, CY + 30, continuousWeights(i, g), spread, 0.85, true);
-        return;
-      }
-      var tokenish = f.disc || (S.samp === 'renoise' && !f.cont) || S.samp === 'ctmc' || (S.samp === 'ancestral' || S.samp === 'analytic');
-      if (tokenish && !(S.samp === 'eb' && f.cont)) {
-        // token states cross-fade from step k to step k + 1
-        var a = tokenState(i, k), c2 = tokenState(i, Math.min(n, k + 1)), e2 = sstep(fr / 0.6);
-        if (k >= n) c2 = a;
-        var draw = function (st, op, dy) { return st.mask ? mask(x, CY + dy, op, st.again) : box(x, CY + dy, st.w, st.w !== SEQ[i], op, true); };
-        if (a.mask === c2.mask && a.w === c2.w && !!a.again === !!c2.again) b += draw(a, pre, 0);
-        else b += draw(a, pre * (1 - e2), -6 * e2) + draw(c2, pre * e2, 6 * (1 - e2));
-        b += box(x, CY, word, wrongFix, fixA, false, fixA > 0 && fixA < 1);
-        return;
-      }
-      if (S.samp === 'renoise') {
-        // a fresh noisy copy of the predicted word each step; the haze shrinks with the noise
-        var g0 = argmaxOf(belief(i, k / n)), g1 = argmaxOf(belief(i, Math.min(1, (k + 1) / n))), e3 = sstep(fr / 0.6);
-        b += '<ellipse cx="' + x + '" cy="' + (CY - 2) + '" rx="' + (24 + 40 * spread).toFixed(1) + '" ry="' + (12 + 22 * spread).toFixed(1) + '" fill="url(#sfog)" opacity="' + (pre * (0.3 + 0.7 * spread)).toFixed(3) + '"/>';
-        var gtxt = function (w, op, dy) { return txt(x, CY + 4 + dy, VOCAB[w], 15 + 2 * (1 - spread), w === SEQ[i] ? 'var(--fg)' : 'var(--rose)', op * pre); };
-        b += g0 === g1 || k >= n ? gtxt(g0, 0.55 + 0.45 * (1 - spread), 0) : gtxt(g0, (1 - e3) * 0.8, -8 * e3) + gtxt(g1, e3 * 0.8, 8 * (1 - e3));
-        b += box(x, CY, word, wrongFix, fixA, false, false);
-        return;
-      }
-      // continuous state moved by the method's own step (or kept moving until EB fixes it)
-      b += stack(i, x, CY, continuousWeights(i, g), spread, pre);
-      if (S.samp === 'flow' && S.corr === 'simplex') {
-        var acc = 0, wts = continuousWeights(i, g);
-        wts.forEach(function (v, j) { b += '<rect x="' + (x - 44 + acc * 88).toFixed(1) + '" y="' + (CY + 34) + '" width="' + Math.max(0.5, v * 88 - 0.6).toFixed(1) + '" height="5" rx="1" fill="' + (j === SEQ[i] ? 'var(--accent)' : 'var(--faint)') + '" opacity="' + pre.toFixed(3) + '"/>'; acc += v; });
-      }
-      if (S.samp === 'flow' && S.corr === 'spherical') {
-        var th = (1 - g) * 80 * Math.PI / 180, ax = x + 52, ay = CY + 30;
-        b += '<g opacity="' + pre.toFixed(3) + '"><circle cx="' + ax + '" cy="' + ay + '" r="9" fill="none" stroke="var(--faint)"/><circle cx="' + ax + '" cy="' + (ay - 9) + '" r="2.4" fill="var(--accent)"/>' +
-          '<circle cx="' + (ax + 9 * Math.sin(th)).toFixed(1) + '" cy="' + (ay - 9 * Math.cos(th)).toFixed(1) + '" r="2.4" fill="var(--fg)"/></g>';
-      }
-      b += box(x, CY, word, wrongFix, fixA, false, eb && fixA > 0 && fixA < 1);
-    });
-    if (eb) {
-      // the model's uncertainty at each position against the entropy bound
-      SEQ.forEach(function (_, i) {
-        var x = X(i), h = entropyOf(belief(i, g)), by = CY + 42, fixed = fixStep(i) <= gn + 1e-6;
-        b += '<rect x="' + (x - 44) + '" y="' + by + '" width="88" height="5" rx="2.5" fill="var(--surface)"/>';
-        b += '<rect x="' + (x - 44) + '" y="' + by + '" width="' + (88 * h).toFixed(1) + '" height="5" rx="2.5" fill="' + (fixed ? 'var(--teal)' : 'var(--accent)') + '" opacity=".85"/>';
-        b += '<line x1="' + (x - 44 + 88 * EB_BOUND).toFixed(1) + '" x2="' + (x - 44 + 88 * EB_BOUND).toFixed(1) + '" y1="' + (by - 3) + '" y2="' + (by + 8) + '" stroke="var(--teal)" stroke-width="1.5"/>';
-      });
-      b += '<text class="lbl" x="8" y="' + (CY + 78) + '">bar: how unsure the model is · line: the entropy bound</text>';
-    }
-    setSvg('samp', eb ? 166 : 140, b, 'Sampler: ' + SAMP[S.samp].label);
-    capEls.samp.innerHTML = T('samp.' + S.samp + (f.cont && (S.samp === 'eb' || S.samp === 'renoise') ? '-continuous' : '')) + T('samp.note');
-    var inf = inferInfo();
-    inferEl.innerHTML = '<dt>Start</dt><dd>' + inf.startLong + '</dd><dt>Steps</dt><dd>' + inf.stepsLong + '</dd><dt>Update</dt><dd>' + SAMP[S.samp].label + '</dd>' +
-      '<dt>Decode</dt><dd>' + inf.decodeLong + '</dd><p class="note">From <code>configs/inference/sampler/' + inf.cfg + '.yaml</code>. Prompt tokens, when there are any, stay fixed. Shown with ' + n + ' steps.</p>';
-  }
-
   // ---------- Training times ----------
   // The noise schedule chosen in the part above, as noise level (0 clean .. 1 noise) against t.
   function schedFn() {
@@ -2093,7 +1966,7 @@
   }
 
   // ---------- Render ----------
-  var DRAW = { tCorr: [drawCorr], tOut: [drawParam], train: [drawSched, drawTsamp], step: [drawMods], gen: [drawSamp] };
+  var DRAW = { tCorr: [drawCorr], tOut: [drawParam], train: [drawSched, drawTsamp], step: [drawMods] };
   function redrawFor(key) {
     (DRAW[key] || []).forEach(function (f) { f(); });
     Object.keys(ctrlEls).forEach(function (id) { if (ctrlEls[id].key === key) ctrlEls[id].sync(); });
@@ -2110,7 +1983,7 @@
     });
     showPick();
     Object.keys(ctrlEls).forEach(function (id) { ctrlEls[id].sync(); });
-    drawRep(); drawCorr(); drawSched(); drawNet(); drawParam(); drawLoss(); drawTsamp(); drawSamp(); drawMods();
+    drawRep(); drawCorr(); drawSched(); drawNet(); drawParam(); drawLoss(); drawTsamp(); drawMods();
     emitState();
   }
   var variesKeys = [];
@@ -2190,6 +2063,7 @@
       });
       if (!keys.length) return;
       variesKeys = variesKeys.concat(keys);
+      if (!variesEls[layer]) return;
       // Picture-only differences only matter when the underlying choice is the same.
       var el = variesEls[layer];
       el.hidden = false;
@@ -2327,7 +2201,7 @@
     } else q = [key + ':' + v];
     return q;
   }
-  var LAYER_CHOICES = { rep: ['rep'], corr: ['corr', 'combine'], sched: ['sched'], net: ['attn', 'tcond', 'self'], param: ['param'], loss: ['loss'], tsamp: ['tsamp'], samp: ['samp'], mods: ['block', 'split', 'varlen'] };
+  var LAYER_CHOICES = { rep: ['rep'], corr: ['corr', 'combine'], sched: ['sched'], net: ['attn', 'tcond', 'self'], param: ['param'], loss: ['loss'], tsamp: ['tsamp'], mods: ['block', 'split', 'varlen'] };
   function section(key) {
     var keys = entryFor(key);
     if (!keys) return '';

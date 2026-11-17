@@ -223,6 +223,100 @@ function notes(sampler, corr, disc, cont, sc, g = false) {
   return n;
 }
 
+// What each sampler does, in words (shown when its chip is picked). `with` adds a note for one corruption.
+const CONTINUOUS_NOTE = "continuous";
+const ABOUT = {
+  general: {
+    text: [
+      "The template is the loop with every slot left open. Each sampler fills the slots in one fixed way.",
+      "Three questions tell them apart. Does the update use the whole prediction $\\hat p$, or one token $\\hat x$ picked from it? Once a position is decided, does it stay fixed (commitment)? And which positions move at each step?",
+    ],
+  },
+  native: {
+    text: [
+      "The corruption's own reverse step. At every step the network predicts $\\hat p_i$ for every position, and the reverse step $R$ moves the state from $t$ to $s$ using all of $\\hat p_i$, not one sampled token.",
+      "The sampler itself freezes nothing. A position stays put only if $R$ keeps it there.",
+    ],
+    with: {
+      masked: "On masked, this is the usual masked-diffusion step: a masked position is revealed with probability $(\\alpha_s - \\alpha_t)/(1 - \\alpha_t)$, with its token drawn from $\\hat p_i$. A revealed token stays revealed, because $R$ never masks it again.",
+      uniform: "On uniform, $R$ is the exact posterior of the uniform process, so a token that is already there can still be swapped for another one until the last step.",
+      [CONTINUOUS_NOTE]: "On a continuous view, every position keeps moving until the last step. $R$ moves the state toward the expected embedding $\\sum_v \\hat p_i(v) E_v$. When $\\hat p_i$ is spread over several words, that average sits between them, and the state drifts there until the prediction sharpens.",
+    },
+  },
+  native_greedy: {
+    text: [
+      "The same reverse step, but $\\hat p_i$ is replaced by a point mass on its most likely token before the update. The state is pulled toward one word instead of an average of words.",
+      "This trades diversity for sharper steps. The last read-out can be argmax or sampled (tuned).",
+    ],
+  },
+  renoise: {
+    text: [
+      "Skip the reverse step. Draw a token $\\hat x_i \\sim \\hat p_i$ at every position, then corrupt it again to the next noise level with the forward kernel: $z_{s,i} = K_s(\\hat x_i)$.",
+      "The new state forgets $z_t$ completely; only the network's guess carries over. So a wrong token at one step can be replaced at the next, and the sampler never relies on the reverse step being accurate.",
+    ],
+    with: {
+      masked: "On masked, $K_s$ keeps $\\hat x_i$ with probability $\\alpha_s$ and masks it otherwise, so tokens that were revealed earlier can be masked again.",
+      uniform: "On uniform, $K_s$ keeps $\\hat x_i$ with probability $\\alpha_s$ and replaces it with a random word otherwise.",
+      [CONTINUOUS_NOTE]: "On a continuous view, this is the familiar \"predict the clean data, then add noise back\" step, except that the clean guess is one sampled word, not the average embedding.",
+    },
+  },
+  renoise_greedy: {
+    text: [
+      "Renoise with the most likely token instead of a sampled one: $z_{s,i} = K_s(\\arg\\max_v \\hat p_i(v))$. The only randomness left is the noise in $K_s$.",
+    ],
+  },
+  eb_greedy: {
+    text: [
+      "Entropy-bounded commitment. At each step, sort the free positions by the entropy of $\\hat p_i$ and commit the surest ones, as many as fit under a budget $\\gamma$ (their summed entropy minus the largest one). Committed positions are frozen to their argmax token for the rest of the run.",
+      "Free positions take $R_0$, the reverse step with its noise set to zero. Easy positions settle early and hard ones wait for more context. The run stops once everything is committed, so it can use fewer than $S + 1$ network calls.",
+    ],
+    with: {
+      [CONTINUOUS_NOTE]: "On a continuous view, a committed position is clamped to its clean embedding $e(\\hat x_i)$ while its neighbours are still noisy. The model never sees that mix in training.",
+    },
+  },
+  eb_churn: {
+    text: [
+      "EB greedy plus churn. At each step every committed position (other than the prompt) is released with probability $\\rho_k$, which starts at $r$ and falls to zero once a fraction $f$ of the run is done. A released position is reset (the churn reset in the formulas below) and can be decided again.",
+      "Churn lets early mistakes be fixed, at the cost of taking longer before everything is committed.",
+    ],
+    with: {
+      masked: "On masked, a released position is masked again.",
+      uniform: "On uniform, a released position is re-noised from its committed token: it keeps that token with probability $\\alpha_t$ and gets a random word otherwise.",
+      [CONTINUOUS_NOTE]: "On a continuous view, a released position is re-noised from its committed token, $\\alpha_t E_{y_i} + \\sigma_t \\epsilon$ for Gaussian, and its state moves freely again.",
+    },
+  },
+  psi: {
+    text: [
+      "Ψ samplers mix the two basic steps, one position at a time. At each step every position flips a coin $b_i$: with probability $\\kappa_t$ it takes the native reverse step $R$, otherwise it is renoised from the prediction, $K_s(\\hat x_i)$. So $\\kappa = 1$ is native and $\\kappa = 0$ is renoise.",
+      "$\\kappa_t$ comes from one noise setting $\\eta$: $\\sigma_t = \\eta\\,\\sigma_t^{\\max}$ (or $\\min(\\eta, \\sigma_t^{\\max})$) and $\\kappa_t = 1 - \\sigma_t/(1 - \\alpha_s)$. The time grid is also warped so that $\\alpha$ holds flat on $[t_{\\text{off}}, t_{\\text{on}}]$. On that stretch the sampler keeps predicting and re-noising at one noise level, which gives it extra steps to fix errors before it finishes.",
+    ],
+    with: {
+      masked: "This is the setting Ψ was designed for. Renoising a masked position means masking it again, so the renoise branch is what lets the sampler take back a token it already revealed.",
+      uniform: "On uniform, the renoise branch keeps $\\hat x_i$ with probability $\\alpha_s$ and otherwise puts in a random word, which lets the sampler revisit a token it already placed.",
+      [CONTINUOUS_NOTE]: "Ψ is not usually used with continuous corruption, and its role changes here. The native Gaussian step already adds fresh noise every step, so there is no frozen token for the renoise branch to undo.\n\nWhat the two branches differ in is what they keep. The native branch keeps part of the current state: it is a weighted mix of $z_t$, the expected embedding and noise. The renoise branch throws $z_t$ away and restarts from one sampled word, $\\alpha_s E_{\\hat x_i} + \\sigma_s \\epsilon$. So on a continuous view Ψ mixes \"follow the trajectory\" with \"snap to a sampled word and noise it again\". Positions that take the second branch sit on a noised word embedding, not between words, which acts like a small discrete jump inside a continuous sampler.\n\nTwo choices also need care. $K$ is the process's own forward kernel, which extends the paper by analogy. And $\\alpha$, which sets $\\kappa_t$, can come from the controller clock or from the corruption level (Ψ·t or Ψ·c); for continuous views these differ, because the learned schedule warps time.",
+    },
+  },
+  anchor_native: {
+    text: [
+      "Random anchoring commits positions at random, on a fixed schedule: after step $k$, a fraction $((k+1)/S)^p$ of the generated positions is committed, chosen uniformly among the free ones. The committed token is sampled or argmax (tuned).",
+      "It ignores the model's confidence and decides positions one by one, in random order. (This mimics masked diffusion, which also reveals positions in a random order.) Free positions take the native step. Everything is committed at the last step, so there is no decode call.",
+    ],
+  },
+  anchor_renoise: {
+    text: [
+      "Random anchoring as above, but free positions are renoised from the prediction, $K_s(\\hat x_i)$, instead of taking the native step.",
+      "Committed positions are fixed tokens; every other position restarts from a fresh guess at each step, so only the committed set carries information forward in the state.",
+    ],
+  },
+};
+function aboutFor(sampler, corr) {
+  const a = ABOUT[sampler];
+  if (!a) return [];
+  const w = a.with || {};
+  const extra = corr === "hybrid" ? null : w[corr] || (CONT.includes(corr) ? w[CONTINUOUS_NOTE] : null);
+  return [...a.text, ...(extra ? extra.split("\n\n") : [])];
+}
+
 // ─── Layout pieces ────────────────────────────────────────────────────────────
 // What each slot of the loop decides, in plain words.
 const SLOT_INFO = {
@@ -382,6 +476,12 @@ function SamplerAlgoInner({ general = false }) {
       </div>}
       note={`Read from candi core/samplers (composed.py, policies.py, psi.py, churn.py, hybrid_updates.py) and each process's reverse and corrupt_state${general ? "" : ", with the settings of the runs in this post"}.`}
     >
+      <Box title={`About ${SAMPLERS.find((x) => x.id === sampler).label === "Template" ? "the template" : SAMPLERS.find((x) => x.id === sampler).label}`} hint={corr === "hybrid" ? "what this sampler does" : `what this sampler does, and what changes on ${VIEW[corr].label.toLowerCase()}`}>
+        <div style={{ display: "grid", gap: 8, fontSize: 14, color: P.text, lineHeight: 1.65, maxWidth: "78ch" }}>
+          {aboutFor(sampler, corr).map((t, i) => <p key={i} style={{ margin: 0 }}><Rich text={t} /></p>)}
+        </div>
+      </Box>
+
       <Box title="Symbols" hint="everything the loop below refers to">
         <Symbols groups={symbols(sampler, hybrid, sc === "on", general)} />
       </Box>

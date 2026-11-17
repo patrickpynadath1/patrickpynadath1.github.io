@@ -57,7 +57,7 @@ function Glyph({ kind, x, y, w = 44, h = 16, color }) {
   );
 }
 
-function ReliabilityMapInner() {
+function ReliabilityMapInner({ kicker = "Figure 1" }) {
   const [pick, setPick] = useState("gauss");
   const on = true; // static figure: the self-conditioning view, with dashed outlines at the starting spots
   const picked = NODES.find((n) => n.id === pick);
@@ -65,7 +65,7 @@ function ReliabilityMapInner() {
 
   return (
     <Frame
-      kicker="Figure 1"
+      kicker={kicker}
       title="Two axes instead of one"
       subtitle="Rows: how hard the state's commits are. Columns: how much the noisy state says about each position's reliability. Dashed outlines mark where each recipe sits on its own; the filled cards show where self conditioning (SC) pulls it. The sketch on each card is the spread of |L| across positions, from no trust (left) to certain (right)."
       note={<span><strong style={{ color: picked.color() }}>{picked.label}.</strong> {picked.text}

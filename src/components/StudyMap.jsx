@@ -7,15 +7,15 @@ const STUDIES = [
   { q: "Does SC help discrete and continuous models alike?",
     vary: ["SC on / off", "masked, uniform", "Gaussian, simplex, spherical, vMF"],
     fixed: ["architecture, training", "tuned sampler, 128 NFE"],
-    href: "#self-conditioning-continuous-corruption-and-learned-noise-schedule", where: "Results" },
+    href: "#uniform-and-the-continuous-methods-gain-from-self-conditioning-masked-is-the-exception", where: "Results" },
   { q: "Does SC still help once a continuous model has discrete anchoring?",
     vary: ["SC on / off", "hybrids: {masked, uniform} × each continuous view"],
     fixed: ["same continuous views as above", "CDCD schedule"],
-    href: "#self-conditioning-hybrid-corruption-and-learned-noise-schedule", where: "Results" },
+    href: "#hybrids-carry-graded-evidence-but-the-schedule-fixes-it", where: "Results" },
   { q: "Does SC change which sampler works best?",
     vary: ["8 samplers per model (10 for pure continuous)", "SC on / off"],
     fixed: ["same checkpoints, prompts, seeds", "same tuning budget"],
-    href: "#self-conditioning-changes-sensitivity-to-tuning", where: "Results" },
+    href: "#with-self-conditioning-special-samplers-matter-less-on-prompted-tasks", where: "Results" },
 ];
 
 function List({ label, items, color }) {

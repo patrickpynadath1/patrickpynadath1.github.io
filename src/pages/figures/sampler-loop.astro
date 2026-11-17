@@ -1,0 +1,46 @@
+---
+// The sampling-loop figure on its own page, so the design map can show it inside its Sampler step
+// (public/figures/design-map/ embeds this page in an iframe). Follows the host page's theme and
+// sizes its frame to fit.
+import 'katex/dist/katex.min.css';
+import '../../styles/post.css';
+import { SamplerAlgo } from '../../components/SamplerAlgo.jsx';
+---
+<html lang="en" data-theme="dark" data-hue="266">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <meta name="robots" content="noindex" />
+    <title>Sampling loop figure</title>
+    <style is:global>
+      html, body { background: transparent !important; margin: 0 !important; padding: 0 !important; min-height: 0 !important; overflow: hidden; }
+      #wrap { padding: 1px 0; }
+      /* The dev server adds its toolbar to every page; this page is shown inside the design map. */
+      astro-dev-toolbar { display: none !important; }
+      #wrap > astro-island > * { margin-top: 0 !important; margin-bottom: 0 !important; }
+    </style>
+    <script is:inline>
+      (function () {
+        var host = null;
+        try { host = window.frameElement ? parent.document.documentElement : null; } catch (e) {}
+        function sync() { if (host && host.dataset.theme) document.documentElement.dataset.theme = host.dataset.theme; }
+        if (host) { sync(); new MutationObserver(sync).observe(host, { attributes: true, attributeFilter: ['data-theme'] }); }
+      })();
+    </script>
+  </head>
+  <body>
+    <div id="wrap"><SamplerAlgo client:load general /></div>
+    <script is:inline>
+      (function () {
+        var wrap = document.getElementById('wrap');
+        function fit() {
+          if (!window.frameElement) return;
+          window.frameElement.style.height = Math.ceil(wrap.getBoundingClientRect().height) + 'px';
+        }
+        new ResizeObserver(fit).observe(wrap);
+        window.addEventListener('load', fit);
+        fit();
+      })();
+    </script>
+  </body>
+</html>

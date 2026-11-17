@@ -1,0 +1,41 @@
+---
+// Links between the three parts of the SDDC series. The current part is highlighted.
+// Used at the top and bottom of each part: <SeriesNav current={2} />
+interface Props { current: 1 | 2 | 3; label?: string }  // 3 kept so the unlisted Part 3 draft still builds
+const { current, label = "The SDDC series" } = Astro.props as Props;
+const parts = [
+  { n: 1, title: "Some DLM Design Choices", blurb: "The modular codebase and the design space", href: "/blog/diffusion-lm-design-choices/" },
+  { n: 2, title: "Self Conditioning Across Recipes", blurb: "What self conditioning does, recipe by recipe", href: "/blog/diffusion-lm-design-choices-self-conditioning/" },
+];
+---
+<nav class="series-nav" aria-label={label}>
+  <span class="series-label">{label}</span>
+  <div class="series-cards">
+    {parts.map((p) => p.n === current ? (
+      <div class="series-card is-current" aria-current="page">
+        <span class="series-num">Part {p.n} · you are here</span>
+        <span class="series-title">{p.title}</span>
+        <span class="series-blurb">{p.blurb}</span>
+      </div>
+    ) : (
+      <a class="series-card" href={p.href}>
+        <span class="series-num">Part {p.n} {p.n < current ? "←" : "→"}</span>
+        <span class="series-title">{p.title}</span>
+        <span class="series-blurb">{p.blurb}</span>
+      </a>
+    ))}
+  </div>
+</nav>
+
+<style>
+  .series-nav { margin: 18px 0 28px; }
+  .series-label { display: block; font-size: 11px; letter-spacing: .12em; text-transform: uppercase; color: var(--muted); margin-bottom: 8px; }
+  .series-cards { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+  .series-card { display: flex; flex-direction: column; gap: 4px; padding: 12px 14px; border-radius: 12px; text-decoration: none !important; color: var(--fg); box-shadow: inset 0 0 0 1px var(--border); background: color-mix(in srgb, var(--fg) 3%, transparent); transition: box-shadow .2s ease, background-color .2s ease, transform .2s ease; }
+  a.series-card:hover, a.series-card:focus-visible { box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--accent) 70%, transparent); background: color-mix(in srgb, var(--accent) 10%, transparent); transform: translateY(-1px); }
+  .series-card.is-current { box-shadow: inset 0 0 0 1.5px var(--accent); background: color-mix(in srgb, var(--accent) 14%, transparent); }
+  .series-num { font-size: 11px; letter-spacing: .06em; color: var(--accent); }
+  .series-title { font-family: Georgia, serif; font-size: 16px; line-height: 1.25; }
+  .series-blurb { font-size: 12.5px; line-height: 1.4; color: var(--muted); }
+  @media (max-width: 640px) { .series-cards { grid-template-columns: 1fr; } }
+</style>

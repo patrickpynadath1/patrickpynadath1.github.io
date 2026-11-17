@@ -45,19 +45,19 @@ function DumbbellRow({ task, label, color, a, b, lo, hi, w }) {
   );
 }
 
-function MaskedUniformInner() {
+function MaskedUniformInner({ kicker = "Figure 4" }) {
   const [kind, setKind] = useState("best");
   const W = 520;
   return (
     <Frame
-      kicker="Figure 3"
+      kicker={kicker}
       title="Masked and uniform respond to self conditioning in opposite ways"
       subtitle="Each line runs from the score without self conditioning (open dot) to the score with it (filled dot). Scales differ by task, so compare within a panel only."
       controls={<Pills value={kind} onChange={setKind} options={[
         { id: "best", label: "Best tuned sampler" },
         { id: "base", label: "Untuned native sampler" },
       ]} />}
-      note={<>Data from Part 2, one training seed per model. One-seed noise levels: about 3 points on Sudoku, 0.5 words on text8 and 0.045 MAUVE on TinyStories.</>}
+      note={<>One training seed per model. One-seed noise levels: about 3 points on Sudoku, 0.5 words on text8 and 0.045 MAUVE on TinyStories.</>}
     >
       {TASKS.map((t) => {
         const rows = [
@@ -94,13 +94,13 @@ const SC_ROWS = [
   { d: "masked", c: "-", label: "Masked", color: () => P.mdlm, sep: true },
 ];
 
-function SCResponseInner() {
+function SCResponseInner({ kicker = "Figure 5" }) {
   return (
     <Frame
-      kicker="Figure 4"
+      kicker={kicker}
       title="Self conditioning raises the best score of uniform and the continuous methods; masked is the exception"
       subtitle="Each cell is the change in a recipe's best tuned score when self conditioning is added, on that task. Green: higher with self conditioning. Red: lower. A pale cell means the change is within the one-seed noise level."
-      note={<>Part 2 data, best tuned sampler, one training seed per model. Noise levels: 3 points on Sudoku, 0.5 words on text8, 0.045 MAUVE on TinyStories.</>}
+      note={<>Best tuned sampler, one training seed per model. Noise levels: 3 points on Sudoku, 0.5 words on text8, 0.045 MAUVE on TinyStories.</>}
     >
       <div style={{ overflowX: "auto" }}>
         <table style={{ display: "table", width: "100%", tableLayout: "fixed", borderCollapse: "collapse", minWidth: 0, margin: 0, fontFamily: SANS }}>
@@ -143,19 +143,19 @@ const PURE6 = [
   { d: "-", c: "simplex", label: "Simplex", color: () => P.pinkText },
 ];
 
-function SpreadInner() {
+function SpreadInner({ kicker = "Figure 6" }) {
   const [kind, setKind] = useState("base");
   const W = 560, x0 = 96, x1 = W - 16;
   return (
     <Frame
-      kicker="Figure 5"
+      kicker={kicker}
       title="With self conditioning, the six recipes score more alike"
       subtitle="Each dot is one pure recipe's score on the task. The top strip is without self conditioning, the bottom strip with it. When the dots bunch together, the choice of recipe matters less."
       controls={<Pills value={kind} onChange={setKind} options={[
         { id: "base", label: "Untuned native sampler" },
         { id: "best", label: "Best tuned sampler" },
       ]} />}
-      note={<>Part 2 data, one training seed per model. On TinyStories, simplex is the one recipe that self conditioning hurts, so it sits apart from the others.</>}
+      note={<>One training seed per model. On TinyStories, simplex is the one recipe that self conditioning hurts, so it sits apart from the others.</>}
     >
       <div style={{ display: "flex", flexWrap: "wrap", gap: "4px 14px", margin: "2px 0 8px" }}>
         {PURE6.map((m) => (
@@ -232,7 +232,7 @@ const DIV_ROWS = [
   { id: "simplex", label: "Simplex", color: () => P.pinkText, hi: true },
 ];
 
-function DiversityInner() {
+function DiversityInner({ kicker = "Figure 6" }) {
   const [m, setM] = useState("d2");
   const met = DIV_METRICS.find((x) => x.id === m);
   const W = 600, x0 = 92, x1 = W - 128, rowH = 30, top = 18;
@@ -243,7 +243,7 @@ function DiversityInner() {
   const H = top + DIV_ROWS.length * rowH + 24;
   return (
     <Frame
-      kicker="Figure 5"
+      kicker={kicker}
       title="With self conditioning, simplex loses far more diversity than any other recipe"
       subtitle={`TinyStories samples from each model's untuned sampler. Each line runs from the value without self conditioning (open dot) to the value with it (filled dot). The dashed line marks real stories. Shown: ${met.long}.`}
       controls={<Pills value={m} onChange={setM} options={DIV_METRICS.map((x) => ({ id: x.id, label: x.label }))} />}

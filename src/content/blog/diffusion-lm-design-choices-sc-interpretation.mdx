@@ -1,44 +1,59 @@
 ---
-title: "Some DLM Design Choices: Interpreting Corruption Families and Self Conditioning"
+title: "SDDC, Part 3: Different ways of Corrupting Bits"
 description: "Part 3 of Some DLM Design Choices. A coding-theory view that sorts corruption families by commitment and by how much the noisy state says about each position's reliability, and reads self conditioning as a message that pulls them together."
 pubDate: 2026-11-12T12:00:00.000Z
 author: "Patrick Pynadath, Ruqi Zhang"
 tags: ["diffusion", "language models"]
 wip: true
-draft: false
+draft: true
 comments: true
+sparknotes: true
 ---
 
 import { LSpread } from "../../components/LSpread.jsx"
+import SeriesNav from "../../components/SeriesNav.astro"
 import ExpandableSection from "../../components/ExpandableSection.jsx"
 import { MaskedUniformSC, SCResponse, SimplexDiversity } from "../../components/Part3Evidence.jsx"
-import { BoxSetup, BoxDiscount, BoxThreeWays } from "../../components/BitBoxes.jsx"
+import { BoxSetup, BoxDiscount, BoxThreeWays, BoxLifecycle } from "../../components/BitBoxes.jsx"
 import { Constellation } from "../../components/CodingFigures.jsx"
+import { ChannelIntuition } from "../../components/ChannelIntuition.jsx"
 import { ReliabilityMap } from "../../components/ReliabilityMap.jsx"
+import { LifecycleFigure } from "../../components/BitLifecycle.jsx"
 
 
-# Some DLM Design Choices: Interpreting Corruption Families and Self Conditioning
+# SDDC, Part 3: Different ways of Corrupting Bits
 
+<SeriesNav current={3} />
 
 
 
 ## Introduction
 
-Diffusion language models have largely split into two lines of research: continuous diffusion, which denoises a relaxation of the tokens, and discrete diffusion, which corrupts the tokens themselves. The split has made sense, since the two call for different views of denoising. Continuous diffusion refines every position gradually, while discrete diffusion requires the model to make hard decisions. **However, as both lines grow, the boundary between them is blurring.** Both families can now commit tokens through discrete anchoring, as in block diffusion, and discrete methods increasingly take soft inputs through self conditioning. If both sides make hard decisions and both use soft information, is discrete versus continuous still the primary difference?
+<div className="spark">
+
+- The discrete-versus-continuous split is not enough to tell recipes apart.
+- Corruption families also differ in reliability information: how much the noisy state says about whether each position can be trusted.
+- Masked diffusion gives exact reliability, uniform gives the same imperfect reliability everywhere, and continuous gives each position its own graded reliability.
+- Together with commitment (hard tokens or soft values), this gives two axes instead of one (Figure 1).
+- Self conditioning pulls the families toward each other, and the results of Part 2 support this picture.
+
+</div>
+
+Diffusion language models have largely split into two lines of research: continuous diffusion, which refines continuous representations of tokens; and discrete diffusion, which makes hard decisions on tokens. **As both lines of research have expanded, the boundary has blurred.** For example, the recent DiffusionGemma model, a uniform discrete diffusion model, uses self conditioning, a technique popular for continuous methods. From the other side, recent scaled up continuous diffusion models use block diffusion, which can be viewed as committing completed chunks of tokens -- in other words, making hard decisions. If both "discrete" and "continuous" methods both rely on soft refinement and hard commitment, is this sufficient to differentiate between methods? 
 
 In this blog, we draw on classical results from coding theory and argue that it is not.
 
-1. **The reliability of the noisy state is a first-order difference between corruption families.** Families differ in how much the noisy state tells the model about how far to trust each position, which coding theory treats as one of the main properties of a channel. We call this information the state's labels.
-   - In masked diffusion, every corrupted position is masked, which labels it as completely unreliable. Unmasked positions are final, and thus completely reliable.
-   - In uniform diffusion, corrupted and uncorrupted positions are both valid tokens, so the model cannot tell them apart. Every position's reliability is just the global noise level.
-   - Continuous methods sit between these extremes. Their positions are neither split into two kinds nor all alike; their reliability is spread out. A position's reliability is its margin: how much closer the noisy point is to the nearest token than to the runner-up, measured against the noise level.
+1. **The reliability of the noisy state is a first-order difference between corruption families.** Families differ in how much the noisy state tells the model about how far to trust each position, which coding theory treats as one of the main properties of a channel. This is referred to as **reliability information**.
+   - In masked diffusion, **every position gives exact reliability** through erasure indicators: either a position is revealed and known iwth certainty; or masked and known to carry no informaition.
+   - In uniform diffusion, **every position has the same imperfect reliability**, which is set to the global noise level. Without contextual information, it is impossible to determine whether a position is clean or corrupted as both cases lead to valid tokens. 
+   - In continuous diffusion, **every position gets its own graded reliability** based on how much closer the noisy point is to the nearest token than to the runner-up, relative to the noise level.
 
    Under this view, **continuous methods sit between masked and uniform diffusion**, not on the other side of a discrete-continuous divide.
 2. **Together with commitment, reliability gives two axes instead of one.** Whether the state commits hard tokens or soft values still matters, so we place every recipe by both its commitment and its labels ([Figure 1](#figure-1)). Hybrids fill in the space between the corners.
 3. **Self conditioning pulls the corruption families toward each other.** It adds a soft, labeled message to every recipe, whatever corner the recipe starts in.
 4. **The results of [Part 2](/blog/diffusion-lm-design-choices-self-conditioning/) support this picture.** Masked and uniform diffusion behave like opposites, uniform diffusion responds to self conditioning like the continuous methods, and self conditioning makes their sampling trajectories more alike.
 
-Self conditioning deserves a closer look, since it is where the two axes meet. Prior work reads it as a second channel between steps: it gets around the "sampling wall" of [@joLoopholingDiscreteDiffusion2026] and carries useful information from one step to the next without redoing computations [@yooSelfconditionedFlowMap2026a]. It also lets the model recover information in the order the model finds easiest, rather than the order the forward process imposes. Without self conditioning, the state is the only thing passed between steps, so the schedule decides which positions are revealed and when. With it, the model's previous prediction travels alongside the state, carrying the model's beliefs about which positions it has worked out and which remain hard. This second channel is soft and labeled for every recipe. It gives masked diffusion graded beliefs for its blanks, gives uniform diffusion the labels it lacks, and keeps the parts of a continuous prediction that fresh noise would otherwise blur away. In our reading, this is why recipes sample more alike with self conditioning: **whatever corner of the map a recipe starts in, the shared channel pulls it toward the center** ([Figure 1](#figure-1)).
+Self conditioning deserves a closer look, since it is where the two axes meet. Prior work reads it as a second channel between steps: it gets around the "sampling wall" of [@joLoopholingDiscreteDiffusion2026] and carries useful information from one step to the next without redoing computations [@yooSelfconditionedFlowMap2026a]. It also lets the model recover information in the order the model finds easiest, rather than the order the forward process imposes. Without self conditioning, the state is the only thing passed between steps, so the schedule decides which positions are revealed and when. With it, the model's previous prediction travels alongside the state, carrying the model's beliefs about which positions it has worked out and which remain hard. This second channel is soft and labeled for every recipe. It gives masked diffusion graded beliefs for its blanks, gives uniform diffusion graded beliefs that its state holds only implicitly, and keeps the parts of a continuous prediction that fresh noise would otherwise blur away. We hypothesize that this is why different methods behave similar with self conditioning: **whatever corner of the map a recipe starts in, the shared channel pulls it toward the center** ([Figure 1](#figure-1)).
 
 <div id="figure-1"></div>
 
@@ -46,13 +61,23 @@ Self conditioning deserves a closer look, since it is where the two axes meet. P
  
 ## Prior work
 
-**Discrete, continuous and hybrid recipes.** Diffusion language models are usually sorted by the space they corrupt. Discrete methods corrupt tokens directly, either by masking them [@sahooSimpleEffectiveMasked2024] or by swapping them for random tokens [@sahooDiffusionDuality2025]. Continuous methods corrupt a relaxation of the tokens, such as their embeddings [@dieleman2022continuous]. Hybrids pair a discrete view with a continuous one [@davisDesignSpaceContinuous2026]. Under this split, masked and uniform diffusion are siblings, since both are discrete.
+<div className="spark">
+
+- Recipes are usually sorted into discrete, continuous and hybrid.
+- Simplex diffusion, SCUD and the revisited uniform diffusion already blur that split.
+- GIDD, self-correcting diffusion, ReMDM, Ψ-samplers and CADD mix families to trade one property for another.
+- Diffusion has been read through coding before, and masked-diffusion theory ties the error of parallel decoding to total correlation.
+- This post adds one shared property, reliability, that places every recipe on one map.
+
+</div>
+
+**Discrete, continuous and hybrid recipes.** Diffusion language models are usually sorted by the space they corrupt. Discrete methods corrupt tokens directly, either by masking them [@sahooSimpleEffectiveMasked2024] or by swapping them for random tokens [@Hoogeboom_Nielsen_Jaini_Forré_Welling_2021]. Continuous methods corrupt a continuous representatijon of the tokens, such as their embeddings [@dieleman2022continuous]. Hybrids pair a discrete view with a continuous one [@davisDesignSpaceContinuous2026]. Under this split, masked and uniform diffusion are siblings, since both are discrete.
 
 **Work that cuts across the split.** Several recent papers already blur this division, and this post builds on them. Simplex diffusion places the noisy state on the probability simplex and controls it with a Dirichlet concentration: at small concentration it reduces to discrete diffusion, and at large concentration it follows a deterministic path with Gaussian fluctuations [@deschenaux2026simplex]. On the discrete side, masked diffusion has usually beaten uniform diffusion on language modeling, and two papers explain the gap in ways that bear directly on this post. Amin et al. [@amin2025scud] argue that masking works because it builds in the known distribution of jump times, the times at which a token is corrupted, and only learns where to jump; applying their schedule-conditioned diffusion (SCUD) to a uniform forward process recovers masked diffusion. Gourevitch et al. [@gourevitch2026uniform] give an absorbing-state reformulation of uniform diffusion that keeps its joint law but samples like masked diffusion, and conclude that the gap comes less from the marginals than from parameterization and sampling. Their leave-one-out denoiser predicts each clean token without using its own noisy observation. Read together, these results say that uniform diffusion behaves like masked diffusion once the model is told, or stops relying on, which positions were corrupted.
 
 **Moving between the corners.** Other work mixes the families to get the benefits of more than one. GIDD [@rutte2025generalized] and self-correcting discrete diffusion [@wang2026selfcorrecting] add uniform noise to masked diffusion, so that the model learns to find and replace its own mistakes. Remasking samplers [@wang2025remasking] and Ψ-samplers [@deschenaux2026psi] reach a similar goal at sampling time by letting committed tokens be revised. In the other direction, continuously augmented discrete diffusion (CADD) [@zheng2025continuously] observes that mapping every unobserved token to the same mask creates an "information void", and pairs each masked token with a noisy continuous latent that carries graded information about it. Each of these trades some of one family's properties for another's, though the trade is usually described in terms of self-correction or information loss rather than as a single shared property.
 
-**Coding and information theory in diffusion.** Diffusion has been read through coding before. Ho et al. [@ho2020denoising] interpret sampling as progressive lossy decompression, Theis et al. [@theis2022lossy] build a lossy compressor from Gaussian diffusion, and Kong et al. [@kong2023information] relate the diffusion likelihood to estimation error through the I-MMSE relation. These works treat the whole diffusion process as a code. We instead look at each position as the output of a channel, and use the standard classes of channels to compare corruption families.
+**Coding and information theory in diffusion.** Diffusion has been read through coding before. Ho et al. [@ho2020denoising] interpret sampling as progressive lossy decompression, Theis et al. [@theis2022lossy] build a lossy compressor from Gaussian diffusion, and Kong et al. [@kong2023information] relate the diffusion likelihood to estimation error through the I-MMSE relation. These works treat the whole diffusion process as a code. Closer to our view, recent theory for masked diffusion relates per-position and sequence-level information directly: it bounds the error of revealing several positions in one step by the total correlation between them and related quantities [@li2025convergence] [@zhao2026adaptation] [@chen2025optimal], and the entropy-bounded sampler keeps this error small by choosing how many positions to reveal so that the sum of their entropies, minus the largest, stays below a threshold [@benhamu2025accelerated]. These analyses work with masked positions, which are either known or not. We instead look at each position as the output of a channel, which extends the same accounting to the partial information that uniform and Gaussian corruption leave at every position, and use the standard classes of channels to compare corruption families.
 
 **Self conditioning.** Self conditioning was introduced by Chen et al. [@chen2022analog] for Gaussian diffusion over analog bits and became a standard part of embedding diffusion [@dieleman2022continuous] [@strudel2022self]. Several explanations exist. In CANDI [@pynadath2025candihybriddiscretecontinuousdiffusion] we proposed that it acts as pseudo-conditioning against the long-tailed behavior of Gaussian noise in high dimensions. Davis et al. [@davisDesignSpaceContinuous2026] attribute much of its gain to a mismatch between training and inference. Yoo et al. [@yooSelfconditionedFlowMap2026a] show that in continuous flows a self-conditioned denoiser defines a fixed-point iteration. Jo et al. [@joLoopholingDiscreteDiffusion2026] describe the "sampling wall" in discrete diffusion and show that carrying a latent between steps, trained with a self-conditioned objective, gets around it. [Part 2](/blog/diffusion-lm-design-choices-self-conditioning/) covers these in more detail.
 
@@ -60,13 +85,126 @@ Self conditioning deserves a closer look, since it is where the two axes meet. P
 
 ## A coding view of corruption
 
+<div className="spark">
+
+- Each corruption is a channel, the data acts as the code, and the model and sampler act as the decoder.
+
+</div>
+
+### The lifecycle of a bit
+
+<div className="spark">
+
+- The state holds content bits (what it already fixes about the final sample) and noise bits.
+- The model turns the state into logits; the sampler draws from them, mixes in noise and writes a state shaped like training data.
+- Sampling wall: the draw throws away the rest of each belief.
+- Self conditioning carries graded beliefs into the next pass.
+- The corruption process decides what the state can keep.
+- Our assumptions: content bits split into usable and buried for a model with limited compute, and the sample is treated as fixed in advance when we use channel language.
+
+</div>
+
+Before turning to channels, it helps to follow the bits through one sampling step ([Figure 2](#figure-2)). The state passed between steps holds two kinds of bits. **Content bits** are what the state already fixes about the final sample; **noise bits** are the rest, the masks, swapped tokens or Gaussian noise that say nothing about it. The model reads the state and returns logits at every position. Where the state already determines a token, the logits show a sharp peak; where a position is still open, they stay flat. The sampler then draws tokens or adds fresh noise, which settles some of the open positions, and writes the result back into a state of the kind the model saw in training. The loop repeats until no noise is left. In [Figure 2](#figure-2), each state holds content bits, split into a usable part (solid) that one network pass can extract and a buried part (dashed) that the state fixes but the pass has not worked out, above the noise bits (hatched). The bit view below draws the same step bit by bit, for each corruption family.
+
+Three parts of this loop organize the rest of the section.
+
+1. **The sampling wall.** The sampler keeps one draw from each belief and discards the rest of it, the "sampling wall" of [@joLoopholingDiscreteDiffusion2026]. The next step must rebuild what was discarded.
+2. **Graded beliefs.** With self conditioning, the logits are also fed into the next pass [@chen2022analog], so graded beliefs survive the wall whatever the state looks like.
+3. **The corruption process.** The sampler must write a state of the shape the forward process produces, so the corruption process decides what the state can keep: exact flags in masked diffusion, hard tokens without flags in uniform diffusion, soft points in continuous diffusion. The subsections below describe this in terms of channels (reliability) and messages (commitment).
+
+<div id="figure-2"></div>
+
+<LifecycleFigure client:visible />
+
+**These are our assumptions.**
+
+- **Usable and buried bits.** We split the content bits into a usable part, which one network pass can extract, and a buried part, which the state fixes but which is tangled with noise beyond what one pass can undo. With unlimited computation this split would not exist: everything the state fixes would count, whether or not the model works it out. We make it because a real network does a fixed amount of computation per pass, and for such an observer computation can create usable information [@xu2020theory] [@finzi2026epiplexity]. Under this split, self conditioning adds no information that the current state does not already hold: for an ideal model and a sampler that follows the forward process, it would change nothing. It helps because it hands the model, in usable form, beliefs that its state holds only implicitly.
+- **A sample that exists from the start.** When we use the language of channels, we treat the final sample as if it existed from the start and each step revealed part of it. No sample exists while sampling, but this view gives the same distribution over sampling paths [@montanari2023sampling], so it lets us borrow the tools of coding theory.
+
+
 ### Why borrow from coding theory
+
+<div className="spark">
+
+- Clean sequence = codeword, forward process = memoryless channel, dependence between positions = the code.
+- Limit: the data is a code nobody designed, so we borrow only results about channels.
+
+</div>
 
 In channel coding, a sender transmits a codeword, a channel corrupts each symbol, and a decoder uses the structure of the code to recover what was sent [@mackay2003information] [@richardson2008modern]. A diffusion language model faces the same problem at every step. The clean sequence plays the role of the codeword. The forward process corrupts each position independently given the clean sequence, which coding theory calls a memoryless channel. The model is told the noise level through its time input, just as a decoder knows its channel. And the dependence between positions plays the role of the code: it is what lets the model fix one position using the others.
 
 The analogy has one clear limit. A code is designed so that its structure is easy to decode, while the "code" here is the data distribution, which nobody designed. We therefore borrow only results about the channel, about what each kind of corruption tells the decoder, and avoid results that depend on how a code is built.
 
+### Bits, shared bits and capacity
+
+<div className="spark">
+
+- The entropy $H(X)$ is the number of bits that specify a sample; cross-entropy loss is $H(X)$ plus a KL term.
+- Describing positions one at a time costs $\sum_i H(X_i)$; the excess over $H(X)$ is the total correlation.
+- Positions settled one after another discount shared bits; positions settled in the same step pay for them more than once.
+- A channel's capacity is the most information one use carries: $1 - \varepsilon$ for erasure, $1 - h_2(p)$ for flips.
+
+</div>
+
+Before turning to channels, we fix the quantities the rest of the post uses. Logarithms are base 2, so quantities are in bits.
+
+**The bits in a sample.** The information content of a sample $x$ under the data distribution $p$ is $h(x) = -\log_2 p(x)$, and its average over samples is the entropy
+
+$$
+H(X) = \mathbb{E}_{x \sim p}\left[-\log_2 p(x)\right].
+$$
+
+The link to the training loss is not incidental. A model $p_\theta$ trained with cross entropy minimizes
+
+$$
+\begin{aligned}
+\mathbb{E}_{x \sim p}\left[-\log_2 p_\theta(x)\right] &= H(X) + D_{\mathrm{KL}}(p \,\|\, p_\theta) \\
+&\geq H(X),
+\end{aligned}
+$$
+
+so the loss is the average number of bits needed to describe a sample with the model, and the gap to the entropy is the KL divergence. This is the basis of the view that language modeling is compression: a model paired with arithmetic coding becomes a compressor that spends about $-\log_2 p_\theta(x)$ bits on each sample [@mackay2003information] (§6.2) [@deletang2024language]. For a diffusion model, the negative ELBO bounds this quantity from above.
+
+**The minimum code length.** By the source coding theorem, no lossless code can describe samples of $X$ in fewer than $H(X)$ bits on average, and an optimal prefix-free code comes within one bit of it, with expected length $H(X) \leq \bar{\ell} < H(X) + 1$ [@shannon1948] [@cover2006elements] (Theorem 5.4.1). In this sense $H(X)$ is the number of bits that specify a sample, and generating a sample means settling those bits.
+
+**Bits per position, and shared bits.** A diffusion language model does not work in that compressed space. It predicts each position of $X = (X_1, \dots, X_n)$. Describing the positions one at a time, each on its own, costs $\sum_i H(X_i)$ bits, which is never less than $H(X)$. The difference is the total correlation [@watanabe1960information]
+
+$$
+\mathrm{TC}(X) = \sum_{i=1}^{n} H(X_i) - H(X) \;\geq\; 0,
+$$
+
+the bits that more than one position holds: once one of those positions is known, the others follow. The chain rule $H(X) = \sum_i H(X_i \mid X_{<i})$ says how to avoid paying for them twice. If positions are settled one after another, each pays only for what the earlier positions did not already fix, so shared bits are discounted. Positions settled in the same step cannot discount each other, and a bit they share is paid for more than once. The breakout below draws this as stacks of colored boxes.
+
+**Mutual information.** The mutual information between $X$ and an observation $Y$,
+
+$$
+I(X; Y) = H(X) - H(X \mid Y),
+$$
+
+is the number of bits that $Y$ reveals about $X$ on average. It is symmetric, never negative, and zero exactly when $X$ and $Y$ are independent [@cover2006elements] (§2.4).
+
+**Channels.** In coding theory, a channel is anything that takes in a symbol and puts out a possibly corrupted copy of it, like a noisy phone line or a scratched disk. Each step of the forward diffusion process is a channel of this kind. Its input is a clean token, its output is the noisy position the model sees, and the noise level sets how bad the line is. The three corruption families are three different kinds of bad line, shown below. Masking is a line that sometimes drops a word but marks the gap. Uniform corruption is a line that sometimes swaps a word for a random one and says nothing. Gaussian noise is static that blurs every word a little, by a different amount each time, so the listener can tell which words came through clearly.
+
+<ChannelIntuition client:visible />
+
+Formally, a channel is a conditional distribution $p(y \mid x)$ from an input $X$ to an output $Y$. Its capacity is the most information one use of the channel can carry,
+
+$$
+C = \max_{p(x)} I(X; Y).
+$$
+
+Capacity counts how many yes-or-no answers about the input one use of the line delivers on average. For a binary input, a perfect line has a capacity of 1 bit, and a line whose output ignores its input has a capacity of 0. The maximum is over input distributions, so capacity describes the line itself rather than any particular message; for the symmetric binary channels in this post, a uniform input reaches it [@cover2006elements] (§7.1–7.2). The erasure channel, which hides its input with probability $\varepsilon$, has $C = 1 - \varepsilon$: every erased use delivers nothing, and every other use delivers the full bit. The binary symmetric channel, which flips its input with probability $p$, has $C = 1 - h_2(p)$, where $h_2(p) = -p \log_2 p - (1-p) \log_2 (1-p)$: a flip rate of one half leaves nothing. The binary-input Gaussian channel has no closed form; its capacity is computed from the distribution of the log-likelihood ratio, defined next.
+
+In diffusion terms, the capacity at a noise level is how many bits one corrupted position, read on its own and without context, carries about its clean value. The forward process is then a family of channels that worsen over time, from full capacity at the start of corruption to none at the end, and sampling runs that family backwards. [Figure 3](#figure-3) compares the three channels at equal capacity.
+
 ### One quantity: the log-likelihood ratio
+
+<div className="spark">
+
+- The log-likelihood ratio $L$ holds everything one observation says about a bit.
+- Its size $|L|$ is the reliability, and the spread of $|L|$ across positions describes the channel.
+
+</div>
 
 Take a binary symbol $X \in \{+1, -1\}$ observed through a channel as $Y$. Its log-likelihood ratio is
 
@@ -79,6 +217,15 @@ The sign of $L$ says which value the observation favors, and its size $|L|$ says
 We use binary symbols to keep the formulas short. For tokens, the same idea applies to the comparison between the true token and each competitor.
 
 ### Three channels
+
+<div className="spark">
+
+- Masked diffusion is an erasure channel: $|L|$ is 0 or infinite, and the model can see which.
+- Uniform diffusion is a symmetric channel: the same $|L|$ at every position; swapped tokens can be found only from context.
+- Gaussian diffusion is a Gaussian channel: $|L|$ varies by position, set by the margin to the runner-up token.
+- Simplex diffusion slides from the symmetric channel toward the Gaussian one as its concentration grows.
+
+</div>
 
 **Masked diffusion is an erasure channel.** A position is either revealed, with $|L| = \infty$, or masked, with $L = 0$. The spread of $|L|$ is two spikes, and the model can see which spike each position sits in.
 
@@ -120,7 +267,7 @@ The large, concentrated part of the noise appears in both distances and cancels.
 
 ### A sample as stacks of bits
 
-Any sample from a discrete distribution can be described by a number of bits: the answers to a series of yes-or-no questions that, taken together, pin the sample down. Generating a sample means settling all of these bits.
+As defined above, a sample needs $H(X)$ bits on average: the answers to a series of yes-or-no questions that, taken together, pin the sample down. Generating a sample means settling all of these bits.
 
 Draw each position of the sequence as a stack of small boxes, one box per bit the position needs. Stacks have different heights, because some tokens are harder to predict than others. Each box also has a color, and boxes of the same color carry the same information: once one of them is known, the others follow. This gives two ways to count. Counting every box gives the bits needed if each position is described on its own. Counting each color once gives the bits needed for the whole sequence. The difference between the two counts is the information the positions share, which information theory calls the total correlation [@watanabe1960information].
 
@@ -146,15 +293,38 @@ Gaussian diffusion does not add noise to bits. It adds noise to each token's emb
 
 This connects back to the main text. Under the erasure channel, each box is known or unknown, and the model sees which. Under Gaussian noise, each bit carries a confidence that the model can read, and that confidence varies from bit to bit by the luck of the noise. Under uniform noise, a shown token may be wrong, and nothing in the token itself says so.
 
+### One sampling step, bit by bit
+
+This is the step of [Figure 2](#figure-2) on the seven-color example. Each column is a row of stacks: the state, the model's logits after one pass, and the next state. Switch the corruption family to see what the state can keep between steps, and what it says about each position's reliability.
+
+<BoxLifecycle client:visible kicker="Illustration · not measured data" />
+
 </div>
 
 </details>
 
 ### Same capacity, different behavior
 
-To compare the three fairly, we match their capacity, so that each carries the same information per position. [Figure 2](#figure-2) does this. Even at equal capacity, the channels differ in how information from two observations combines. For two copies of one bit, the erasure channel gives the most information, the symmetric channel the least, and the Gaussian channel sits between them. For the parity of two bits, the order reverses.
+<div className="spark">
 
-<div id="figure-2"></div>
+- Matching the capacity per position does not make corruptions interchangeable.
+- For copies of a bit, erasure is best and flips are worst; for parities, the order reverses.
+- Erasure and symmetric channels are the two extremes at any capacity, with Gaussian between them (Figure 3).
+- So which family suits a task depends on how its data links positions.
+
+</div>
+
+**Why do different corruptions matter?** One might expect that once two corruptions are tuned to deliver the same number of bits per position, they are interchangeable. They are not. Matching capacity fixes how much each noisy position says about its own clean value, $I(X_i; Y_i) = C$. What the model needs, though, is a view of the whole sequence, and that view is built by combining many noisy positions. How those per-position bits combine depends on the channel.
+
+If the positions were independent, the channel would not matter: $n$ noisy positions would carry $nC$ bits about the sequence, whatever the corruption. The differences come from the dependence between positions, the "code" of the earlier analogy. Take the two simplest kinds of dependence.
+
+- **Copies.** Two positions hold the same bit, so the two noisy positions are two looks at one value. Under erasure, a look is either useless or exact, so if either look survives, the bit is known for certain. Under flips, the two looks can disagree, and nothing says which one is wrong, so they partly cancel. At a capacity of 0.5 bits per position, two looks give 0.75 bits under erasure, 0.74 under Gaussian noise and 0.71 under flips.
+- **Parities.** A third value is fixed by two bits together, such as their parity. Now the order reverses. A parity needs both inputs, and one erasure leaves it completely unknown, while two flip-corrupted inputs still give partial evidence about it. At the same capacity, the parity of two bits is recovered best under flips, worst under erasure, with Gaussian noise between.
+
+So even when the raw bits per position are tuned to be equal, how those bits combine into a view of the actual sequence can differ, and which channel gives the clearest view depends on how the data links its positions. [Figure 3](#figure-3) shows both cases for any capacity.
+
+
+<div id="figure-3"></div>
 
 <LSpread client:visible />
 
@@ -176,21 +346,58 @@ $$
 
 </ExpandableSection>
 
-For diffusion language models, the data plays the role of the code, so this result says that **the reliability axis does not rank the families on its own**. Exact labels pay off most where positions share information as copies, and flips hurt least where positions are tied by parity-like constraints. In our reading, which family suits a task should depend on which kind of dependence its data has, a prediction we return to when we look at the evidence.
+For diffusion language models, the data plays the role of the code, so this result says that **the reliability axis does not rank the families on its own**. Exact labels pay off most where positions share information as copies, and flips hurt least where positions are tied by parity-like constraints. So which family suits a task should depend on which kind of dependence its data has, a prediction we return to when we look at the evidence.
 
 ### Commitment as hard or soft messages
 
-The second axis also has a coding counterpart, though here the match is our own reading. An iterative decoder works in rounds, and between rounds it passes messages. In hard-decision decoders such as Gallager's algorithm A, each message is a single symbol. In belief propagation, each message is a full belief, a log-likelihood ratio [@richardson2008modern] (§4.2). The state that a diffusion sampler passes from one step to the next plays the role of these messages. Masked and uniform diffusion pass hard symbols: each position holds a token or a mask. Continuous methods pass soft values: each position holds a point that still carries graded evidence. **Coding theory finds a large gap between the two**: on the same codes, decoders that pass hard messages tolerate much less noise than belief propagation [@richardson2008modern] (§4.5–4.7).
+<div className="spark">
+
+- The state passed between steps acts like the messages of an iterative decoder.
+- Masked and uniform diffusion pass hard symbols; continuous methods pass soft values.
+- Decoders that pass hard messages tolerate much less noise than belief propagation.
+- Masked diffusion is special: on erasure, hard messages lose nothing, but its sampler can commit a token before the data fixes it.
+
+</div>
+
+The second axis also has a coding counterpart, though this match is ours, not an established result. An iterative decoder works in rounds, and between rounds it passes messages. In hard-decision decoders such as Gallager's algorithm A, each message is a single symbol. In belief propagation, each message is a full belief, a log-likelihood ratio [@richardson2008modern] (§4.2). The state that a diffusion sampler passes from one step to the next plays the role of these messages. Masked and uniform diffusion pass hard symbols: each position holds a token or a mask. Continuous methods pass soft values: each position holds a point that still carries graded evidence.
 
 Masked diffusion is a revealing special case. On the erasure channel, belief propagation's messages are themselves hard: a bit is either known for certain or not at all, so hard messages lose nothing [@richardson2008modern] (§3.5). The peeling decoder fills in a bit only once the code has determined it. A masked sampler differs in one step: it reveals a position by sampling from the model's prediction, so it can declare a token certain before the data has determined it. This is the "sampling wall" of [@joLoopholingDiscreteDiffusion2026] seen from the coding side, and it explains why the order of reveals matters so much for masked diffusion. Samplers that reveal the positions the model is surest about first [@benhamu2025accelerated] act like a peeling decoder, while random reveal orders do not.
 
+### Bits that are fixed but not yet worked out
+
+<div className="spark">
+
+- A model with limited compute can treat a bit as open even though the state already fixes it.
+- Without self conditioning, that partial work is lost every step; with it, the previous prediction carries the work forward.
+
+</div>
+
+The chain rule says that once some positions are revealed, any bit they determine costs nothing more: if the revealed positions $X_S$ fix $X_j$, then $H(X_j \mid X_S) = 0$. Classical information theory has no notion of a bit that is fixed but not yet worked out. A model with a limited amount of computation does. Working out a bit can take a chain of deductions, and a decoder that stops early treats a bit as uncertain even though the data determines it. In iterative decoding this is the familiar picture: a belief-propagation decoder learns bits round by round, bits that sit several links away from the evidence need several rounds, and with too few rounds it falls short of what the code determines [@richardson2008modern] (§3.9, §3.20). Recent work makes the same point for learning in general. Finzi et al. define time-bounded entropy and epiplexity, which split information into what stays unpredictable and what becomes learnable for an observer with a fixed compute budget, and show that for such an observer computation can create usable information and the order of the data matters [@finzi2026epiplexity]. Usable (V-) information makes a related point for a fixed family of models [@xu2020theory].
+
+A diffusion sampler faces this at every step. One network pass can carry out only so much computation, so some bits that the current state already determines remain unresolved after the pass. Without self conditioning, that partial work is lost when the step ends: the sampler may pay for those bits again, or commit them by sampling before they are worked out. With self conditioning, the previous prediction carries the unfinished work into the next step, so the model keeps resolving bits in the order it finds them, much as a decoder continues from its last round rather than starting over. This is the "sampling wall" bypass of [@joLoopholingDiscreteDiffusion2026] and the fixed-point view of [@yooSelfconditionedFlowMap2026a], stated in terms of bits.
+
 ### Where hybrids and self conditioning land
 
-A hybrid observes each position through two channels at once: a discrete view and a continuous view. In coding terms, this is the parallel channel setting of [Figure 2](#figure-2), where two observations of the same symbol are combined. What the continuous view adds depends on the discrete one. Paired with masked diffusion, it gives the masked positions graded evidence, so a blank is no longer a total blank. Paired with uniform diffusion, it supplies the labels uniform lacks: when a token and its noisy embedding disagree, the model has reason to doubt the token. Hybrids therefore fill in the space between the corners of [Figure 1](#figure-1) rather than forming a corner of their own.
+<div className="spark">
+
+- A hybrid observes each position through two channels at once, filling the space between the corners.
+- Self conditioning adds a soft message to every recipe, which pulls recipes toward the center of Figure 1.
+
+</div>
+
+A hybrid observes each position through two channels at once: a discrete view and a continuous view. In coding terms, this is the parallel channel setting of [Figure 3](#figure-3), where two observations of the same symbol are combined. What the continuous view adds depends on the discrete one. Paired with masked diffusion, it gives the masked positions graded evidence, so a blank is no longer a total blank. Paired with uniform diffusion, it supplies the labels uniform lacks: when a token and its noisy embedding disagree, the model has reason to doubt the token. Hybrids therefore fill in the space between the corners of [Figure 1](#figure-1) rather than forming a corner of their own.
 
 Self conditioning adds a second message to every recipe. Alongside the state, the model receives its own previous prediction [@chen2022analog], which is a soft belief for every position. In the terms of this section, every recipe now passes both its own kind of state and a soft message, whatever corner it started in. This is why we expect self conditioning to pull recipes toward the center of [Figure 1](#figure-1). It does not erase the corners: the state still decides what is committed, and the fed-back belief is only as reliable as the model's own confidence.
 
 ### What this predicts
+
+<div className="spark">
+
+- Exact labels matter most when the answer is fixed.
+- Self conditioning helps most where its message is missing: uniform, continuous, and masked with random reveal order.
+- Self conditioning makes recipes sample more alike.
+
+</div>
 
 The framework makes predictions that can be checked within a single task, where the metric is shared:
 
@@ -202,37 +409,66 @@ The next section tests these predictions against the results of [Part 2](/blog/d
 
 ## Evidence from Part 2
 
-We now check the predictions against the experiments in [Part 2](/blog/diffusion-lm-design-choices-self-conditioning/). Every model there was trained with one seed, every sampler was tuned per model, and the three tasks use different metrics: exact-solve accuracy on Sudoku, distinct valid words on text8, and MAUVE on TinyStories. We therefore compare methods only within a task. We read Sudoku as a task with a fixed answer, since the prompt determines the solution; text8 as an unconditional task with many valid answers; and TinyStories as a prompted task in between.
+<div className="spark">
+
+- Methods are compared only within a task: Sudoku (fixed answer), text8 (many answers), TinyStories (in between).
+
+</div>
+
+We now check the predictions against the experiments in [Part 2](/blog/diffusion-lm-design-choices-self-conditioning/). Every model there was trained with one seed, every sampler was tuned per model, and the three tasks use different metrics: exact-solve accuracy on Sudoku, distinct valid words on text8, and MAUVE on TinyStories. We therefore compare methods only within a task. We treat Sudoku as a task with a fixed answer, since the prompt determines the solution; text8 as an unconditional task with many valid answers; and TinyStories as a prompted task in between.
 
 ### Masked and uniform behave like opposite corners
 
-Under the discrete-versus-continuous split, masked and uniform diffusion are siblings. **In our results they behave like opposites** ([Figure 3](#figure-3)). Without self conditioning, masked diffusion beats uniform diffusion on Sudoku by 20 points (97.4% against 77.4%), while uniform diffusion beats masked diffusion on text8 by 2.3 words (16.47 against 14.20). On TinyStories they tie. This matches the first prediction: exact labels and a confidence-ordered sampler pay off when the answer is fixed, and the advantage reverses when many answers are valid.
+<div className="spark">
+
+- Without self conditioning, masked beats uniform on Sudoku by 20 points, and uniform beats masked on text8 by 2.3 words.
+- Self conditioning moves them in opposite directions on Sudoku: uniform +16.8 points, masked −3.7.
+
+</div>
+
+Under the discrete-versus-continuous split, masked and uniform diffusion are siblings. **In our results they behave like opposites** ([Figure 4](#figure-4)). Without self conditioning, masked diffusion beats uniform diffusion on Sudoku by 20 points (97.4% against 77.4%), while uniform diffusion beats masked diffusion on text8 by 2.3 words (16.47 against 14.20). On TinyStories they tie. This matches the first prediction: exact labels and a confidence-ordered sampler pay off when the answer is fixed, and the advantage reverses when many answers are valid.
 
 Self conditioning then moves the two in opposite directions on Sudoku: uniform gains 16.8 points while masked loses 3.7. On text8 the pattern flips, with masked gaining 1.3 words and uniform gaining 0.28, within the noise level. This matches the second prediction. Self conditioning helps uniform most where labels matter, and it barely helps masked diffusion's best sampler, which already reveals positions in order of confidence.
 
-<div id="figure-3"></div>
+<div id="figure-4"></div>
 
 <MaskedUniformSC client:visible />
 
 <ExpandableSection title="More detail: the untuned sampler tells the same story" client:load>
 
-The untuned native sampler of uniform diffusion reveals tokens without any special ordering or correction. On Sudoku it scores 51.5% without self conditioning and 94.5% with it, slightly above uniform diffusion's best tuned sampler. Once self conditioning supplies labels, uniform diffusion no longer needs a special sampler. Masked diffusion's native sampler also improves with self conditioning, from 31.7% to 81.6%, but stays far below the 97.4% that its entropy-bounded sampler reaches without self conditioning. Masked diffusion already gets most of the value of labels through the order in which it reveals positions. Switch Figure 3 to the untuned sampler to see these numbers.
+The untuned native sampler of uniform diffusion reveals tokens without any special ordering or correction. On Sudoku it scores 51.5% without self conditioning and 94.5% with it, slightly above uniform diffusion's best tuned sampler. Once self conditioning supplies labels, uniform diffusion no longer needs a special sampler. Masked diffusion's native sampler also improves with self conditioning, from 31.7% to 81.6%, but stays far below the 97.4% that its entropy-bounded sampler reaches without self conditioning. Masked diffusion already gets most of the value of labels through the order in which it reveals positions. Switch Figure 4 to the untuned sampler to see these numbers.
 
 </ExpandableSection>
 
 ### By its response to self conditioning, uniform groups with the continuous methods
 
-If the discrete-versus-continuous split were the main divide, masked and uniform diffusion should respond to self conditioning in similar ways. They do not ([Figure 4](#figure-4)). With each model's best tuned sampler, self conditioning raises the score of uniform diffusion and of Gaussian, spherical and vMF diffusion on all three tasks, and of simplex diffusion on two of them: 14 of these 15 changes are gains. Masked diffusion is the exception. Its best score falls on Sudoku (−3.7 points), barely moves on TinyStories, and rises only on text8. By this measure, **uniform diffusion groups with the continuous methods, not with masked diffusion**, which is where the reliability axis puts it. None of these recipes tells the model exactly which positions to trust, and the fed-back prediction supplies that information. Masked diffusion already has exact labels, and its best sampler already reveals positions in order of confidence, so self conditioning has less to add.
+<div className="spark">
 
-<div id="figure-4"></div>
+- With self conditioning, 14 of 15 best-score changes are gains for uniform and the continuous methods.
+- Masked diffusion is the exception: its confidence-ordered sampler already acts like a peeling decoder.
+- Caveats: several gains are within the noise level, and simplex drops on TinyStories.
+
+</div>
+
+If the discrete-versus-continuous split were the main divide, masked and uniform diffusion should respond to self conditioning in similar ways. They do not ([Figure 5](#figure-5)). With each model's best tuned sampler, self conditioning raises the score of uniform diffusion and of Gaussian, spherical and vMF diffusion on all three tasks, and of simplex diffusion on two of them: 14 of these 15 changes are gains. Masked diffusion is the exception. Its best score falls on Sudoku (−3.7 points), barely moves on TinyStories, and rises only on text8. By this measure, **uniform diffusion groups with the continuous methods, not with masked diffusion**, which is where the reliability axis puts it. None of these recipes tells the model exactly which positions to trust, and the fed-back prediction supplies that information. Masked diffusion already has exact labels, and its best sampler already reveals positions in order of confidence, so self conditioning has less to add.
+
+<div id="figure-5"></div>
 
 <SCResponse client:visible />
 
-Masked diffusion's drop on Sudoku comes from the samplers that suit it best. Its entropy-bounded samplers, which reveal positions in order of the model's confidence [@benhamu2025accelerated], are its strongest samplers on Sudoku with or without self conditioning, and self conditioning lowers both. On validation, entropy-bounded greedy falls from 95.7% to 93.0% and entropy-bounded churn from 95.3% to 92.2%, and the selected sampler's test score falls from 97.4% to 93.8%. In our reading, a confidence-ordered sampler already behaves like a peeling decoder, so the soft message has little to add, and it may blur the confidence ordering that the sampler relies on. We cannot run the same check on text8 or TinyStories. There the entropy-bounded samplers collapse even at their best settings, reaching at most 6 valid words on text8, against about 15 for the best sampler, and a MAUVE below 0.01 on TinyStories, so their changes say nothing about self conditioning.
+Masked diffusion's drop on Sudoku comes from the samplers that suit it best. Its entropy-bounded samplers, which reveal positions in order of the model's confidence [@benhamu2025accelerated], are its strongest samplers on Sudoku with or without self conditioning, and self conditioning lowers both. On validation, entropy-bounded greedy falls from 95.7% to 93.0% and entropy-bounded churn from 95.3% to 92.2%, and the selected sampler's test score falls from 97.4% to 93.8%. A confidence-ordered sampler already behaves like a peeling decoder, so the soft message has little to add, and it may blur the confidence ordering that the sampler relies on. We cannot run the same check on text8 or TinyStories. There the entropy-bounded samplers collapse even at their best settings, reaching at most 6 valid words on text8, against about 15 for the best sampler, and a MAUVE below 0.01 on TinyStories, so their changes say nothing about self conditioning.
 
 Two caveats apply. Several of these gains are small: uniform diffusion's gain on text8 (0.28 words) is within the noise level, and its gain on TinyStories (0.045 MAUVE) sits right at it, as does spherical diffusion's (0.041). And simplex diffusion breaks the pattern on TinyStories, where self conditioning lowers its best score, which we return to below.
 
 ### On prompted tasks, self conditioning makes special samplers unnecessary
+
+<div className="spark">
+
+- Without self conditioning, each recipe's best sampler makes up for something its state lacks.
+- With it, the gap between the best tuned and the untuned sampler closes on Sudoku (except masked) and on TinyStories.
+- On text8 the sampler still matters, and Ψ-samplers stay best.
+
+</div>
 
 Without self conditioning, the best sampler for each recipe compensates for something its state lacks. On Sudoku, masked diffusion's best sampler is entropy-bounded and reveals positions in order of confidence. Uniform diffusion's best sampler is renoising, which re-corrupts the predicted tokens and decodes them again, a way to find wrong tokens without labels. The continuous methods mostly prefer Ψ-samplers [@deschenaux2026psi]. If self conditioning supplies the missing information, these samplers should matter less. The table below gives the gap between each model's best tuned sampler and its untuned native sampler, without and then with self conditioning.
 
@@ -249,11 +485,26 @@ On Sudoku the gap closes for every recipe except masked diffusion, whose untuned
 
 ### Self conditioning makes sampling behave more alike
 
+<div className="spark">
+
+- Distances between recipes' entropy trajectories fall by 84% on Sudoku, 35% on text8 and 31% on TinyStories; scores still differ.
+- Random anchoring on continuous models rises from 2–45% to 84–94% on Sudoku with self conditioning.
+
+</div>
+
 The third prediction says self conditioning should make recipes behave more alike during sampling. It does, though not in their scores, which still differ by recipe and task. **The sampling trajectories converge**: in the untuned sampler's per-step entropy, the average distance between two recipes' curves falls by 84% on Sudoku, 35% on text8 and 31% on TinyStories.
 
 Self conditioning also weakens the commitment axis. Continuous models are never trained on committed tokens, so committing positions at random during sampling usually hurts them. On Sudoku, random anchoring scores 12%, 2%, 33% and 45% for Gaussian, simplex, spherical and vMF without self conditioning, and 91%, 84%, 91% and 94% with it, each close to that model's best tuned result. On text8 the same samplers gain 1.7 to 4.6 words. With a soft message carried alongside the state, a hard commitment no longer pushes the model far from what it saw in training.
 
 ### Renoising: when the two channels disagree
+
+<div className="spark">
+
+- With self conditioning, renoising collapses on text8 for recipes with hard-token states, but improves on Sudoku.
+- When many answers are valid, the re-decoded token can disagree with the fed-back belief.
+- This fits the pattern but is not a controlled test.
+
+</div>
 
 One result in Part 2 had no explanation: with self conditioning, renoising samplers collapse on text8, most of all for masked diffusion. The decode-versus-choose view suggests one. A renoising sampler discards the current state, re-corrupts the predicted tokens and decodes again, while a self-conditioned model also receives its previous prediction. When the answer is fixed, re-decoding a re-noised position returns the same token, so the new state and the fed-back belief agree. When many answers are valid, the re-decoded position can settle on a different valid token than the one the fed-back belief favors, and the two channels pull in different directions.
 
@@ -265,23 +516,40 @@ One result in Part 2 had no explanation: with self conditioning, renoising sampl
 | Uniform + Gaussian | 83% → 92% | 15.1 → 8.5 | 0.92 → 0.83 |
 | Gaussian | 52% → 91% | 12.6 → 13.4 | 0.91 → 0.88 |
 
-The pattern fits this reading. On Sudoku, renoising improves with self conditioning for every recipe. On text8, it collapses for every recipe whose state holds hard tokens, while pure Gaussian diffusion, whose state stays soft, improves slightly. TinyStories, a prompted task with many valid continuations, falls in between: masked diffusion improves, the two uniform recipes drop, and the other changes are within the noise level. This is a reading that fits the pattern, not a controlled test, and the numbers are first-stage validation scores from one training seed.
+The results fit this explanation. On Sudoku, renoising improves with self conditioning for every recipe. On text8, it collapses for every recipe whose state holds hard tokens, while pure Gaussian diffusion, whose state stays soft, improves slightly. TinyStories, a prompted task with many valid continuations, falls in between: masked diffusion improves, the two uniform recipes drop, and the other changes are within the noise level. This is a reading that fits the pattern, not a controlled test, and the numbers are first-stage validation scores from one training seed.
 
 ### What does not fit
 
+<div className="spark">
+
+- Small-concentration simplex should behave like uniform, yet self conditioning hurts it on TinyStories.
+- Its stories lose far more diversity: distinct bigrams fall from 0.248 to 0.130, against 0.253 for real stories.
+- This fits an over-sharpened sampler with a 10k vocabulary; a larger Dirichlet concentration should help.
+
+</div>
+
 Some results do not fit the picture. Small-concentration simplex diffusion should behave like uniform diffusion, yet on TinyStories self conditioning hurts simplex (0.889 to 0.858 with the best tuned sampler) while it helps uniform.
 
-The generated stories point to a cause. To separate the base model's behavior from the effect of tuning, we compare samples from each model's untuned native sampler, 4,096 stories per model. Self conditioning lowers diversity for every recipe, but for most it lands near the diversity of real stories. Simplex loses far more and ends well below it ([Figure 5](#figure-5)): distinct bigrams across its stories fall from 0.248 to 0.130, against 0.253 for real stories, and the share of stories that open with the same ten words rises from 3.3% to 11.0%.
+The generated stories point to a cause. To separate the base model's behavior from the effect of tuning, we compare samples from each model's untuned native sampler, 4,096 stories per model. Self conditioning lowers diversity for every recipe, but for most it lands near the diversity of real stories. Simplex loses far more and ends well below it ([Figure 6](#figure-6)): distinct bigrams across its stories fall from 0.248 to 0.130, against 0.253 for real stories, and the share of stories that open with the same ten words rises from 3.3% to 11.0%.
 
-<div id="figure-5"></div>
+<div id="figure-6"></div>
 
 <SimplexDiversity client:visible />
 
-The other recipes behave differently. The discrete and hybrid models are slightly more diverse than real stories without self conditioning, and self conditioning brings them close to it. The pure continuous methods drop somewhat below it (distinct bigrams around 0.21), yet their MAUVE rises, so a loss of diversity alone does not explain the drop. Simplex differs in degree: it starts as the least diverse recipe and loses about twice as much. In our reading, this fits an over-sharpened sampler. A small-concentration simplex state already looks like a committed token, the fed-back prediction adds confidence on top, and the sampler settles positions early, which MAUVE penalizes. It happens only on TinyStories because of its vocabulary: with 10,000 tokens, a near-corner simplex point looks far more like a committed token than it does with the 27 characters of text8 or the digits of Sudoku. Raising the Dirichlet concentration should move simplex toward the Gaussian end of the map (Proposition 4.1 of [@deschenaux2026simplex]) and very likely fix this, though we have not tested it. Simplex's stories without self conditioning are also unusually short (101 words, against about 130 for the other recipes and 132 for real stories), so something specific to this recipe may be at work as well.
+The other recipes behave differently. The discrete and hybrid models are slightly more diverse than real stories without self conditioning, and self conditioning brings them close to it. The pure continuous methods drop somewhat below it (distinct bigrams around 0.21), yet their MAUVE rises, so a loss of diversity alone does not explain the drop. Simplex differs in degree: it starts as the least diverse recipe and loses about twice as much. This fits an over-sharpened sampler. A small-concentration simplex state already looks like a committed token, the fed-back prediction adds confidence on top, and the sampler settles positions early, which MAUVE penalizes. It happens only on TinyStories because of its vocabulary: with 10,000 tokens, a near-corner simplex point looks far more like a committed token than it does with the 27 characters of text8 or the digits of Sudoku. Raising the Dirichlet concentration should move simplex toward the Gaussian end of the map (Proposition 4.1 of [@deschenaux2026simplex]) and very likely fix this, though we have not tested it. Simplex's stories without self conditioning are also unusually short (101 words, against about 130 for the other recipes and 132 for real stories), so something specific to this recipe may be at work as well.
 
 Every comparison rests on one training seed per model, so differences near the noise level (about 3 points on Sudoku, 0.5 words on text8 and 0.045 MAUVE on TinyStories) should not be read as effects.
 
 ## Conclusion
+
+<div className="spark">
+
+- Reliability information is a second property next to discrete versus continuous.
+- With commitment, it explains results from Part 2 that the split does not.
+- Questions to ask of a recipe: does the task have one answer or many, does the state say which positions to trust, and does the sampler commit too early?
+- Open: one seed and small tasks; a causal test would move one recipe along the reliability axis.
+
+</div>
 
 Diffusion language models are usually divided into discrete and continuous methods. This post argues that **the division hides a second property**, one that coding theory treats as fundamental: how much the noisy state tells the model about each position's reliability. Masked diffusion is an erasure channel, where every position is known for certain or not at all and the model can see which. Uniform diffusion is a symmetric channel, where every token is equally suspect. Continuous methods sit between them, with reliability spread across positions. Together with whether the state commits hard tokens or soft values, this gives two axes in place of one ([Figure 1](#figure-1)).
 
@@ -289,6 +557,8 @@ The two axes account for results from Part 2 that the discrete-versus-continuous
 
 For practice, the framework suggests questions to ask before choosing a recipe. Does the task have a fixed answer or many valid ones? Does the recipe's state tell the model which positions to trust? Does the sampler commit tokens before the model is sure of them? A recipe that lacks labels or commits too early is one that self conditioning, a continuous view, or a confidence-ordered sampler can repair.
 
-Several questions remain open. Our evidence rests on one training seed per model and on three small tasks. Reliability is a property of each corruption process and follows from it exactly; what our evidence does not yet show is that it causes the differences we see. The results above fit the picture after the fact. A direct test would move a recipe along the reliability axis while holding everything else fixed, for example by giving uniform diffusion a flag that marks which positions were corrupted, or by raising the Dirichlet concentration of simplex diffusion, and check that its response to self conditioning and its preferred sampler move as the framework predicts. The second test would also check our reading of simplex diffusion on TinyStories, which self conditioning over-sharpens at the small concentration we used. And the claim that the kind of dependence in the data decides which corner suits a task is, for now, a prediction: measuring that dependence directly, and testing whether it forecasts which recipe wins, would turn the framework from an interpretation into a tool.
+Several questions remain open. Our evidence rests on one training seed per model and on three small tasks. Reliability is a property of each corruption process and follows from it exactly; what our evidence does not yet show is that it causes the differences we see. The results above fit the picture after the fact. A direct test would move a recipe along the reliability axis while holding everything else fixed, for example by giving uniform diffusion a flag that marks which positions were corrupted, or by raising the Dirichlet concentration of simplex diffusion, and check that its response to self conditioning and its preferred sampler move as the framework predicts. The second test would also check our explanation of simplex diffusion on TinyStories, which self conditioning over-sharpens at the small concentration we used. And the claim that the kind of dependence in the data decides which corner suits a task is, for now, a prediction: measuring that dependence directly, and testing whether it forecasts which recipe wins, would turn the framework from an interpretation into a tool.
+
+<SeriesNav current={3} label="Read the series" />
 
 ## References

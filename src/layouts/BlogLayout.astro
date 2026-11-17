@@ -12,10 +12,11 @@ interface Props {
   tags?: string[];
   wip?: boolean;
   comments?: boolean;
+  sparknotes?: boolean;
   headings?: Heading[];
 }
 
-const { title, description, publishDate, tags = [], headings = [], wip = false, comments = false } = Astro.props as Props;
+const { title, description, publishDate, tags = [], headings = [], wip = false, comments = false, sparknotes = false } = Astro.props as Props;
 // Comments use Hypothesis: readers highlight any text in the post and attach a note to it.
 // Sections (##) hold subsections (###), which hold their parts (####).
 // A #### directly under a ## (no ### yet) is listed as a subsection.
@@ -71,6 +72,12 @@ const formattedDate = publishDate
       <div class="post-meta">
         <span class="eyebrow">Research note</span>
         {wip && <span class="wip-badge">Work in progress</span>}
+        {sparknotes && (
+          <div class="view-toggle" role="group" aria-label="How to read this post">
+            <button type="button" data-view="full" aria-pressed="true">Full post</button>
+            <button type="button" data-view="spark" aria-pressed="false">Bullet summary</button>
+          </div>
+        )}
         {formattedDate && publishDate && <time datetime={publishDate.toISOString()}>{formattedDate}</time>}
         {tags.length > 0 && <div class="tags">{tags.map((tag) => <span>{tag}</span>)}</div>}
       </div>
@@ -105,6 +112,25 @@ const formattedDate = publishDate
     </div>
 
     <div class="cite-pop" id="cite-pop" role="tooltip" hidden></div>
+
+    <!-- Full post or bullet summary. The choice is remembered across posts. -->
+    <script is:inline>
+      (function () {
+        var toggle = document.querySelector('.view-toggle');
+        if (!toggle) return;
+        var root = document.documentElement;
+        var buttons = toggle.querySelectorAll('button');
+        function set(view, save) {
+          root.dataset.view = view;
+          buttons.forEach(function (b) { b.setAttribute('aria-pressed', b.dataset.view === view ? 'true' : 'false'); });
+          if (save) { try { localStorage.setItem('post-view', view); } catch (e) {} }
+        }
+        var saved = 'full';
+        try { saved = localStorage.getItem('post-view') || 'full'; } catch (e) {}
+        set(saved === 'spark' ? 'spark' : 'full', false);
+        buttons.forEach(function (b) { b.addEventListener('click', function () { set(b.dataset.view, true); }); });
+      })();
+    </script>
 
     <!-- Loads the highlight-and-comment tool only on posts that ask for it (frontmatter comments: true). -->
     <script is:inline>

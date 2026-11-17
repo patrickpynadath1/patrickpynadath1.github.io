@@ -15,6 +15,8 @@ const blog = defineCollection({
     local: z.boolean().optional(),
     // Lets readers highlight text in the post and comment on it (Hypothesis).
     comments: z.boolean().optional(),
+    // Adds a toggle that swaps the prose for the bullet summaries in <div className="spark"> blocks.
+    sparknotes: z.boolean().optional(),
   }),
 });
 

@@ -1,5 +1,5 @@
 ---
-title: "Some DLM Design Choices: Why Modular?"
+title: "SDDC, Part 1: Some DLM Design Choices"
 description: "Most design choices in a diffusion language model are separate parts that can be swapped across recipes. A codebase that does this, an interactive map of the parts, and small worked examples of the interactions it lets us measure."
 pubDate: 2026-10-28T12:00:00.000Z
 author: "Patrick Pynadath, Ruqi Zhang"
@@ -7,17 +7,18 @@ tags: ["diffusion", "language models"]
 wip: true
 draft: false
 comments: true
+sparknotes: true
 ---
 
 import DesignMap from "../../components/DesignMap.astro"
+import SeriesNav from "../../components/SeriesNav.astro"
 import MapText from "../../components/MapText.astro"
 import HackableComparison from "../../components/HackableComparison.astro"
-import { SamplerAlgo } from "../../components/SamplerAlgo.jsx"
 
 {/* The figure lives in public/figures/design-map/index.html (built from the artifact by build_embed.py). */}
 
 
-# Some DLM Design Choices: Why Modular?
+# SDDC, Part 1: Some DLM Design Choices
 
 <a href="https://github.com/patrickpynadath1/sddc" target="_blank" rel="noopener" aria-label="SDDC code on GitHub" style={{ display: "inline-flex", alignItems: "center", gap: 8, padding: "7px 16px", margin: "4px 0 18px", borderRadius: 999, background: "var(--fg)", color: "var(--bg)", fontWeight: 600, fontSize: 15, textDecoration: "none" }}><svg width="18" height="18" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/></svg>Code on GitHub</a>
 
@@ -25,7 +26,7 @@ Patrick Pynadath<sup>1</sup>, Ruqi Zhang<sup>1</sup>
 
 <sup>1</sup> Purdue Department of Computer Science
 
-Series: [Part 1](/blog/diffusion-lm-design-choices/) · [Part 2](/blog/diffusion-lm-design-choices-self-conditioning/) · [Part 3](/blog/diffusion-lm-design-choices-sc-interpretation/)
+<SeriesNav current={1} />
 
 <div className="tldr">
 <span className="tldr-tag" aria-label="TL;DR">TL;DR</span>
@@ -35,6 +36,16 @@ Many techniques in diffusion language models, like self conditioning and block d
 </div>
 
 ## Introduction
+
+<div className="spark">
+
+- In diffusion language models, the generative path is itself a design choice: discrete, continuous, hybrid and latent methods all qualify.
+- Techniques like self conditioning and block diffusion started in one family and spread to others.
+- A borrowed technique may not work the same way, or for the same reason, in a new recipe.
+- SDDC makes recipes modular, so one part can be swapped while the rest stays fixed.
+- A recipe answers three questions: the information path, the denoising task and the inference settings. Modifiers cut across all three.
+
+</div>
 
 All autoregressive models follow the same left-to-right generative path. In diffusion, the generative path itself is a design choice. Diffusion language models (DLMs) have come to mean any generative method that leverages some form of parallel, iterative refinement in the generative process. This encompasses discrete methods (masked and uniform token corruption); continuous methods (Gaussian diffusion, diffusion on the simplex, and Riemannian flow matching on the sphere); hybrids that combine a discrete and a continuous process; and latent methods, such as diffusion in a latent space with an autoregressive decoder. For recent overviews, see Li et al. [@li2025dlmsurvey] for diffusion language models broadly, and Tang et al. [@tang2026survey] for continuous diffusion and flow language models. 
 
@@ -51,6 +62,14 @@ Outside of these questions, we define recipe modifiers as components that requir
 
 ## Scope: What is this Codebase?
 
+<div className="spark">
+
+- SDDC covers a narrow slice of diffusion language models on purpose.
+- Every method has factorized representations, a fixed tokenizer and simulation-free training.
+- The excluded directions are left out only for lack of time.
+
+</div>
+
 The codebase captures a narrow slice of the DLM landscape. Every method in it has three properties:
 
 1. It works with **factorized** representations.
@@ -61,17 +80,39 @@ Below we explain what each constraint means and which works it excludes. They ar
 
 ### Factorized Representations
 
+<div className="spark">
+
+- Each position has its own state, and its clean value depends on that token alone.
+- This rules out contextual representations (BERT or T5 hidden states) and compressed, sequence-level latents.
+
+</div>
+
 Every method here corrupts a representation with a one-to-one mapping to the tokens of the original sequence. Position $i$ has its own state, and its clean value depends on token $i$ alone: a one-hot vector or a point on the simplex, a learned embedding of that token, or a point on a sphere. Discrete methods use the token itself. Given a token, you know its clean representation; given the clean representation, you can read the token back. The forward process then corrupts each position from its own clean value, and the noisy state can be a mask, a random token, or a noisy point in that space. The model still sees the whole sequence when it denoises. Only the representation and the noise are per token.
 
 This rules out contextual representations, even ones that keep one vector per token. The hidden state of a BERT model or a T5 encoder at position $i$ depends on every token in the input. The same token gets a different vector in every sentence, and the vector at position $i$ carries information about its neighbors. Corrupting that vector corrupts a mixture of the whole sequence, not one token, and no fixed rule reads token $i$ back from it. The same goes for compressed, sequence-level latent spaces, where one latent vector describes many tokens at once [@lovelace2023latent; @meshchaninov2026cosmoscompressedsmoothlatent; @shen2026codar]. Both change what "one step of denoising" means, and comparing them fairly against per-token methods needs its own protocol.
 
 ### Tokenizer Agnostic
 
+<div className="spark">
+
+- The tokenizer is fixed before diffusion starts, so it can be swapped as an experimental variable.
+- This rules out learned segmentation, dynamic patches and methods that split tokens into smaller units, such as CoBit's bitstreams.
+
+</div>
+
 The tokenizer is fixed before diffusion starts. Every recipe sees the same token sequence, and the diffusion process never merges, splits, or learns tokens. This lets us swap tokenizers as an experimental variable without changing anything else in the recipe.
 
 It rules out methods that learn their own segmentation or work on dynamic patches. It also rules out methods that split each token into smaller units and diffuse those. CoBit [@batzolis2026towards] is one example: it writes each token's ID as a fixed-width binary code and runs continuous diffusion over the resulting bitstream, so the model predicts about $\log_2 V$ bits per token instead of one choice among $V$ tokens. The insertion and deletion modifier changes sequence length, but it inserts and deletes whole tokens from the same fixed vocabulary.
 
 ### Simulation Free
+
+<div className="spark">
+
+- Each training example is built in closed form from the forward process; training never runs the model's own sampler.
+- Self conditioning is the one exception: it adds one extra forward pass.
+- This rules out distillation, consistency, flow-map and RL-style training.
+
+</div>
 
 Training never runs the model's own sampler. Each training example is built in closed form: sample a time, corrupt the clean sequence with the forward process, and ask the model to undo it. The one exception is self conditioning, which runs one extra forward pass to produce the feedback it trains on.
 
@@ -85,6 +126,16 @@ SDDC covers a narrow slice of DLMs on purpose: noise is applied to factorized re
 </div>
 
 ## The design space
+
+<div className="spark">
+
+- Information path: representation, corruption process, noise schedule.
+- Denoising task: network, parameterization, objective, training time sampler.
+- Inference: initialization, time grid, update rule, terminal decoding.
+- Modifiers (self conditioning, block diffusion, hybrid views, insertion and deletion) cut across the parts.
+- The interactive map shows how the parts connect, every option, and where each one lives in the code.
+
+</div>
 
 Each part of a recipe answers one question and is made of a few pieces. Modifiers sit across the parts, because each one touches more than one of them.
 
@@ -358,7 +409,7 @@ Self conditioning on the expected embedding: the previous pass’s probabilities
 - A second option re-runs the two passes fresh at every step, at twice the cost.
 - It works with every method that predicts a clean-token posterior. Plug-in and score methods (UDLM, DUO, SEDD) cannot use it, and neither can the adaptive ODE solver.
 - Self conditioning was introduced in Analog Bits [@chen2022analog]. Proposed explanations include fixed-point refinement [@yooSelfconditionedFlowMap2026a] and making tokens identifiable under heavy noise [@davis2026design]. It can also push models toward repetition [@zhang2026ace].
-- Self conditioning sits here as a network input, but it also changes the effective information path. [Part 3](/blog/diffusion-lm-design-choices-sc-interpretation/) reads it as a second, soft message passed between steps.
+- Self conditioning sits here as a network input, but it also changes the effective information path. [Part 2](/blog/diffusion-lm-design-choices-self-conditioning/#input-reliability-task-structure-and-self-conditioning) reads it as a soft message passed between steps.
 
 </MapText>
 
@@ -671,128 +722,6 @@ With a block-size mixture, single-token blocks skip this and always train at t =
 <MapText name="tsamp.note">
 
 The sampler never changes what a value of t means; that is the noise schedule’s job. It only decides how often each t is drawn (left), and so how the training budget is split across t (right). Generation never uses it.
-
-</MapText>
-
-{/* Sampler */}
-
-<MapText name="about.samp">
-
-How predictions become text. Four settings: where to start, which steps to take, how each step changes the state, and how the end state becomes tokens.
-
-
-
-- Fixed-length recipes share one sampling engine with independent settings: how to propose clean tokens (keep the full posterior, sample, or argmax), which positions to update (all, random, or by entropy), how to move the state (the method's reverse step, or fresh forward noise), whether committed tokens stay fixed, and how to decode at the end.
-- The named samplers are presets of this engine: ancestral, entropy-bounded, SEDD's analytic step, discrete flow matching, Euler, Heun and adaptive ODE solvers, DDPM, and each process's native reverse step.
-- Cost is counted in network calls, including the final decoding call, so samplers should be compared at equal call budgets.
-- There are two kinds of temperature: one on the token probabilities, and Plaid's score temperature, which applies only to Gaussian steps.
-- In RePlaid's comparison, DPM-Solver++ does best with few steps and DDPM with many [@yang2026continuousdiffusionscalescompetitively; @lu2025dpmsolverpp]. The codebase currently has Euler, Heun, an adaptive-step ODE solver and DDPM.
-
-All of these are settings of one loop; step through it in the figure below the map.
-
-</MapText>
-
-<MapText name="samp.ancestral">
-
-Ancestral sampling reveals tokens a few at a time in random order, one network call per step.
-
-</MapText>
-
-<MapText name="samp.eb">
-
-Entropy-bounded sampling fixes a position as soon as the model is sure about it, and fixes every such position in the same step. Positions become final in order of confidence, not at random, so it needs fewer steps and rarely fixes a wrong word.
-
-
-
-- Commitment belongs to the sampler, so even a purely continuous model can use entropy-bounded decoding: a committed token's state is set to its clean value and held there.
-- A churn option randomly reopens committed tokens and re-noises them with the process's own forward step. It costs no extra calls, but it may use more of the step budget before finishing.
-- Based on the entropy-bounded sampler [@benhamu2025accelerated].
-
-</MapText>
-
-<MapText name="samp.ode">
-
-A Gaussian solver (Euler, Heun, adaptive ODE or DDPM) moves every vector a little each step; all words sharpen together.
-
-
-
-- Euler takes one network call per step, Heun two, and the adaptive-step ODE solver picks its own steps within an error tolerance and a call budget. Integration stops just short of the clean endpoint, then decodes. The adaptive solver does not support self conditioning.
-
-</MapText>
-
-<MapText name="samp.flow">
-
-Each process takes its own reverse step, and all positions sharpen together. Simplex Diffusion Models use Dirichlet bridge sampling, with optional churn. S-FLM integrates along the geodesic with tangent Euler steps. vMF spherical flows use an ODE predictor, with optional Langevin corrector steps. On the simplex the state is itself a probability vector, drawn as the bar under each position: it starts even and its mass moves to one word. On the sphere the state is a direction: the dial shows the angle between it (white) and the clean embedding (purple), which closes as generation runs.
-
-</MapText>
-
-<MapText name="samp.hybrid">
-
-Each view takes its own reverse step: masked tokens are revealed while the continuous view sharpens.
-
-</MapText>
-
-<MapText name="samp.analytic">
-
-SEDD's analytic step uses the score ratios to jump several masked tokens at once with exact transition probabilities.
-
-
-
-- Used only with SEDD's score ratios [@louDiscreteDiffusionModeling2023].
-
-</MapText>
-
-<MapText name="samp.ctmc">
-
-Discrete flow matching follows a continuous-time Markov chain: tokens jump between states, and with uniform noise a filled-in word can still change later (red).
-
-
-
-- At each step, sample a candidate token, then jump to it with probability $1-e^{-h\,\mathrm{rate}}$. This is the basic solver from discrete flow matching, with no corrector [@gat2024discrete]. Revealed masked tokens stay fixed; under uniform noise a token can still change.
-
-</MapText>
-
-<MapText name="samp.ddpm">
-
-DDPM takes stochastic Gaussian reverse steps: every vector sharpens, with a little fresh noise added each step.
-
-
-
-- DDPM takes stochastic steps from the reverse Gaussian posterior; it is not Euler with noise added. It has its own self conditioning options and supports score temperature.
-
-</MapText>
-
-<MapText name="samp.ar">
-
-Autoregressive decoding: one new token per step, strictly left to right.
-
-</MapText>
-
-<MapText name="samp.eb-continuous">
-
-With continuous noise the same rule applies to vectors: once a position’s prediction is under the entropy bound, its vector is set to the clean embedding of the predicted word and frozen. The other positions keep taking the method’s own reverse step.
-
-</MapText>
-
-<MapText name="samp.renoise">
-
-Renoising predicts the whole clean sequence at every step, then corrupts that prediction again to the next, lower noise level. Nothing is final until the end: with masking, a word shown at one step can be masked again at the next (orange).
-
-
-
-- Forward resampling draws a full clean sequence from the posterior, then applies fresh forward noise at the next time, separately for each view. It works with any fixed-length recipe, and it can remask tokens.
-
-</MapText>
-
-<MapText name="samp.renoise-continuous">
-
-With continuous noise, each step jumps to a fresh noisy version of the predicted words instead of moving the current vector a little. Early on the prediction can switch between words; the noise shrinks step by step until one word is left.
-
-</MapText>
-
-<MapText name="samp.note">
-
-Each card is one position. With continuous noise the likely words are stacked, larger and brighter when more likely, and they merge into one as the noise falls. A dashed box is not final; a solid box is fixed. Red marks a wrong word.
 
 </MapText>
 
@@ -1255,17 +1184,18 @@ Each recipe is a named config in the codebase (`+experiment=&lt;name&gt;`). Pres
 
 </DesignMap>
 
-### The samplers, as one loop
-
-Every sampler in the codebase is one loop with a few slots. At each step the model reads the current state and predicts the clean tokens, and the sampler then builds the next state from that prediction. The samplers differ only in how they fill the slots: which positions they update, whether they commit a position to a token and freeze it, and whether they add fresh noise.
-
-The **native** sampler takes each process's own reverse step. **Renoise** discards the state and re-noises the model's predicted tokens to the next noise level. **Ψ** mixes the two [@deschenaux2026psi]: at each step, every position takes the native step with some probability and is re-noised otherwise, so one setting recovers native and the other recovers renoise. The Ψ-samplers were introduced for discrete diffusion, and we extend them to continuous processes by re-noising with each process's own forward kernel. **Entropy-bounded (EB)** samplers commit the positions the model is surest about [@benhamu2025accelerated], and **random anchoring** commits positions at random on a schedule. The block below writes out each one.
-
-<SamplerAlgo client:visible general />
-
 Switch to "Paper recipes" at the top to see how published methods fill in the map. Boxes that change across a family of recipes are highlighted. Many well-known methods differ in only one or two boxes, which is what makes it tempting to swap parts between them.
 
 ## Why modular? (And some Teasers)
+
+<div className="spark">
+
+- Modularity exposes interactions that are otherwise hard to see.
+- Example: without self conditioning, tuning the sampler gives large gains and can flip the ranking between methods.
+- With self conditioning, the gain from tuning is much smaller, for every recipe tested on Sudoku and text8.
+- Modularity also makes new recipes cheap: most of the work is wiring existing parts together in a config file.
+
+</div>
 The modular approach of this codebase is motivated by two core reasons: first, a modular set up makes it easier to design experiments that tease out otherwise subtle interactions that different components can have on downstream performance. As an example, we take each recipe (masked, uniform, the pure continuous methods, and their hybrids) and tune its sampler over the same set of sampler families, once for a model trained without self conditioning and once for a model trained with it. We notice that how much tuning matters is contingent on whether self conditioning is used: without self conditioning, tuning the sampler gives a large gain over the untuned native sampler, and it can even flip the ranking between methods. With self conditioning, the gain from tuning is much smaller, and this holds for every recipe we test on both Sudoku and text8. This seems to support two conclusions: 
 1. Without self conditioning, a method's untuned score can say more about its default sampler than about the method itself. 
 2. Self conditioning seems to change how sensitive methods are to sampler tuning. This is a change in how much the sampler matters rather than a guaranteed gain in performance. 
@@ -1283,6 +1213,13 @@ Being able to swap one part and hold the rest fixed is what makes findings like 
 
 ## Inspiration: Hackable Diffusion
 
+<div className="spark">
+
+- SDDC borrows its structure from Hackable Diffusion: small parts with clear contracts, and one sub-library per pipeline stage.
+- It departs in three places: several views of the same tokens, the representation as its own part, and recipes as configs checked at build time.
+
+</div>
+
 The structure of SDDC borrows heavily from [Hackable Diffusion](https://github.com/google/hackable_diffusion) [@hackablediffusion2026], a JAX toolbox for experimenting with and teaching diffusion models. Hackable Diffusion is built on two principles: assemble models from small objects with well-defined contracts, and give each part of the pipeline (architecture, corruption, inference, loss and sampling) its own sub-library. Its core file, `hd_api.py`, defines nothing but the interfaces between these parts, so a training or sampling loop never needs to know which schedule, network or data type sits behind them.
 
 SDDC applies the same split to diffusion language models. Most of its components have a direct counterpart in Hackable Diffusion:
@@ -1298,23 +1235,52 @@ SDDC departs from Hackable Diffusion in three places, each driven by its focus o
 
 ## Next in this series
 
+<div className="spark">
+
+- Part 2 uses the framework to study self conditioning across recipes.
+
+</div>
+
 Part 2, [Self Conditioning Across Recipes](/blog/diffusion-lm-design-choices-self-conditioning/), uses the breadth of the framework on one question. It swaps one part at a time to show how self conditioning interacts with the corruption process, the sampler and the noise schedule.
 
-Part 3, [Interpreting Corruption Families and Self Conditioning](/blog/diffusion-lm-design-choices-sc-interpretation/), interprets those results through coding theory. It sorts corruption families by how hard their commitments are and by how much the noisy state tells the model about each position's reliability, and reads self conditioning as a message that pulls the families together.
 
 ## Future directions
+
+<div className="spark">
+
+- The project will keep growing, and contributions are welcome in these directions.
+
+</div>
 
 This project will keep changing as we find new questions to ask. The codebase also covers a narrow slice of current DLM research (see [the scope](#scope-what-is-this-codebase)). These are the directions where we would most welcome contributions.
 
 ### Sampler distillation
 
+<div className="spark">
+
+- Distillation, consistency and flow-map methods are left out today; a shared framework for them would make them easier to compare.
+
+</div>
+
 Distillation, consistency and flow map methods [@roos2026categoricalflowmaps; @lee2026onesteplanguagemodelingcontinuous] are among the most active areas of DLM research, and the codebase leaves them out because they train on the model's own trajectories. SDDC treats many recipes as settings of one skeleton. A shared framework of the same kind for distillation methods would make them far easier to compare.
 
 ### Insertion and deletion
 
+<div className="spark">
+
+- Insertion and deletion exist, including a FlexMDM-style recipe, but are basic; how they interact with the rest of a recipe is unexplored.
+
+</div>
+
 The codebase can insert and delete tokens, including a FlexMDM-style recipe [@kim2026any], but the implementation is basic. Much remains to explore: how these modifiers interact with the rest of a recipe, and how to make them work well rather than merely work.
 
 ### Latent diffusion and other representations
+
+<div className="spark">
+
+- Bringing latent, contextual and sub-token representations into the framework would show which results depend on per-token representations.
+
+</div>
 
 Latent diffusion for language has made real progress [@lovelace2023latent; @meshchaninov2026cosmoscompressedsmoothlatent; @shen2026codar]. Bringing compressed and contextual latent spaces into the same framework, along with representations that split tokens into smaller units, such as CoBit's bitstreams [@batzolis2026towards], would show which of the results here depend on per-token representations.
 
@@ -1322,6 +1288,14 @@ These are only a few directions, and we are sure we are missing others.
 
 ## Acknowledgements
 
+<div className="spark">
+
+- Thanks to Yazid Janati, Justin Deschenaux, Valentin De Bortoli and Alex Galashov.
+
+</div>
+
 We thank Yazid Janati, Justin Deschenaux, Valentin De Bortoli, and Alex Galashov for all-hands support during the writing of this blog.
+
+<SeriesNav current={1} label="Read the series" />
 
 ## References

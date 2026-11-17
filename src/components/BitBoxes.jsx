@@ -819,3 +819,209 @@ function BoxHybridUniformInner() {
   );
 }
 export const BoxHybridUniform = withVizTheme(BoxHybridUniformInner);
+
+// ─── The lifecycle of a bit, in boxes ─────────────────────────────────────────
+// One sampling step on the seven-color example: the state, the model's logits after one
+// pass, and the next state after the sampler writes position 3. A family switch changes how
+// the state looks and what it says about reliability. Every view below is hand-set.
+const LC_FAMS = [
+  { id: "masked", label: "Masked" },
+  { id: "uniform", label: "Uniform" },
+  { id: "cont", label: "Continuous" },
+];
+const LC_BLURB = {
+  masked: "The state flags exactly which positions are known (1) and which are blank (0). After the sampler, the worked-out red boxes go back to striped: the state cannot hold work in progress.",
+  uniform: "Every position shows a token and nothing says which ones are right, so every position gets the same reliability. The model works out less, because it cannot fully trust even the committed position.",
+  cont: "Every position is partly known, and how far it leans gives each position its own graded reliability. A soft state keeps part of the worked-out red boxes, so less is lost.",
+};
+// Which bits (colors) are fixed by what is committed. Position 1 = r, b; after the step
+// position 3 adds y, c (chosen by the sampler's randomness).
+const LC_FIX_A = new Set(["r", "b"]);
+const LC_FIX_C = new Set(["r", "b", "y", "c"]);
+const lcCommittedA = [0], lcCommittedC = [0, 2];
+// How far each position leans in the continuous state (A: before, C: after).
+const LC_LEAN_A = [0.8, 0.35, 0.25, 0.4, 0.15];
+const LC_LEAN_C = [0.9, 0.5, 0.85, 0.5, 0.2];
+
+function lcView(fam, stage) {
+  // stage: "A" state s_k, "B" logits after one pass, "C" state s_k+1
+  const committed = stage === "C" ? lcCommittedC : lcCommittedA;
+  const fixed = stage === "C" ? LC_FIX_C : LC_FIX_A;
+  return (si, bi) => {
+    const c = BASE[si][bi];
+    const isCommitted = committed.includes(si);
+    if (stage === "B") {
+      if (isCommitted) return { st: "k" };
+      if (!fixed.has(c)) return { st: "u" };
+      // the pass works the fixed bits out; uniform works out only the nearest one
+      if (fam === "uniform") return si === 1 ? { st: "k" } : { st: "d" };
+      return { st: "k" };
+    }
+    if (fam === "masked") {
+      if (isCommitted) return { st: "k" };
+      return fixed.has(c) ? { st: "d" } : { st: "u" };
+    }
+    if (fam === "uniform") {
+      if (isCommitted) return { amt: 0.7, dashed: true };
+      return fixed.has(c) ? { st: "d" } : { st: "s" };
+    }
+    // continuous
+    const lean = stage === "C" ? LC_LEAN_C : LC_LEAN_A;
+    if (isCommitted) return { amt: lean[si] };
+    if (stage === "C" && c === "r") return { amt: 0.6 }; // the soft state keeps part of the work
+    return fixed.has(c) ? { st: "d" } : { amt: lean[si] };
+  };
+}
+
+// Tally one view. A color is one bit of X. known = colors held for sure (gray, or a mostly
+// filled box); open = the rest, H(X | s); buried = striped boxes, bits the state fixes that
+// one pass has not worked out, so a bounded model would pay for them again.
+function lcCount(view) {
+  const known = new Set(), all = new Set();
+  let buried = 0;
+  BASE.forEach((s, si) => s.forEach((c, bi) => {
+    const v = view(si, bi);
+    all.add(c);
+    if (v.st === "k" || (v.amt !== undefined && v.amt >= 0.7)) known.add(c);
+    if (v.st === "d") buried += 1;
+  }));
+  return { all: all.size, k: known.size, o: all.size - known.size, b: buried };
+}
+
+// Indicator over each stack. kind: "binary" (0 or 1), "flat" (same everywhere), "graded".
+function LcIndicators({ x0, y, values, kind }) {
+  return (
+    <g>
+      {values.map((v, si) => {
+        const x = x0 + si * (BW + SG);
+        if (kind === "binary") {
+          return (
+            <g key={si}>
+              <rect x={x + 7} y={y - 1} width={16} height={13} rx={3} fill={v ? P.text : "none"} stroke={P.line2} />
+              <text x={x + BW / 2} y={y + 9} textAnchor="middle" fontSize={9.5} fontWeight={700} fill={v ? P.bg : P.dim2}>{v ? 1 : 0}</text>
+            </g>
+          );
+        }
+        return (
+          <g key={si}>
+            <rect x={x} y={y + 2} width={BW} height={7} rx={3.5} fill={P.inset} stroke={P.line2} strokeWidth={0.8} />
+            <rect x={x} y={y + 2} width={BW * v} height={7} rx={3.5} fill={kind === "flat" ? P.dim : P.accent} />
+          </g>
+        );
+      })}
+    </g>
+  );
+}
+
+function LcBadge({ x, y, n }) {
+  return (
+    <g>
+      <circle cx={x} cy={y} r={8.5} fill={P.warn} />
+      <text x={x} y={y + 3.6} textAnchor="middle" fontSize={10.5} fontWeight={700} fill={P.bg}>{n}</text>
+    </g>
+  );
+}
+
+function BoxLifecycleInner({ kicker = "Figure 2", start = "masked" }) {
+  const [fam, setFam] = useState(start);
+  const colW = stacksW(BASE);
+  const XA = 14, XB = XA + colW + 110, XC = XB + colW + 180;
+  const W = XC + colW + 14;
+  const yBase = 150, yInd = yBase - stacksH(BASE) - 20;
+  const stateKind = fam === "masked" ? "binary" : fam === "uniform" ? "flat" : "graded";
+  const stateVals = (stage) => {
+    if (fam === "masked") return [0, 1, 2, 3, 4].map((i) => ((stage === "C" ? lcCommittedC : lcCommittedA).includes(i) ? 1 : 0));
+    if (fam === "uniform") return Array(5).fill(stage === "C" ? 0.6 : 0.5);
+    return stage === "C" ? LC_LEAN_C : LC_LEAN_A;
+  };
+  const conf = fam === "uniform" ? [0.7, 0.45, 0.3, 0.35, 0.1] : fam === "masked" ? [1, 0.6, 0.45, 0.6, 0.1] : [0.95, 0.6, 0.45, 0.6, 0.15];
+  const indLabel = { binary: "reliability |Lᵢ| ∈ {0, ∞}", flat: "reliability |Lᵢ| equal for every i", graded: "reliability |Lᵢ| graded per i" }[stateKind];
+  const arrow = (x1, x2, y) => (
+    <g>
+      <line x1={x1} y1={y} x2={x2 - 6} y2={y} stroke={P.dim} strokeWidth={1.4} />
+      <path d={`M${x2 - 9},${y - 4} L${x2 - 3},${y} L${x2 - 9},${y + 4}`} fill="none" stroke={P.dim} strokeWidth={1.4} />
+    </g>
+  );
+  const box = (x, w, label) => (
+    <g>
+      <rect x={x} y={yBase - 52} width={w} height={26} rx={13} fill={P.inset} stroke={P.line2} />
+      <text x={x + w / 2} y={yBase - 35} textAnchor="middle" fontSize={10} fill={P.text}>{label}</text>
+    </g>
+  );
+  const mB = XA + colW + 18, mW = 74, sB = XB + colW + 48, sW = 84;
+  const H = 292;
+  const tallies = [[XA, lcCount(lcView(fam, "A"))], [XB, lcCount(lcView(fam, "B"))], [XC, lcCount(lcView(fam, "C"))]];
+  return (
+    <Frame kicker={kicker} title="The lifecycle of a bit during sampling"
+      subtitle="One sampling step on the seven-color example. Left: the state. Middle: the model's logits after one pass. Right: the next state, after the sampler writes position 3. Switch the corruption family to see what the state can keep."
+      controls={<Pills value={fam} onChange={setFam} options={LC_FAMS} />}
+      note={<>Hand-set illustration, not measured data. For uniform and continuous a mostly filled box counts as known, so their counts are rounded. Gray boxes are bits the model has worked out (usable); striped boxes are fixed by what is committed but not worked out (buried). The bar or flag over each stack is what the state says about that position's reliability; over the logits it is the model's confidence, which is always graded. The split into worked-out and fixed-but-not-worked-out bits is an assumption; see the text.</>}>
+      <Key items={["unknown", "dim", "known", fam === "uniform" ? "shown" : fam === "cont" ? "partial" : "empty"].filter((k) => k !== "empty")} />
+      <div style={blurbStyle()}><strong style={{ color: P.text }}>How to read it.</strong> Each stack is one position i. Each color is one bit of the final sample X, so the 7 colors give H(X) = 7 bits; a color in several stacks is one bit shared by those positions. Under each column, I(X; s) counts the colors known for sure, H(X | s) the colors still open, and "buried" the striped boxes: bits the state fixes that one pass has not worked out. Here buried = H_V(X | s) − H(X | s), the extra bits a model limited to one pass would pay.</div>
+      <div style={blurbStyle()}>{LC_BLURB[fam]}</div>
+      <div style={{ overflowX: "auto" }}>
+        <svg viewBox={`0 0 ${W} ${H}`} style={{ width: "100%", minWidth: 560, height: "auto", display: "block", fontFamily: FONT }} role="img"
+          aria-label={`One sampling step for ${fam} diffusion: state, logits after one pass, and the next state after the sampler writes position 3.`}>
+          {[[XA, "STATE sₖ"], [XB, "LOGITS ŷₖ = f_θ(sₖ), ONE PASS"], [XC, "STATE sₖ₊₁"]].map(([x, t]) => (
+            <text key={t} x={x} y={16} fontSize={9.5} fill={P.muted} letterSpacing="0.08em">{t}</text>
+          ))}
+          <text x={XA} y={yInd - 8} fontSize={9} fill={P.dim2}>{indLabel}</text>
+          <text x={XB} y={yInd - 8} fontSize={9} fill={P.dim2}>confidence maxₓ p_θ(xᵢ | sₖ): graded</text>
+          <text x={XC} y={yInd - 8} fontSize={9} fill={P.dim2}>{indLabel}</text>
+          <LcIndicators x0={XA} y={yInd} values={stateVals("A")} kind={stateKind} />
+          <LcIndicators x0={XB} y={yInd} values={conf} kind="graded" />
+          <LcIndicators x0={XC} y={yInd} values={stateVals("C")} kind={stateKind} />
+
+          <Stacks stacks={BASE} view={lcView(fam, "A")} x0={XA} yBase={yBase} mark={lcCommittedA} />
+          <Stacks stacks={BASE} view={lcView(fam, "B")} x0={XB} yBase={yBase} />
+          <Stacks stacks={BASE} view={lcView(fam, "C")} x0={XC} yBase={yBase} mark={[2]} />
+
+          {arrow(XA + colW + 4, mB, yBase - 39)}
+          {box(mB, mW, "model pass")}
+          {arrow(mB + mW, XB - 4, yBase - 39)}
+          {arrow(XB + colW + 4, sB, yBase - 39)}
+          {box(sB, sW, "sampler")}
+          {arrow(sB + sW, XC - 4, yBase - 39)}
+
+          {/* new randomness into the sampler */}
+          <text x={sB + sW / 2} y={yBase - 92} textAnchor="middle" fontSize={9.5} fill={P.warn}>new randomness</text>
+          <line x1={sB + sW / 2} y1={yBase - 86} x2={sB + sW / 2} y2={yBase - 58} stroke={P.warn} strokeWidth={1.4} />
+          <path d={`M${sB + sW / 2 - 4},${yBase - 62} L${sB + sW / 2},${yBase - 56} L${sB + sW / 2 + 4},${yBase - 62}`} fill="none" stroke={P.warn} strokeWidth={1.4} />
+          <text x={sB + sW / 2} y={yBase - 8} textAnchor="middle" fontSize={9} fill={P.muted}>writes position 3: x₃ ~ p_θ</text>
+          <text x={sB + sW / 2} y={yBase + 4} textAnchor="middle" fontSize={9} fill={P.muted}>chosen: yellow, cyan = {tallies[2][1].k - tallies[0][1].k} bits</text>
+
+          {/* 1: sampling wall */}
+          <text x={sB - 26} y={yBase + 81} fontSize={9} fill={P.bad}>sampling wall: drops the worked-out</text>
+          <text x={sB - 26} y={yBase + 93} fontSize={9} fill={P.bad}>boxes and the rest of ŷₖ</text>
+          
+          <LcBadge x={sB - 38} y={yBase + 84} n={1} />
+
+          {/* 2: self conditioning carries the logits forward */}
+          <path d={`M${XB + colW / 2 + 40},${yBase + 62} C${XB + colW / 2 + 40},${yBase + 118} ${mB + mW / 2},${yBase + 118} ${mB + mW / 2},${yBase - 22}`}
+            fill="none" stroke={P.good} strokeWidth={1.5} strokeDasharray="5 4" />
+          <path d={`M${mB + mW / 2 - 4},${yBase - 17} L${mB + mW / 2},${yBase - 23} L${mB + mW / 2 + 4},${yBase - 17}`} fill="none" stroke={P.good} strokeWidth={1.5} />
+          <text x={(XB + colW / 2 + mB + mW / 2) / 2 + 30} y={yBase + 128} textAnchor="middle" fontSize={9.5} fill={P.good}>self conditioning: ŷₖ fed into the next pass, f_θ(sₖ₊₁, ŷₖ)</text>
+          <LcBadge x={mB + mW / 2 - 14} y={yBase + 80} n={2} />
+
+          {/* tallies, in math terms */}
+          {[[XA, tallies[0][1], "sₖ"], [XB, tallies[1][1], "ŷₖ"], [XC, tallies[2][1], "sₖ₊₁"]].map(([x, c, v]) => (
+            <g key={v}>
+              <text x={x} y={yBase + 30} fontSize={9.5} fill={P.text}>I(X; {v}) = {c.k} bits known</text>
+              <text x={x} y={yBase + 43} fontSize={9.5} fill={P.text}>H(X | {v}) = {c.o} bits open</text>
+              <text x={x} y={yBase + 56} fontSize={9.5} fill={P.warn}>buried = {c.b} {c.b === 1 ? "box" : "boxes"}</text>
+            </g>
+          ))}
+
+          {/* 3: the corruption process decides what the state keeps */}
+          <LcBadge x={XC - 12} y={yInd + 5} n={3} />
+        </svg>
+      </div>
+      <div style={{ ...small(), marginTop: 2, display: "flex", flexWrap: "wrap", gap: "4px 14px" }}>
+        <span><strong style={{ color: P.text }}>1</strong> sampling wall: the draw throws away the rest of the belief</span>
+        <span><strong style={{ color: P.text }}>2</strong> self conditioning: graded beliefs carried forward</span>
+        <span><strong style={{ color: P.text }}>3</strong> corruption process: decides what the state keeps</span>
+      </div>
+    </Frame>
+  );
+}
+export const BoxLifecycle = withVizTheme(BoxLifecycleInner);
