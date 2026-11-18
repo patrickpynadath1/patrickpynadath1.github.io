@@ -15,7 +15,7 @@ const STUDIES = [
   { q: "Does SC change which sampler works best?",
     vary: ["8 samplers per model (10 for pure continuous)", "SC on / off"],
     fixed: ["same checkpoints, prompts, seeds", "same tuning budget"],
-    href: "#with-self-conditioning-special-samplers-matter-less-on-prompted-tasks", where: "Results" },
+    href: "#other-effects-of-self-conditioning", where: "Results" },
 ];
 
 function List({ label, items, color }) {

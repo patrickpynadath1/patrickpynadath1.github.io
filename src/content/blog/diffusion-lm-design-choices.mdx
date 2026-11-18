@@ -409,7 +409,7 @@ Self conditioning on the expected embedding: the previous pass’s probabilities
 - A second option re-runs the two passes fresh at every step, at twice the cost.
 - It works with every method that predicts a clean-token posterior. Plug-in and score methods (UDLM, DUO, SEDD) cannot use it, and neither can the adaptive ODE solver.
 - Self conditioning was introduced in Analog Bits [@chen2022analog]. Proposed explanations include fixed-point refinement [@yooSelfconditionedFlowMap2026a] and making tokens identifiable under heavy noise [@davis2026design]. It can also push models toward repetition [@zhang2026ace].
-- Self conditioning sits here as a network input, but it also changes the effective information path. [Part 2](/blog/diffusion-lm-design-choices-self-conditioning/#input-reliability-task-structure-and-self-conditioning) reads it as a soft message passed between steps.
+- Self conditioning sits here as a network input, but it also changes the effective information path. [Part 2](/blog/diffusion-lm-design-choices-self-conditioning/#ideas-from-coding-theory) reads it as a soft message passed between steps.
 
 </MapText>
 

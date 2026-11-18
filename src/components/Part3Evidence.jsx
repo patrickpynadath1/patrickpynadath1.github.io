@@ -6,6 +6,7 @@ import { useState } from "react";
 import { P, withVizTheme } from "./vizTheme.js";
 import { Frame, Pills, FONT, rgba } from "./SelfCondDepth.jsx";
 import RERUN from "../data/sc_rerun.json";
+import LADDER from "../data/sudoku_hint_ladder.json";
 
 const SANS = "Helvetica, Arial, sans-serif";
 const TASKS = [
@@ -271,3 +272,148 @@ function DiversityInner({ kicker = "Figure 6" }) {
 }
 
 export const SimplexDiversity = withVizTheme(DiversityInner);
+
+// ─── Sudoku hint ladder (Part 2) (src/data/sudoku_hint_ladder.json) ─────
+// Built by scripts/build_sudoku_hint_ladder.py from 672 runs: 28 Part 2 Sudoku models,
+// 4 samplers each (top 3 tuned Part 2 winners + untuned native), 6 hint levels.
+
+const LADDER_GROUPS = {
+  pure: [
+    { d: "masked", c: null, label: "Masked", color: () => P.mdlm },
+    { d: "uniform", c: null, label: "Uniform", color: () => P.duo },
+    { d: null, c: "gaussian", label: "Gaussian", color: () => P.accent },
+    { d: null, c: "spherical", label: "Spherical", color: () => P.orange },
+    { d: null, c: "vmf", label: "vMF", color: () => P.lime },
+    { d: null, c: "simplex", label: "Simplex", color: () => P.pinkText },
+  ],
+  masked: ["gaussian", "spherical", "vmf", "simplex"].map((c) => ({ d: "masked", c })),
+  uniform: ["gaussian", "spherical", "vmf", "simplex"].map((c) => ({ d: "uniform", c })),
+};
+const CONT_STYLE = { gaussian: ["Gaussian", () => P.accent], spherical: ["Spherical", () => P.orange],
+  vmf: ["vMF", () => P.lime], simplex: ["Simplex", () => P.pinkText] };
+for (const g of ["masked", "uniform"]) {
+  LADDER_GROUPS[g] = LADDER_GROUPS[g].map((r) => ({ ...r, label: `${g === "masked" ? "Masked" : "Uniform"} + ${CONT_STYLE[r.c][0]}`, color: CONT_STYLE[r.c][1] }));
+}
+const SAMPLER_LABEL = { native: "native", native_greedy: "native greedy", renoising: "renoising",
+  renoising_greedy: "renoising greedy", eb_greedy: "EB greedy", eb_churn: "EB churn",
+  psi_corruption: "Ψ (corruption clock)", psi_controller: "Ψ (controller clock)", native_untuned: "native, untuned" };
+
+// Fixed color per sampler, so a sampler keeps its color across recipes.
+const SAMPLER_COLOR = { native: () => P.accent, native_greedy: () => P.accentDim, renoising: () => P.duo,
+  renoising_greedy: () => P.candi, eb_greedy: () => P.mdlm, eb_churn: () => P.orange,
+  psi_corruption: () => P.lime, psi_controller: () => P.pinkText, native_untuned: () => P.muted };
+const SAMPLER_SHORT = { native: "native", native_greedy: "native greedy", renoising: "renoising",
+  renoising_greedy: "renoise greedy", eb_greedy: "EB greedy", eb_churn: "EB churn",
+  psi_corruption: "Ψ corruption", psi_controller: "Ψ controller" };
+const LADDER_RECIPES = [...LADDER_GROUPS.pure, ...LADDER_GROUPS.masked, ...LADDER_GROUPS.uniform];
+
+function ladderPoint(row, arm, metric, kind, level) {
+  const c = LADDER.cases.find((x) => x.disc === row.d && x.cont === row.c && x.arm === arm);
+  const pool = c.samplers.filter((s) => (kind === "best" ? s.tuned : !s.tuned));
+  const best = pool.reduce((a, s) => (s.levels[level][metric] > a.levels[level][metric] ? s : a), pool[0]);
+  return { v: best.levels[level][metric], sampler: best.name };
+}
+
+function HintLadderInner({ kicker = "Figure · Sudoku hint ladder" }) {
+  const [metric, setMetric] = useState("dv");
+  const [arm, setArm] = useState("none");
+  const [kind, setKind] = useState("best");
+  const [group, setGroup] = useState("pure");
+  const [view, setView] = useState("recipes");
+  const [recipe, setRecipe] = useState(0);
+  const [hover, setHover] = useState(null);
+  const { hints, peeled } = LADDER.meta;
+  const rows = LADDER_GROUPS[group];
+  const picked = LADDER_RECIPES[recipe];
+  const pickedCase = LADDER.cases.find((x) => x.disc === picked.d && x.cont === picked.c && x.arm === arm);
+  const W = 600, x0 = 44, x1 = W - (view === "samplers" ? 132 : 118), yTop = 14, yBot = 214, stripY = 280, H = 314;
+  const X = (i) => x0 + (i / (hints.length - 1)) * (x1 - x0);
+  const Y = (v) => yBot - v * (yBot - yTop);
+  const series = view === "recipes"
+    ? rows.map((r) => ({ ...r, pts: hints.map((_, i) => ladderPoint(r, arm, metric, kind, i)) }))
+    : pickedCase.samplers.map((sm) => ({
+      label: sm.tuned ? `#${pickedCase.samplers.indexOf(sm) + 1} ${SAMPLER_SHORT[sm.name]}` : "untuned native",
+      color: SAMPLER_COLOR[sm.name], dashed: !sm.tuned, val: sm.val,
+      pts: sm.levels.map((l) => ({ v: l[metric], sampler: sm.name })),
+    }));
+  // direct labels at the right end, nudged apart so they do not overlap
+  const ends = series.map((s) => ({ label: s.label, color: s.color(), y: Y(s.pts[s.pts.length - 1].v) }))
+    .sort((a, b) => a.y - b.y);
+  for (let i = 1; i < ends.length; i++) ends[i].y = Math.max(ends[i].y, ends[i - 1].y + 13);
+  const mlabel = metric === "dv" ? "distinct and valid" : "valid";
+  return (
+    <Frame
+      kicker={kicker}
+      title="As hints are removed, Sudoku goes from redundant to synergistic, and the families split"
+      subtitle={`Share of samples that are ${mlabel} solutions of the weakened puzzle${metric === "dv" ? ", counting each distinct board once" : ""}. Below the chart: share of blank cells that peeling (erasure-channel belief propagation) fills from the hints alone.`}
+      controls={<>
+        <Pills value={metric} onChange={setMetric} options={[{ id: "dv", label: "Distinct and valid" }, { id: "valid", label: "Valid" }]} />
+        <Pills value={arm} onChange={setArm} options={[{ id: "none", label: "Without SC" }, { id: "sc", label: "With SC" }]} />
+        <Pills value={view} onChange={setView} options={[{ id: "recipes", label: "Compare recipes" }, { id: "samplers", label: "Compare samplers" }]} />
+        {view === "recipes" ? <>
+          <Pills value={kind} onChange={setKind} options={[{ id: "best", label: "Best of top 3 tuned" }, { id: "base", label: "Untuned native" }]} />
+          <Pills value={group} onChange={setGroup} options={[{ id: "pure", label: "Pure" }, { id: "masked", label: "Masked hybrids" }, { id: "uniform", label: "Uniform hybrids" }]} />
+        </> : (
+          <label style={{ display: "inline-flex", alignItems: "center", gap: 8, fontFamily: FONT, fontSize: 11.5, color: P.dim2 }}>
+            recipe
+            <select value={recipe} onChange={(e) => setRecipe(Number(e.target.value))} style={{
+              fontFamily: FONT, fontSize: 12, color: P.text, background: P.inset, border: `1px solid ${P.line2}`,
+              borderRadius: 999, padding: "5px 10px" }}>
+              {LADDER_RECIPES.map((r, i) => <option key={r.label} value={i}>{r.label}</option>)}
+            </select>
+          </label>
+        )}
+      </>}
+      note={<>The Sudoku models above, trained only on 30-hint puzzles, evaluated on the first 32 validation puzzles with nested subsets of their hints, 16 samples each, NFE 128; no retraining or retuning. "Best of top 3 tuned" takes, at each point, the best of the model's three best tuned samplers (hover for which). "Compare samplers" shows one model's samplers: #1 to #3 in the order of their 30-hint validation accuracy from the tuning, each at its tuned settings, and the native sampler untuned (dashed). Distinct counts are per puzzle out of 16; at 0 hints all puzzles are the same empty grid, so they are pooled over all 512 samples. At 30 hints each puzzle has one solution, so the distinct-and-valid ceiling is 1/16; from 23 hints down every puzzle has at least 16 solutions. One training seed per model; rates move by about ±0.05.</>}
+    >
+      <svg viewBox={`0 0 ${W} ${H}`} width="100%" style={{ display: "block", fontFamily: SANS, maxWidth: 680 }}>
+        {[0, 0.25, 0.5, 0.75, 1].map((t) => (
+          <g key={t}>
+            <line x1={x0} x2={x1} y1={Y(t)} y2={Y(t)} stroke={P.grid} strokeWidth={1} />
+            <text x={x0 - 8} y={Y(t) + 4} fontSize={11} fill={P.dim2} fontFamily={FONT} textAnchor="end">{t.toFixed(2)}</text>
+          </g>
+        ))}
+        {hints.map((h, i) => (
+          <text key={i} x={X(i)} y={yBot + 20} fontSize={11.5} fill={P.muted} fontFamily={FONT} textAnchor="middle">{h}</text>
+        ))}
+        <text x={(x0 + x1) / 2} y={yBot + 36} fontSize={11.5} fill={P.dim2} textAnchor="middle">hints kept (of 30)</text>
+        {series.map((s) => {
+          const c = s.color(), dim = hover && hover !== s.label;
+          return (
+            <g key={s.label} opacity={dim ? 0.18 : 1} onMouseEnter={() => setHover(s.label)} onMouseLeave={() => setHover(null)}>
+              <polyline points={s.pts.map((p, i) => `${X(i)},${Y(p.v)}`).join(" ")} fill="none" stroke={c} strokeWidth={2} strokeLinejoin="round" strokeDasharray={s.dashed ? "5 4" : undefined} />
+              {s.pts.map((p, i) => (
+                <g key={i}>
+                  <circle cx={X(i)} cy={Y(p.v)} r={4.5} fill={c} stroke={P.inset} strokeWidth={2} />
+                  <circle cx={X(i)} cy={Y(p.v)} r={11} fill="transparent" style={{ cursor: "help" }}>
+                    <title>{view === "recipes"
+                      ? `${s.label}, ${arm === "sc" ? "with" : "without"} SC, ${hints[i]} hints: ${p.v.toFixed(2)} ${mlabel} (${SAMPLER_LABEL[p.sampler]})`
+                      : `${picked.label}, ${arm === "sc" ? "with" : "without"} SC, ${SAMPLER_LABEL[p.sampler]}${s.val != null ? ` (30-hint validation accuracy ${s.val.toFixed(2)})` : ""}, ${hints[i]} hints: ${p.v.toFixed(2)} ${mlabel}`}</title>
+                  </circle>
+                </g>
+              ))}
+            </g>
+          );
+        })}
+        {ends.map((e) => (
+          <text key={e.label} x={x1 + 12} y={e.y + 4} fontSize={11.5} fill={P.text} opacity={hover && hover !== e.label ? 0.3 : 1}>
+            <tspan fill={e.color}>● </tspan>{e.label}
+          </text>
+        ))}
+        <text x={X(0) - 26} y={stripY - 7} fontSize={11} fill={P.dim2}>blank cells peeling fills from the hints</text>
+        {hints.map((_, i) => {
+          const v = peeled[i];
+          return (
+            <g key={i}>
+              <rect x={X(i) - 26} y={stripY} width={52} height={14} rx={4} fill={P.inset} stroke={P.line2} />
+              <rect x={X(i) - 26} y={stripY} width={Math.max(v * 52, v > 0 ? 3 : 0)} height={14} rx={4} fill={rgba(P.accent2, 0.75)} />
+              <text x={X(i)} y={stripY + 28} fontSize={11} fill={P.muted} fontFamily={FONT} textAnchor="middle">{`${Math.round(v * 100)}%`}</text>
+            </g>
+          );
+        })}
+      </svg>
+    </Frame>
+  );
+}
+
+export const HintLadder = withVizTheme(HintLadderInner);
