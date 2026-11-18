@@ -743,12 +743,35 @@ In practice, three questions help pick a recipe. Does the task have one answer o
 - Critical windows: masked diffusion decides each position in a much narrower window than uniform or Gaussian diffusion, which costs it parallelism.
 - SCUD: masking works because it builds in when each token is corrupted.
 - Gourevitch et al.: uniform diffusion can be rewritten to sample like masked diffusion, and then it matches masked diffusion.
+- Aharoni and Pfister: a conservation law treats the same three corruptions as channels and ties likelihood to the noise path; we ask how each channel decodes in a few steps.
 
 </div>
 
 **Critical windows.** Li and Chen [@li2024critical] show that diffusion models decide each feature of the output in a short window of the reverse process. Chen and Wang [@chen2026parallelism] apply this to language models: masked diffusion's window is far narrower than uniform or Gaussian diffusion's, so it can need many more forward passes. Like ours, their split puts masked diffusion on one side and uniform and Gaussian diffusion on the other.
 
 **Masked vs uniform diffusion.** Amin et al. [@amin2025scud] argue that masked diffusion works because it builds in when each token is corrupted and only learns what it becomes; giving other discrete processes the same knowledge (SCUD) recovers its benefits. Gourevitch et al. [@gourevitch2026uniform] rewrite uniform diffusion as an absorbing process with the same joint law, which turns its sampling into masked-diffusion-like steps: unmasking, with tokens carried over, plus a natural form of remasking. In that form it matches or beats masked diffusion, which suggests the gap between the two comes from sampling and parameterization more than from the noise itself. Von Rütte et al. [@vonrutte2025scaling] note that uniform diffusion told which tokens are noisy becomes equivalent to masked diffusion, and Guzelkabaagac et al. [@guzelkabaagac2026uniform] show that uniform diffusion trains the model to estimate whether each token is still clean. In our terms, all of these move uniform diffusion toward the erasure channel.
+
+**Channel views of diffusion.** Aharoni and Pfister [@aharoni2026conservation] also treat masking, uniform noise and Gaussian noise as channels, and derive a conservation law for the likelihood. Due to the closeness of our work, we include a more detailed discussion below.
+
+<details className="breakout">
+<summary>
+<span className="breakout-kicker">Breakout · optional</span>
+<span className="breakout-title">Conservation laws and the channel view</span>
+<span className="breakout-sub">How our reading relates to the GEXIT conservation law of Aharoni and Pfister.</span>
+</summary>
+
+<div className="breakout-body">
+
+**What they show.** Aharoni and Pfister treat masking, uniform noise and Gaussian noise as erasure, replacement and Gaussian channels. Their tool is the GEXIT function from coding theory, which measures how the uncertainty about the data changes as one position's noise level changes. They prove that, for a broad class of noise processes, the data–model cross-entropy is exactly an integral of these per-position terms along the noise path. In the Gaussian case this reduces to the familiar I-MMSE relation between mutual information and denoising error [@kong2023information].
+
+**What follows from it.** With exact posteriors, the integral equals the data entropy for any admissible noise path. So in their view, the gaps between channels come from how well a finite network approximates each channel's posteriors, not from the channels themselves.
+
+**How our reading differs.** Their law fixes the total area under the curve, not its shape. It does not say when along the path each channel resolves information, or how a decoder combines evidence across positions. It is also a statement about likelihood in continuous time, and they note that finite-step sampling can depend on the joint posterior. Our results are finite-step samples at a fixed budget, and the redundant and synergistic structure we appeal to lives in that joint posterior.
+
+**Why the two can disagree.** On text8, their likelihoods favor masked diffusion, while our sample metric favors uniform. This is not a conflict. One ranks how well each channel was learned; the other also counts how well a parallel sampler decodes.
+
+</div>
+</details>
 
 ## Limitations, and the Future 
 
